@@ -166,6 +166,141 @@ class TestCategories:
         assert data["name"] == new_cat["name"]
         assert "id" in data
         print(f"✓ Created category: {data['name']}")
+    
+    def test_update_category(self):
+        """P1-3: PUT /categories/{id} updates category name/icon"""
+        global AUTH_TOKEN
+        headers = {"Authorization": f"Bearer {AUTH_TOKEN}"}
+        
+        # First create a test category
+        unique_name = f"TEST_Update_Cat_{uuid.uuid4().hex[:6]}"
+        new_cat = {"name": unique_name, "icon": "FileText", "order": 99}
+        create_response = requests.post(f"{BASE_URL}/api/categories", headers=headers, json=new_cat)
+        assert create_response.status_code == 200
+        cat_id = create_response.json()["id"]
+        
+        # UPDATE name and icon
+        update_payload = {"name": f"RENAMED_{unique_name}", "icon": "Rocket"}
+        update_response = requests.put(f"{BASE_URL}/api/categories/{cat_id}", headers=headers, json=update_payload)
+        assert update_response.status_code == 200
+        updated = update_response.json()
+        assert updated["name"] == update_payload["name"]
+        assert updated["icon"] == "Rocket"
+        print(f"✓ Updated category: {updated['name']} with icon {updated['icon']}")
+        
+        # Verify update persisted via GET
+        get_response = requests.get(f"{BASE_URL}/api/categories", headers=headers)
+        all_cats = get_response.json()
+        found = next((c for c in all_cats if c["id"] == cat_id), None)
+        assert found is not None
+        assert found["name"] == update_payload["name"]
+        assert found["icon"] == "Rocket"
+        print(f"✓ Update verified via GET")
+    
+    def test_update_category_not_found(self):
+        """PUT /categories/{id} returns 404 for non-existent category"""
+        global AUTH_TOKEN
+        headers = {"Authorization": f"Bearer {AUTH_TOKEN}"}
+        
+        fake_id = f"nonexistent-{uuid.uuid4().hex}"
+        update_response = requests.put(f"{BASE_URL}/api/categories/{fake_id}", headers=headers, json={"name": "Test"})
+        assert update_response.status_code == 404
+        print(f"✓ Update non-existent category returns 404")
+    
+    def test_delete_empty_category(self):
+        """P1-3: DELETE /categories/{id} works for empty category"""
+        global AUTH_TOKEN
+        headers = {"Authorization": f"Bearer {AUTH_TOKEN}"}
+        
+        # Create a category with no children or documents
+        unique_name = f"TEST_Delete_Empty_{uuid.uuid4().hex[:6]}"
+        new_cat = {"name": unique_name, "icon": "FileText", "order": 99}
+        create_response = requests.post(f"{BASE_URL}/api/categories", headers=headers, json=new_cat)
+        assert create_response.status_code == 200
+        cat_id = create_response.json()["id"]
+        
+        # DELETE should succeed
+        delete_response = requests.delete(f"{BASE_URL}/api/categories/{cat_id}", headers=headers)
+        assert delete_response.status_code == 200
+        assert delete_response.json()["status"] == "deleted"
+        print(f"✓ Deleted empty category: {cat_id}")
+        
+        # Verify deletion via GET
+        get_response = requests.get(f"{BASE_URL}/api/categories", headers=headers)
+        all_cats = get_response.json()
+        found = next((c for c in all_cats if c["id"] == cat_id), None)
+        assert found is None, "Deleted category should not appear in list"
+        print(f"✓ Delete verified - category removed from list")
+    
+    def test_delete_category_with_children_fails(self):
+        """P1-3: DELETE /categories/{id} fails for category with children"""
+        global AUTH_TOKEN
+        headers = {"Authorization": f"Bearer {AUTH_TOKEN}"}
+        
+        # Create parent category
+        parent_name = f"TEST_Parent_{uuid.uuid4().hex[:6]}"
+        parent_response = requests.post(f"{BASE_URL}/api/categories", headers=headers, json={
+            "name": parent_name, "icon": "FolderOpen", "order": 98
+        })
+        parent_id = parent_response.json()["id"]
+        
+        # Create child category
+        child_name = f"TEST_Child_{uuid.uuid4().hex[:6]}"
+        child_response = requests.post(f"{BASE_URL}/api/categories", headers=headers, json={
+            "name": child_name, "icon": "FileText", "order": 0, "parent_id": parent_id
+        })
+        child_id = child_response.json()["id"]
+        
+        # DELETE parent should fail (has children)
+        delete_response = requests.delete(f"{BASE_URL}/api/categories/{parent_id}", headers=headers)
+        assert delete_response.status_code == 400
+        assert "children" in delete_response.json().get("detail", "").lower() or "documents" in delete_response.json().get("detail", "").lower()
+        print(f"✓ Delete category with children returns 400")
+        
+        # Cleanup: delete child first, then parent
+        requests.delete(f"{BASE_URL}/api/categories/{child_id}", headers=headers)
+        requests.delete(f"{BASE_URL}/api/categories/{parent_id}", headers=headers)
+    
+    def test_delete_category_with_documents_fails(self):
+        """P1-3: DELETE /categories/{id} fails for category with documents"""
+        global AUTH_TOKEN
+        headers = {"Authorization": f"Bearer {AUTH_TOKEN}"}
+        
+        # Create a category
+        cat_name = f"TEST_CatWithDoc_{uuid.uuid4().hex[:6]}"
+        cat_response = requests.post(f"{BASE_URL}/api/categories", headers=headers, json={
+            "name": cat_name, "icon": "FileText", "order": 99
+        })
+        cat_id = cat_response.json()["id"]
+        
+        # Create a document in this category
+        doc_response = requests.post(f"{BASE_URL}/api/documents", headers=headers, json={
+            "title": f"TEST_Doc_{uuid.uuid4().hex[:6]}",
+            "content": "Test content",
+            "category_id": cat_id,
+            "order": 0
+        })
+        doc_id = doc_response.json()["id"]
+        
+        # DELETE category should fail (has documents)
+        delete_response = requests.delete(f"{BASE_URL}/api/categories/{cat_id}", headers=headers)
+        assert delete_response.status_code == 400
+        assert "children" in delete_response.json().get("detail", "").lower() or "documents" in delete_response.json().get("detail", "").lower()
+        print(f"✓ Delete category with documents returns 400")
+        
+        # Cleanup: delete document first, then category
+        requests.delete(f"{BASE_URL}/api/documents/{doc_id}", headers=headers)
+        requests.delete(f"{BASE_URL}/api/categories/{cat_id}", headers=headers)
+    
+    def test_delete_category_not_found(self):
+        """DELETE /categories/{id} returns 404 for non-existent category"""
+        global AUTH_TOKEN
+        headers = {"Authorization": f"Bearer {AUTH_TOKEN}"}
+        
+        fake_id = f"nonexistent-{uuid.uuid4().hex}"
+        delete_response = requests.delete(f"{BASE_URL}/api/categories/{fake_id}", headers=headers)
+        assert delete_response.status_code == 404
+        print(f"✓ Delete non-existent category returns 404")
 
 
 class TestDocuments:
