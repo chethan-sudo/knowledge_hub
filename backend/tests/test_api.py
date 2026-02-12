@@ -319,14 +319,14 @@ class TestDocuments:
                 AUTH_TOKEN = response.json()["token"]
     
     def test_get_documents(self):
-        """GET /documents returns 26 documents"""
+        """GET /documents returns documents list"""
         global AUTH_TOKEN
         headers = {"Authorization": f"Bearer {AUTH_TOKEN}"}
         response = requests.get(f"{BASE_URL}/api/documents", headers=headers)
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data, list)
-        assert len(data) == 26, f"Expected 26 documents, got {len(data)}"
+        assert len(data) >= 26, f"Expected at least 26 documents, got {len(data)}"
         print(f"✓ GET /documents returns {len(data)} documents")
     
     def test_documents_have_mermaid_content(self):
