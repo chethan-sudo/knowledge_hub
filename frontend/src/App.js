@@ -612,8 +612,9 @@ function Dashboard() {
   const parentCat = currentCat?.parent_id ? categories.find(c => c.id === currentCat.parent_id) : null;
   const bookmarkedDocs = documents.filter(d => bookmarkedIds.includes(d.id));
 
-  const showHome = !docId && !creating && !editing && view !== "bookmarks";
-  const showBookmarks = view === "bookmarks" && !docId && !creating && !editing;
+  const isBookmarksRoute = window.location.pathname === "/bookmarks";
+  const showHome = !docId && !creating && !editing && !isBookmarksRoute;
+  const showBookmarks = isBookmarksRoute && !docId && !creating && !editing;
 
   return (
     <div className="dashboard" data-testid="dashboard">
