@@ -1,55 +1,54 @@
 # Emergent Document Hub - PRD
 
 ## Original Problem Statement
-User wanted all knowledge about Emergent platform, LLMs, AI agents, infrastructure etc. converted into a Notion-like documentation website called "Emergent Document Hub" with light/dark mode, categories/subcategories, full CRUD, search, bookmarks, and comprehensive feature set.
+Notion-like documentation website called "Emergent Document Hub" with comprehensive features for managing AI/platform documentation. Admin (chethan@emergent.sh) has full CRUD; viewers can read + comment.
 
 ## Architecture
-- **Frontend**: React (single-file App.js) + Custom CSS (port 3000)
+- **Frontend**: React + Custom CSS (port 3000)
 - **Backend**: FastAPI + Motor (port 8001)
-- **Database**: MongoDB
-- **Auth**: JWT-based (bcrypt + pyjwt)
+- **Database**: MongoDB (users, user_sessions, categories, documents, doc_versions, comments, bookmarks, tools)
+- **Auth**: Emergent-managed Google OAuth with session cookies
 
-## Core Requirements (All Completed)
-- [x] Authentication (register/login with JWT)
+## All Implemented Features
+- [x] Google OAuth login (Emergent-managed)
+- [x] Admin/Viewer role system (chethan@emergent.sh = admin)
 - [x] Dark/Light mode toggle
-- [x] Sidebar navigation with nested categories
-- [x] Sidebar flattening (subcategories with 1 doc shown inline)
-- [x] Document viewer with custom markdown rendering
-- [x] Mermaid diagram rendering (22 documents with diagrams)
-- [x] Code blocks with copy button
-- [x] Table rendering
-- [x] Table of contents per document
-- [x] Breadcrumb navigation
-- [x] Search dialog (Ctrl+K) with backend full-text search
-- [x] Search results with content snippets
-- [x] Bookmarks (toggle, bookmarks page)
-- [x] CRUD for documents (create, read, update, delete)
-- [x] Pre-seeded content (26 documents across 34 categories)
-- [x] Content accuracy (E1 as orchestrator, not LLM)
-- [x] System Architecture Overview document
-- [x] Split-pane markdown editor with live preview
-- [x] Category management UI (create, edit, delete)
-- [x] Export documents as Markdown
+- [x] Sidebar navigation with nested categories + flattening
+- [x] Inline search bar (not modal) with fuzzy/case-insensitive matching + snippets
+- [x] Mermaid diagram rendering with expand/fullscreen
+- [x] PDF export (renders Mermaid as images)
 - [x] Document version history
 - [x] Tags/labels system
-- [x] Keyboard navigation for sidebar (ArrowUp/Down)
+- [x] Keyboard navigation (ArrowUp/Down)
+- [x] Soft delete + Trash with admin restore
+- [x] Threaded comments with upvotes and replies
+- [x] Public document sharing (shareable links)
+- [x] Tools & Resources directory (admin-managed)
+- [x] Category management UI (admin-only)
+- [x] Bookmarks
+- [x] Breadcrumb navigation
+- [x] Table of contents
+- [x] Pre-seeded content: 33 documents, 43 categories
+- [x] Test Cases category (6 sub-categories, comprehensive QA suite)
+- [x] LLM Proxy Architecture document
+- [x] Code blocks with copy button, tables, markdown rendering
 
 ## Key API Endpoints
-- POST /api/auth/register, /api/auth/login, GET /api/auth/me
+- POST /api/auth/session (Google OAuth exchange)
+- GET /api/auth/me, POST /api/auth/logout
 - GET/POST /api/categories, PUT/DELETE /api/categories/{id}
 - GET/POST /api/documents, GET/PUT/DELETE /api/documents/{id}
 - GET /api/documents/{id}/versions
-- GET /api/documents/{id}/export
+- GET/POST /api/documents/{id}/comments
+- POST /api/comments/{id}/upvote, DELETE /api/comments/{id}
+- POST /api/documents/{id}/share, GET /api/public/{shareId}
+- GET/POST /api/tools, PUT/DELETE /api/tools/{id}
+- GET /api/trash, POST /api/trash/{id}/restore, DELETE /api/trash/{id}
 - GET/POST /api/bookmarks, POST /api/bookmarks/{id}
-- GET /api/search?q=...
-- GET /api/tags
-
-## DB Collections
-- users, categories, documents, bookmarks, doc_versions
+- GET /api/search?q=..., GET /api/tags
 
 ## Backlog
 - Drag-and-drop document reordering
 - Collaborative editing (multi-user)
 - Reading progress indicator
-- Full-text search indexing (MongoDB text index)
-- Document sharing via public links
+- Document sharing with specific users/groups
