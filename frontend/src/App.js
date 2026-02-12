@@ -581,6 +581,7 @@ function Sidebar({ categories, documents, activeDocId, onSelectDoc, onNewDoc, co
           </div>
         </>
       )}
+      {!collapsed && <div className="sidebar-resize" data-testid="sidebar-resize" onMouseDown={handleMouseDown} />}
     </aside>
   );
 }
