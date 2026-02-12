@@ -110,6 +110,7 @@ CATEGORIES = [
     {"id": SUB_TC_ADMIN, "name": "Admin & Permissions Tests", "icon": "Lock", "order": 3, "parent_id": CAT_TESTCASES},
     {"id": SUB_TC_EDGE, "name": "Edge Cases & Error Handling", "icon": "Sparkles", "order": 4, "parent_id": CAT_TESTCASES},
     {"id": SUB_TC_PERF, "name": "Performance & Stress Tests", "icon": "Rocket", "order": 5, "parent_id": CAT_TESTCASES},
+    {"id": SUB_TC_AGENT, "name": "AI Agent & Orchestration Tests", "icon": "Cpu", "order": 6, "parent_id": CAT_TESTCASES},
 
     {"id": CAT_TOOLS, "name": "Tools & Resources", "icon": "Sparkles", "order": 11, "parent_id": None},
 
