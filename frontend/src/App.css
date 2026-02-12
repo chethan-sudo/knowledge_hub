@@ -246,3 +246,29 @@ body {
 .sidebar, .main-content, .auth-page, .home-card, .bookmark-item, .search-dialog {
   transition: background-color 0.2s, border-color 0.2s;
 }
+
+/* --- Category Manager --- */
+.catmgr-dialog { width: 640px; max-width: 90vw; max-height: 80vh; background: var(--card-bg); border: 1px solid var(--border-clr); border-radius: 12px; box-shadow: var(--shadow-lg); display: flex; flex-direction: column; overflow: hidden; }
+.catmgr-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border-clr); }
+.catmgr-header h2 { font-size: 1.1rem; font-weight: 600; }
+.catmgr-close { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; border-radius: 6px; display: flex; }
+.catmgr-close:hover { background: var(--hover-bg); color: var(--text-primary); }
+.catmgr-body { flex: 1; overflow-y: auto; padding: 16px 20px; }
+.catmgr-section { margin-bottom: 20px; }
+.catmgr-section h3 { font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); margin-bottom: 10px; }
+.catmgr-add-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.catmgr-add-row input { flex: 1; min-width: 140px; height: 36px; padding: 0 10px; border: 1px solid var(--border-clr); border-radius: var(--radius); background: var(--content-bg); color: var(--text-primary); font-size: 0.8rem; font-family: inherit; outline: none; }
+.catmgr-add-row input:focus { border-color: var(--accent); }
+.catmgr-add-row select { height: 36px; padding: 0 8px; border: 1px solid var(--border-clr); border-radius: var(--radius); background: var(--content-bg); color: var(--text-primary); font-size: 0.8rem; font-family: inherit; outline: none; }
+.catmgr-add-row .editor-btn-primary { height: 36px; padding: 0 16px; font-size: 0.8rem; }
+.catmgr-list { display: flex; flex-direction: column; gap: 2px; }
+.catmgr-group { margin-bottom: 4px; }
+.catmgr-item { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 6px; font-size: 0.8rem; color: var(--text-primary); }
+.catmgr-item:hover { background: var(--hover-bg); }
+.catmgr-sub { padding-left: 28px; color: var(--text-secondary); font-size: 0.775rem; }
+.catmgr-name { flex: 1; font-weight: 500; }
+.catmgr-action-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; border-radius: 4px; display: flex; }
+.catmgr-action-btn:hover { background: var(--code-bg); color: var(--text-primary); }
+.catmgr-danger:hover { color: var(--danger); }
+.catmgr-edit-input { height: 28px; padding: 0 8px; border: 1px solid var(--accent); border-radius: 4px; background: var(--content-bg); color: var(--text-primary); font-size: 0.8rem; font-family: inherit; outline: none; flex: 1; }
+.catmgr-edit-select { height: 28px; padding: 0 6px; border: 1px solid var(--border-clr); border-radius: 4px; background: var(--content-bg); color: var(--text-primary); font-size: 0.75rem; font-family: inherit; }
