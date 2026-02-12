@@ -153,6 +153,30 @@ async def create_category(data: CategoryCreate, user=Depends(get_current_user)):
     await db.categories.insert_one(doc)
     return {"id": cat_id, "name": data.name, "icon": data.icon, "order": data.order, "parent_id": data.parent_id}
 
+@api_router.put("/categories/{cat_id}")
+async def update_category(cat_id: str, data: CategoryUpdate, user=Depends(get_current_user)):
+    cat = await db.categories.find_one({"id": cat_id}, {"_id": 0})
+    if not cat:
+        raise HTTPException(status_code=404, detail="Category not found")
+    update = {k: v for k, v in data.model_dump().items() if v is not None}
+    if not update:
+        return cat
+    await db.categories.update_one({"id": cat_id}, {"$set": update})
+    updated = await db.categories.find_one({"id": cat_id}, {"_id": 0})
+    return updated
+
+@api_router.delete("/categories/{cat_id}")
+async def delete_category(cat_id: str, user=Depends(get_current_user)):
+    cat = await db.categories.find_one({"id": cat_id}, {"_id": 0})
+    if not cat:
+        raise HTTPException(status_code=404, detail="Category not found")
+    children = await db.categories.count_documents({"parent_id": cat_id})
+    docs = await db.documents.count_documents({"category_id": cat_id})
+    if children > 0 or docs > 0:
+        raise HTTPException(status_code=400, detail="Category has children or documents. Remove them first.")
+    await db.categories.delete_one({"id": cat_id})
+    return {"status": "deleted"}
+
 # --- Documents Routes ---
 @api_router.get("/documents")
 async def get_documents(category_id: Optional[str] = None, user=Depends(get_current_user)):
