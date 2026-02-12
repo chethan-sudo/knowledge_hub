@@ -362,7 +362,7 @@ function SearchDialog({ open, onClose, categories, onSelect }) {
 }
 
 // --- Sidebar ---
-function Sidebar({ categories, documents, activeDocId, onSelectDoc, onNewDoc, collapsed, setCollapsed, bookmarkedIds }) {
+function Sidebar({ categories, documents, activeDocId, onSelectDoc, onNewDoc, collapsed, setCollapsed, bookmarkedIds, onManageCategories }) {
   const [expanded, setExpanded] = useState({});
   const { dark, toggle } = useTheme();
   const { logout, user } = useAuth();
