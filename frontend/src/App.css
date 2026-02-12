@@ -154,6 +154,7 @@ body {
 .doc-layout { display: flex; gap: 3rem; }
 .doc-content { flex: 1; min-width: 0; }
 .doc-toc { width: 180px; flex-shrink: 0; position: sticky; top: 2rem; align-self: flex-start; }
+.doc-sidebar-right { width: 200px; flex-shrink: 0; position: sticky; top: 2rem; align-self: flex-start; }
 .doc-toc-title { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 8px; }
 .doc-toc-link { display: block; font-size: 0.75rem; color: var(--text-muted); text-decoration: none; padding: 4px 0; border-left: 2px solid var(--border-clr); padding-left: 12px; margin-bottom: 2px; }
 .doc-toc-link:hover { color: var(--accent); border-color: var(--accent); }
