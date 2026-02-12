@@ -1054,6 +1054,7 @@ function Dashboard() {
   const [editing, setEditing] = useState(false);
   const [creating, setCreating] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState(272);
   const [loading, setLoading] = useState(true);
   const [catManagerOpen, setCatManagerOpen] = useState(false);
   const isAdmin = user?.role === "admin";
