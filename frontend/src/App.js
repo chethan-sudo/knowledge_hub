@@ -1283,6 +1283,7 @@ function Dashboard() {
         : isBookmarksRoute ? <BookmarksPage bookmarkedDocs={bookmarkedDocs} categories={categories} onSelectDoc={selectDoc} onToggleBookmark={toggleBookmark} />
         : isToolsRoute ? <ToolsPage isAdmin={isAdmin} />
         : isTrashRoute && isAdmin ? <TrashPage />
+        : isSettingsRoute && isAdmin ? <SettingsPage isAdmin={isAdmin} />
         : showHome ? <HomePage categories={categories} documents={documents} onSelectDoc={selectDoc} />
         : <DocumentViewer doc={activeDoc} category={currentCat} parentCategory={parentCat} isBookmarked={bookmarkedIds.includes(activeDoc?.id)} onToggleBookmark={() => activeDoc && toggleBookmark(activeDoc.id)} onEdit={() => setEditing(true)} onDelete={handleDelete} isAdmin={isAdmin} />}
       </main>
