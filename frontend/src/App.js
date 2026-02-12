@@ -465,6 +465,7 @@ function Sidebar({ categories, documents, activeDocId, onSelectDoc, onNewDoc, co
   const navigate = useNavigate();
   const navRef = useRef(null);
 
+  // All categories collapsed by default - expand only when clicked
   const parentCats = categories.filter(c => !c.parent_id).sort((a,b) => a.order - b.order);
   const getChildren = (pid) => categories.filter(c => c.parent_id === pid).sort((a,b) => a.order - b.order);
   const getDocsForCat = (catId) => documents.filter(d => d.category_id === catId).sort((a,b) => a.order - b.order);
