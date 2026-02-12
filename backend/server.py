@@ -71,6 +71,13 @@ class ToolUpdate(BaseModel):
     description: Optional[str] = None
     category: Optional[str] = None
 
+class InviteCreate(BaseModel):
+    email: str
+    role: str = "viewer"
+
+class UserRoleUpdate(BaseModel):
+    role: str
+
 # --- Auth Helpers ---
 async def get_current_user(request: Request, authorization: str = Header(None)):
     """Check session_token cookie first, then Authorization header."""
