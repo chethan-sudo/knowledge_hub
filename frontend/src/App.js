@@ -754,7 +754,8 @@ function Dashboard() {
   const [creating, setCreating] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState("home"); // home, doc, bookmarks, edit
+  const [view, setView] = useState("home");
+  const [catManagerOpen, setCatManagerOpen] = useState(false);
 
   const searchOpen = searchParams.get("search") === "1";
 
