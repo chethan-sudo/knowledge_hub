@@ -101,6 +101,18 @@ CATEGORIES = [
     {"id": SUB_PROMPT, "name": "Prompt Engineering", "icon": "MessageSquare", "order": 2, "parent_id": CAT_ADVANCED},
 
     {"id": CAT_FUTURE, "name": "Future of AI Agents", "icon": "Telescope", "order": 9, "parent_id": None},
+
+    {"id": CAT_TESTCASES, "name": "Test Cases", "icon": "Check", "order": 10, "parent_id": None},
+    {"id": SUB_TC_AUTH, "name": "Authentication Tests", "icon": "Lock", "order": 0, "parent_id": CAT_TESTCASES},
+    {"id": SUB_TC_DOCS, "name": "Document CRUD Tests", "icon": "FileText", "order": 1, "parent_id": CAT_TESTCASES},
+    {"id": SUB_TC_SEARCH, "name": "Search & Navigation Tests", "icon": "Search", "order": 2, "parent_id": CAT_TESTCASES},
+    {"id": SUB_TC_ADMIN, "name": "Admin & Permissions Tests", "icon": "Lock", "order": 3, "parent_id": CAT_TESTCASES},
+    {"id": SUB_TC_EDGE, "name": "Edge Cases & Error Handling", "icon": "Sparkles", "order": 4, "parent_id": CAT_TESTCASES},
+    {"id": SUB_TC_PERF, "name": "Performance & Stress Tests", "icon": "Rocket", "order": 5, "parent_id": CAT_TESTCASES},
+
+    {"id": CAT_TOOLS, "name": "Tools & Resources", "icon": "Sparkles", "order": 11, "parent_id": None},
+
+    {"id": SUB_LLM_PROXY, "name": "LLM Proxy", "icon": "Cpu", "order": 3, "parent_id": CAT_LLM},
 ]
 
 DOCUMENTS = [
