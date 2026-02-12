@@ -715,7 +715,7 @@ function HomePage({ categories, documents, onSelectDoc }) {
   const getChildCount = (catId) => { const children = categories.filter(c => c.parent_id === catId); return documents.filter(d => d.category_id === catId || children.some(c => c.id === d.category_id)).length; };
   return (
     <div className="home-page" data-testid="home-page">
-      <div className="home-hero"><h1>Emergent Document Hub</h1><p>A comprehensive knowledge base covering AI agents, LLMs, platform architecture, infrastructure, and the future of software development.</p></div>
+      <div className="home-hero"><h1>Emergent Knowledge Hub</h1><p>A comprehensive knowledge base covering AI agents, LLMs, platform architecture, infrastructure, and the future of software development.</p></div>
       <div className="home-grid">{parentCats.map(cat => (
         <button key={cat.id} className="home-card" data-testid={`home-card-${cat.id}`} onClick={() => {
           const firstDoc = documents.find(d => { const children = categories.filter(c => c.parent_id === cat.id); return d.category_id === cat.id || children.some(c => c.id === d.category_id); });
