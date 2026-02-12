@@ -1076,8 +1076,18 @@ function Dashboard() {
   };
 
   const handleDelete = async () => {
-    if (!activeDoc || !window.confirm("Move this document to trash?")) return;
-    try { await api("delete", `/documents/${activeDoc.id}`); setDocuments(prev => prev.filter(d => d.id !== activeDoc.id)); setActiveDoc(null); navigate("/"); } catch {}
+    if (!activeDoc) return;
+    const confirmed = window.confirm("Move this document to trash?");
+    if (!confirmed) return;
+    try {
+      await api("delete", `/documents/${activeDoc.id}`);
+      setDocuments(prev => prev.filter(d => d.id !== activeDoc.id));
+      setActiveDoc(null);
+      navigate("/");
+    } catch (e) {
+      console.error("Delete failed:", e);
+      alert(e.response?.data?.detail || "Failed to delete");
+    }
   };
 
   const startNew = () => { setCreating(true); setEditing(false); setActiveDoc(null); };
