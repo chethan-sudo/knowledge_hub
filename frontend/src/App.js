@@ -1067,6 +1067,7 @@ function Dashboard() {
 
   return (
     <div className="dashboard" data-testid="dashboard">
+      <ReadingProgress />
       <Sidebar categories={categories} documents={documents} activeDocId={activeDoc?.id} onSelectDoc={selectDoc} onNewDoc={startNew} collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} bookmarkedIds={bookmarkedIds} onManageCategories={() => setCatManagerOpen(true)} isAdmin={isAdmin} />
       <main className="main-content" data-testid="main-content">
         {creating || editing ? <DocumentEditor doc={editing ? activeDoc : null} categories={categories} onSave={handleSaveDoc} onCancel={() => { setCreating(false); setEditing(false); if (activeDoc) navigate(`/doc/${activeDoc.id}`); else navigate("/"); }} />
@@ -1077,6 +1078,7 @@ function Dashboard() {
         : <DocumentViewer doc={activeDoc} category={currentCat} parentCategory={parentCat} isBookmarked={bookmarkedIds.includes(activeDoc?.id)} onToggleBookmark={() => activeDoc && toggleBookmark(activeDoc.id)} onEdit={() => setEditing(true)} onDelete={handleDelete} isAdmin={isAdmin} />}
       </main>
       <CategoryManager open={catManagerOpen} onClose={() => setCatManagerOpen(false)} categories={categories} onCategoriesChange={setCategories} isAdmin={isAdmin} />
+      <AIChatbot docId={activeDoc?.id} />
     </div>
   );
 }
