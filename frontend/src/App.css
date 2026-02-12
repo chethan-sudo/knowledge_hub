@@ -355,7 +355,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 .share-disable-btn:hover { background: rgba(239,68,68,0.08); }
 
 /* AI Chatbot */
-.chatbot-fab { position: fixed; bottom: 24px; right: 24px; width: 52px; height: 52px; border-radius: 50%; background: var(--accent); color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-lg); z-index: 90; transition: transform 0.15s; }
+.chatbot-fab { position: fixed; bottom: 24px; right: 220px; width: 52px; height: 52px; border-radius: 50%; background: var(--accent); color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-lg); z-index: 90; transition: transform 0.15s; }
 .chatbot-fab:hover { transform: scale(1.08); }
 .chatbot-panel { position: fixed; bottom: 88px; right: 24px; width: 380px; height: 520px; background: var(--card-bg); border: 1px solid var(--border-clr); border-radius: 16px; box-shadow: var(--shadow-lg); z-index: 90; display: flex; flex-direction: column; overflow: hidden; }
 .chatbot-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--border-clr); font-weight: 600; font-size: 0.9rem; color: var(--text-primary); }
