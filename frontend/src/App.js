@@ -625,18 +625,12 @@ function DocumentViewer({ doc, category, parentCategory, isBookmarked, onToggleB
         <div>
           <h1 className="doc-title" data-testid="doc-title">{viewingVersion ? `${doc.title} (version)` : doc.title}</h1>
           {tags.length > 0 && <div className="doc-tags" data-testid="doc-tags">{tags.map((t, i) => <span key={i} className="doc-tag"><Icon name="Tag" size={11}/>{t}</span>)}</div>}
-          {shareId && (
-            <div className="doc-share-bar" data-testid="share-bar">
-              <Icon name="Share" size={13}/> <span>Shared</span>
-              <button className="doc-share-copy" data-testid="copy-share-link" onClick={copyShareLink}>{copied ? "Copied!" : "Copy link"}</button>
-            </div>
-          )}
         </div>
         <div className="doc-actions">
           {viewingVersion && <button data-testid="version-back-btn" className="doc-action-btn" onClick={() => setViewingVersion(null)} title="Back to current"><Icon name="ArrowLeft" size={18}/></button>}
           <button data-testid="export-pdf-btn" className="doc-action-btn" onClick={exportPDF} title="Export as PDF" disabled={exporting}><Icon name="Download" size={18}/></button>
           <button data-testid="version-history-btn" className="doc-action-btn" onClick={loadVersions} title="Version history"><Icon name="Clock" size={18}/></button>
-          {isAdmin && <button data-testid="share-toggle-btn" className={`doc-action-btn ${shareId ? "bookmarked" : ""}`} onClick={toggleShare} title={shareId ? "Disable sharing" : "Enable sharing"}><Icon name="Share" size={18}/></button>}
+          {isAdmin && <button data-testid="share-toggle-btn" className="doc-action-btn" onClick={() => setShowShare(true)} title="Share settings"><Icon name="Share" size={18}/></button>}
           <button data-testid="bookmark-toggle-btn" className={`doc-action-btn ${isBookmarked ? "bookmarked" : ""}`} onClick={onToggleBookmark}><Icon name={isBookmarked ? "BookmarkFilled" : "Bookmark"} size={18}/></button>
           {isAdmin && <button data-testid="edit-doc-btn" className="doc-action-btn" onClick={onEdit}><Icon name="Edit" size={18}/></button>}
           {isAdmin && <button data-testid="delete-doc-btn" className="doc-action-btn doc-action-danger" onClick={onDelete}><Icon name="Trash" size={18}/></button>}
