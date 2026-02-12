@@ -442,6 +442,66 @@ async def search_documents(q: str = "", user=Depends(get_current_user)):
         results.append({"id": d["id"], "title": d["title"], "category_id": d.get("category_id", ""), "snippet": snippet, "tags": d.get("tags", [])})
     return results
 
+# --- AI Chatbot ---
+class ChatRequest(BaseModel):
+    message: str
+    session_id: str
+    doc_id: Optional[str] = None
+
+@api_router.post("/chat")
+async def chat_with_ai(data: ChatRequest, user=Depends(get_current_user)):
+    from emergentintegrations.llm.chat import LlmChat, UserMessage
+    # Build context from documents
+    context_parts = []
+    if data.doc_id:
+        doc = await db.documents.find_one({"id": data.doc_id, "deleted": {"$ne": True}}, {"_id": 0})
+        if doc:
+            context_parts.append(f"Current document: {doc['title']}\n{doc['content'][:3000]}")
+    # Also get top relevant docs via keyword search from message
+    words = data.message.split()[:5]
+    search_q = " ".join(words)
+    if search_q:
+        query = {"deleted": {"$ne": True}, "$or": [
+            {"title": {"$regex": search_q, "$options": "i"}},
+            {"content": {"$regex": search_q, "$options": "i"}}
+        ]}
+        related = await db.documents.find(query, {"_id": 0, "title": 1, "content": 1}).to_list(3)
+        for r in related:
+            context_parts.append(f"Related doc: {r['title']}\n{r['content'][:1500]}")
+    if not context_parts:
+        all_docs = await db.documents.find({"deleted": {"$ne": True}}, {"_id": 0, "title": 1}).to_list(100)
+        titles = ", ".join([d["title"] for d in all_docs])
+        context_parts.append(f"Available documents: {titles}")
+    context = "\n\n---\n\n".join(context_parts)
+    system = f"""You are the Emergent Knowledge Hub AI assistant. Answer questions about the documentation.
+Be concise, accurate, and helpful. Reference specific document names when possible.
+If you don't know something, say so honestly.
+
+Documentation context:
+{context}"""
+    try:
+        api_key = os.environ.get("EMERGENT_LLM_KEY")
+        chat = LlmChat(api_key=api_key, session_id=data.session_id, system_message=system)
+        chat.with_model("anthropic", "claude-sonnet-4-5-20250929")
+        user_msg = UserMessage(text=data.message)
+        response = await chat.send_message(user_msg)
+        # Store in DB for history
+        await db.chat_messages.insert_one({
+            "session_id": data.session_id, "user_id": user["user_id"],
+            "user_message": data.message, "ai_response": response,
+            "doc_id": data.doc_id, "created_at": datetime.now(timezone.utc).isoformat(), "_id": None
+        })
+        await db.chat_messages.update_many({"_id": None}, {"$unset": {"_id": ""}})
+        return {"response": response}
+    except Exception as e:
+        logger.error(f"Chat error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/chat/history/{session_id}")
+async def get_chat_history(session_id: str, user=Depends(get_current_user)):
+    messages = await db.chat_messages.find({"session_id": session_id, "user_id": user["user_id"]}, {"_id": 0}).sort("created_at", 1).to_list(100)
+    return messages
+
 # --- Seed Route ---
 @api_router.post("/seed")
 async def seed_data():
