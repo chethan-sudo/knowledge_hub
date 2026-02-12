@@ -320,13 +320,16 @@ function InlineSearch({ categories, onSelect }) {
   const wrapRef = useRef(null);
 
   useEffect(() => {
-    const handler = (e) => { if ((e.metaKey || e.ctrlKey) && e.key === "k") { e.preventDefault(); wrapRef.current?.querySelector("input")?.focus(); } };
+    const handler = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") { e.preventDefault(); wrapRef.current?.querySelector("input")?.focus(); }
+      if (e.key === "Escape") { setQuery(""); setResults([]); wrapRef.current?.querySelector("input")?.blur(); }
+    };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
   useEffect(() => {
-    if (query.length < 2) { setResults([]); return; }
+    if (query.length < 1) { setResults([]); return; }
     clearTimeout(timerRef.current);
     timerRef.current = setTimeout(async () => {
       setSearching(true);
