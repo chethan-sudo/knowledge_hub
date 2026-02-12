@@ -538,6 +538,7 @@ function Sidebar({ categories, documents, activeDocId, onSelectDoc, onNewDoc, co
             <button className="sidebar-item" data-testid="sidebar-bookmarks-btn" onClick={() => navigate("/bookmarks")}><Icon name="Bookmark" size={16}/><span>Bookmarks</span>{bookmarkedIds.length > 0 && <span className="sidebar-badge">{bookmarkedIds.length}</span>}</button>
             <button className="sidebar-item" data-testid="sidebar-tools-btn" onClick={() => navigate("/tools")}><Icon name="Link" size={16}/><span>Tools</span></button>
             {isAdmin && <button className="sidebar-item" data-testid="sidebar-trash-btn" onClick={() => navigate("/trash")}><Icon name="Trash" size={16}/><span>Trash</span></button>}
+            {isAdmin && <button className="sidebar-item" data-testid="sidebar-settings-btn" onClick={() => navigate("/settings")}><Icon name="Sparkles" size={16}/><span>Settings</span></button>}
             <div className="sidebar-divider"/>
             {parentCats.map(cat => {
               const children = getChildren(cat.id);
