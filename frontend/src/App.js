@@ -505,7 +505,7 @@ function Sidebar({ categories, documents, activeDocId, onSelectDoc, onNewDoc, co
             <div className="sidebar-divider"/>
             {parentCats.map(cat => {
               const children = getChildren(cat.id);
-              const isExpanded = expanded[cat.id] === true;
+              const isExpanded = expanded[cat.id] !== false;
               const catDocs = getDocsForCat(cat.id);
               return (
                 <div key={cat.id} className="sidebar-category" data-testid={`sidebar-cat-${cat.id}`}>
