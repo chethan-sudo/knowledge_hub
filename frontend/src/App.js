@@ -758,9 +758,28 @@ function DocumentEditor({ doc, categories, onSave, onCancel }) {
 
   return (
     <div className="doc-editor" data-testid="doc-editor">
+      {showTemplates && templates.length > 0 && !doc && (
+        <div className="template-picker" data-testid="template-picker">
+          <div className="template-picker-header">
+            <h3>Start from a template</h3>
+            <button className="catmgr-close" onClick={() => setShowTemplates(false)}><Icon name="X" size={16}/></button>
+          </div>
+          <div className="template-grid">
+            <button className="template-card" data-testid="template-blank" onClick={() => setShowTemplates(false)}>
+              <Icon name="FileText" size={24}/><span>Blank page</span>
+            </button>
+            {templates.map(t => (
+              <button key={t.id} className="template-card" data-testid={`template-${t.id}`} onClick={() => applyTemplate(t)}>
+                <Icon name={t.icon} size={24}/><span>{t.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="editor-header">
         <h2>{doc ? "Edit page" : "New page"}</h2>
         <div className="editor-actions">
+          {!doc && <button data-testid="editor-templates-btn" className="editor-btn-toggle" onClick={() => setShowTemplates(!showTemplates)}><Icon name="Layers" size={14}/><span>Templates</span></button>}
           <button data-testid="editor-preview-toggle" className={`editor-btn-toggle ${showPreview ? "active" : ""}`} onClick={() => setShowPreview(!showPreview)}><Icon name="Monitor" size={14}/><span>{showPreview ? "Hide preview" : "Show preview"}</span></button>
           <button data-testid="editor-cancel-btn" className="editor-btn-secondary" onClick={onCancel}>Cancel</button>
           <button data-testid="editor-save-btn" className="editor-btn-primary" onClick={handleSave} disabled={saving || !title.trim() || !categoryId}>{saving ? "Saving..." : "Save"}</button>
@@ -774,7 +793,14 @@ function DocumentEditor({ doc, categories, onSave, onCancel }) {
       </select>
       <div className="editor-tags-row" data-testid="editor-tags-row">
         <Icon name="Tag" size={14}/>{tags.map(t => <span key={t} className="editor-tag">{t}<button onClick={() => removeTag(t)}><Icon name="X" size={10}/></button></span>)}
-        <input data-testid="editor-tag-input" className="editor-tag-input" placeholder="Add tag..." value={tagInput} onChange={e => setTagInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addTag(); }}} />
+        <div className="tag-input-wrap">
+          <input data-testid="editor-tag-input" className="editor-tag-input" placeholder="Add tag..." value={tagInput} onChange={e => onTagInputChange(e.target.value)} onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addTag(); }}} />
+          {tagSuggestions.length > 0 && (
+            <div className="tag-suggestions" data-testid="tag-suggestions">
+              {tagSuggestions.map(s => <button key={s} className="tag-suggestion" onClick={() => { setTags([...tags, s]); setTagInput(""); setTagSuggestions([]); }}>{s}</button>)}
+            </div>
+          )}
+        </div>
       </div>
       <div className={`editor-split ${showPreview ? "editor-split-active" : ""}`}>
         <textarea data-testid="editor-content-textarea" className="editor-textarea" placeholder="Write in markdown..." value={content} onChange={e => setContent(e.target.value)} />
