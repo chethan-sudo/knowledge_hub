@@ -726,6 +726,7 @@ function DocumentViewer({ doc, category, parentCategory, isBookmarked, onToggleB
 
 // --- Document Editor ---
 function DocumentEditor({ doc, categories, onSave, onCancel }) {
+  const { api } = useAuth();
   const [title, setTitle] = useState(doc?.title || "");
   const [content, setContent] = useState(doc?.content || "");
   const [categoryId, setCategoryId] = useState(doc?.category_id || "");
@@ -733,11 +734,27 @@ function DocumentEditor({ doc, categories, onSave, onCancel }) {
   const [showPreview, setShowPreview] = useState(true);
   const [tags, setTags] = useState(doc?.tags || []);
   const [tagInput, setTagInput] = useState("");
+  const [tagSuggestions, setTagSuggestions] = useState([]);
+  const [templates, setTemplates] = useState([]);
+  const [showTemplates, setShowTemplates] = useState(!doc);
   const subCats = categories.filter(c => c.parent_id);
 
+  useEffect(() => {
+    if (!doc) api("get", "/templates").then(r => setTemplates(r.data)).catch(() => {});
+  }, [api, doc]);
+
+  const applyTemplate = (t) => { setTitle(t.name); setContent(t.content); setShowTemplates(false); };
+
   const handleSave = async () => { if (!title.trim() || !categoryId) return; setSaving(true); await onSave({ title, content, category_id: categoryId, tags }); setSaving(false); };
-  const addTag = () => { const t = tagInput.trim().toLowerCase(); if (t && !tags.includes(t)) setTags([...tags, t]); setTagInput(""); };
+  const addTag = () => { const t = tagInput.trim().toLowerCase(); if (t && !tags.includes(t)) setTags([...tags, t]); setTagInput(""); setTagSuggestions([]); };
   const removeTag = (t) => setTags(tags.filter(x => x !== t));
+
+  const onTagInputChange = async (val) => {
+    setTagInput(val);
+    if (val.length >= 1) {
+      try { const r = await api("get", `/tags/suggestions?q=${encodeURIComponent(val)}`); setTagSuggestions(r.data.filter(t => !tags.includes(t))); } catch {}
+    } else { setTagSuggestions([]); }
+  };
 
   return (
     <div className="doc-editor" data-testid="doc-editor">
