@@ -918,7 +918,7 @@ function PublicDocPage() {
 
   return (
     <div className="public-doc" data-testid="public-doc">
-      <div className="public-header"><svg width="22" height="22" viewBox="0 0 32 32" fill="none"><polygon points="16,2 30,28 2,28" stroke="currentColor" strokeWidth="2.5" fill="none"/><circle cx="16" cy="18" r="3.5" fill="currentColor"/></svg><span>Emergent Document Hub</span></div>
+      <div className="public-header"><svg width="22" height="22" viewBox="0 0 32 32" fill="none"><polygon points="16,2 30,28 2,28" stroke="currentColor" strokeWidth="2.5" fill="none"/><circle cx="16" cy="18" r="3.5" fill="currentColor"/></svg><span>Emergent Knowledge Hub</span></div>
       <article className="doc-viewer" style={{maxWidth:800,margin:"0 auto",padding:"2rem"}}>
         <h1 className="doc-title" data-testid="public-doc-title">{doc.title}</h1>
         {doc.tags?.length > 0 && <div className="doc-tags">{doc.tags.map((t,i) => <span key={i} className="doc-tag"><Icon name="Tag" size={11}/>{t}</span>)}</div>}
