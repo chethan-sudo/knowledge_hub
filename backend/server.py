@@ -510,6 +510,75 @@ async def get_chat_history(session_id: str, user=Depends(get_current_user)):
     messages = await db.chat_messages.find({"session_id": session_id, "user_id": user["user_id"]}, {"_id": 0}).sort("created_at", 1).to_list(100)
     return messages
 
+# --- Invite / User Management ---
+@api_router.get("/users")
+async def list_users(user=Depends(require_admin)):
+    users = await db.users.find({}, {"_id": 0, "user_id": 1, "email": 1, "name": 1, "role": 1, "picture": 1, "created_at": 1}).to_list(500)
+    return users
+
+@api_router.post("/invite")
+async def invite_user(data: InviteCreate, user=Depends(require_admin)):
+    existing = await db.users.find_one({"email": data.email}, {"_id": 0})
+    if existing:
+        raise HTTPException(status_code=400, detail="User already exists")
+    if data.role not in ("admin", "viewer"):
+        raise HTTPException(status_code=400, detail="Role must be admin or viewer")
+    user_id = f"user_{uuid.uuid4().hex[:12]}"
+    new_user = {
+        "user_id": user_id, "email": data.email, "name": data.email.split("@")[0],
+        "picture": "", "role": data.role, "invited_by": user["user_id"],
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.users.insert_one(new_user)
+    return {k: v for k, v in new_user.items() if k != "_id"}
+
+@api_router.put("/users/{user_id}/role")
+async def update_user_role(user_id: str, data: UserRoleUpdate, user=Depends(require_admin)):
+    target = await db.users.find_one({"user_id": user_id}, {"_id": 0})
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+    if data.role not in ("admin", "viewer"):
+        raise HTTPException(status_code=400, detail="Role must be admin or viewer")
+    await db.users.update_one({"user_id": user_id}, {"$set": {"role": data.role}})
+    return {"user_id": user_id, "role": data.role}
+
+@api_router.delete("/users/{user_id}")
+async def remove_user(user_id: str, user=Depends(require_admin)):
+    if user_id == user["user_id"]:
+        raise HTTPException(status_code=400, detail="Cannot remove yourself")
+    result = await db.users.delete_one({"user_id": user_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+    await db.user_sessions.delete_many({"user_id": user_id})
+    return {"status": "removed"}
+
+# --- Document Templates ---
+TEMPLATES = [
+    {"id": "api-doc", "name": "API Documentation", "icon": "Server",
+     "content": "# API Name\n\n## Overview\nBrief description of the API.\n\n## Base URL\n`https://api.example.com/v1`\n\n## Authentication\nDescribe auth method.\n\n## Endpoints\n\n### GET /resource\n**Description:** Fetch resource.\n\n| Parameter | Type | Required | Description |\n|-----------|------|----------|-------------|\n| id | string | yes | Resource ID |\n\n**Response:**\n```json\n{\"id\": \"123\", \"name\": \"example\"}\n```\n\n## Error Codes\n\n| Code | Description |\n|------|-------------|\n| 400 | Bad request |\n| 401 | Unauthorized |\n| 404 | Not found |\n| 500 | Server error |\n"},
+    {"id": "runbook", "name": "Runbook", "icon": "Rocket",
+     "content": "# Runbook: Service Name\n\n## Overview\nWhat this runbook covers.\n\n## Prerequisites\n- Access to production environment\n- Required permissions\n\n## Procedure\n\n### Step 1: Verify the Issue\n1. Check monitoring dashboard\n2. Review recent deployments\n3. Check error logs\n\n### Step 2: Diagnose\n1. SSH into the affected server\n2. Run diagnostic commands\n3. Identify root cause\n\n### Step 3: Remediate\n1. Apply the fix\n2. Verify the fix\n3. Monitor for 15 minutes\n\n## Rollback Plan\nIf the fix fails:\n1. Revert the change\n2. Notify on-call team\n3. Escalate if needed\n\n## Contacts\n| Role | Name | Contact |\n|------|------|---------|\n| On-call | TBD | TBD |\n| Escalation | TBD | TBD |\n"},
+    {"id": "rca", "name": "Root Cause Analysis", "icon": "Search",
+     "content": "# RCA: Incident Title\n\n## Incident Summary\n| Field | Detail |\n|-------|--------|\n| Date | YYYY-MM-DD |\n| Duration | X hours |\n| Severity | P1/P2/P3 |\n| Impact | Description of impact |\n\n## Timeline\n| Time | Event |\n|------|-------|\n| HH:MM | Issue detected |\n| HH:MM | Investigation started |\n| HH:MM | Root cause identified |\n| HH:MM | Fix deployed |\n| HH:MM | Resolved |\n\n## Root Cause\nDetailed explanation of what went wrong.\n\n## Contributing Factors\n- Factor 1\n- Factor 2\n\n## Resolution\nWhat was done to fix the issue.\n\n## Action Items\n| Action | Owner | Due Date | Status |\n|--------|-------|----------|--------|\n| Action 1 | TBD | TBD | Open |\n| Action 2 | TBD | TBD | Open |\n\n## Lessons Learned\n- Lesson 1\n- Lesson 2\n"},
+    {"id": "meeting-notes", "name": "Meeting Notes", "icon": "MessageSquare",
+     "content": "# Meeting: Title\n\n## Details\n| Field | Value |\n|-------|-------|\n| Date | YYYY-MM-DD |\n| Attendees | Name 1, Name 2 |\n| Facilitator | Name |\n\n## Agenda\n1. Topic 1\n2. Topic 2\n3. Topic 3\n\n## Discussion Notes\n\n### Topic 1\n- Key point discussed\n- Decision made\n\n### Topic 2\n- Key point discussed\n- Decision made\n\n## Action Items\n| Action | Owner | Due Date |\n|--------|-------|----------|\n| Action 1 | Name | Date |\n| Action 2 | Name | Date |\n\n## Next Meeting\nDate and time of next meeting.\n"},
+    {"id": "test-plan", "name": "Test Plan", "icon": "Check",
+     "content": "# Test Plan: Feature Name\n\n## Objective\nWhat this test plan covers.\n\n## Scope\n- In scope: Feature X, Feature Y\n- Out of scope: Feature Z\n\n## Test Cases\n\n### TC-001: Basic Flow\n| Field | Detail |\n|-------|--------|\n| Priority | High |\n| Preconditions | User is logged in |\n\n**Steps:**\n1. Navigate to page\n2. Perform action\n3. Verify result\n\n**Expected Result:** Description of expected outcome.\n\n### TC-002: Error Handling\n| Field | Detail |\n|-------|--------|\n| Priority | Medium |\n| Preconditions | User is logged in |\n\n**Steps:**\n1. Navigate to page\n2. Trigger error condition\n3. Verify error handling\n\n**Expected Result:** Appropriate error message shown.\n\n## Test Environment\n- Browser: Chrome latest\n- OS: macOS/Windows\n- Backend: Staging\n"},
+]
+
+@api_router.get("/templates")
+async def get_templates(user=Depends(get_current_user)):
+    return TEMPLATES
+
+# --- Tag Suggestions ---
+@api_router.get("/tags/suggestions")
+async def get_tag_suggestions(q: str = "", user=Depends(get_current_user)):
+    all_tags = await get_all_tags(user)
+    if not q:
+        return all_tags[:20]
+    q_lower = q.lower()
+    return [t for t in all_tags if q_lower in t.lower()][:10]
+
 # --- Seed Route ---
 @api_router.post("/seed")
 async def seed_data():
