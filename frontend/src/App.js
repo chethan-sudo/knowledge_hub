@@ -833,6 +833,7 @@ function Dashboard() {
         activeDocId={activeDoc?.id} onSelectDoc={selectDoc}
         onNewDoc={startNew} collapsed={sidebarCollapsed}
         setCollapsed={setSidebarCollapsed} bookmarkedIds={bookmarkedIds}
+        onManageCategories={() => setCatManagerOpen(true)}
       />
       <main className="main-content" data-testid="main-content">
         {creating || editing ? (
@@ -845,7 +846,8 @@ function Dashboard() {
           <DocumentViewer doc={activeDoc} category={currentCat} parentCategory={parentCat} isBookmarked={bookmarkedIds.includes(activeDoc?.id)} onToggleBookmark={() => activeDoc && toggleBookmark(activeDoc.id)} onEdit={() => setEditing(true)} onDelete={handleDelete} />
         )}
       </main>
-      <SearchDialog open={searchOpen} onClose={(v) => setSearchParams(v ? {search:"1"} : {})} documents={documents} categories={categories} onSelect={selectDoc} />
+      <SearchDialog open={searchOpen} onClose={(v) => setSearchParams(v ? {search:"1"} : {})} categories={categories} onSelect={selectDoc} />
+      <CategoryManager open={catManagerOpen} onClose={() => setCatManagerOpen(false)} categories={categories} onCategoriesChange={setCategories} />
     </div>
   );
 }
