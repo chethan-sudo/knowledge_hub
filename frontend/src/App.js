@@ -310,9 +310,10 @@ function CodeBlock({ code, lang }) {
 }
 
 // --- Inline Search (not modal) ---
-function InlineSearch({ categories, onSelect }) {
+function InlineSearch({ categories, documents, onSelect }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
+  const [catResults, setCatResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [focused, setFocused] = useState(false);
   const { api } = useAuth();
@@ -322,14 +323,19 @@ function InlineSearch({ categories, onSelect }) {
   useEffect(() => {
     const handler = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") { e.preventDefault(); wrapRef.current?.querySelector("input")?.focus(); }
-      if (e.key === "Escape") { setQuery(""); setResults([]); wrapRef.current?.querySelector("input")?.blur(); }
+      if (e.key === "Escape") { setQuery(""); setResults([]); setCatResults([]); wrapRef.current?.querySelector("input")?.blur(); }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
   useEffect(() => {
-    if (query.length < 1) { setResults([]); return; }
+    if (query.length < 1) { setResults([]); setCatResults([]); return; }
+    // Local category search
+    const q = query.toLowerCase();
+    const matchedCats = categories.filter(c => c.name.toLowerCase().includes(q));
+    setCatResults(matchedCats.slice(0, 5));
+    // Remote doc search
     clearTimeout(timerRef.current);
     timerRef.current = setTimeout(async () => {
       setSearching(true);
@@ -337,9 +343,13 @@ function InlineSearch({ categories, onSelect }) {
       setSearching(false);
     }, 200);
     return () => clearTimeout(timerRef.current);
-  }, [query, api]);
+  }, [query, api, categories]);
 
   const getCatName = (id) => categories.find(c => c.id === id)?.name || "";
+  const getFirstDocInCat = (catId) => {
+    const children = categories.filter(c => c.parent_id === catId);
+    return documents.find(d => d.category_id === catId || children.some(c => c.id === d.category_id));
+  };
 
   return (
     <div className="inline-search" ref={wrapRef} data-testid="inline-search">
