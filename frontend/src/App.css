@@ -247,8 +247,8 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 .comments-section { margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border-clr); }
 .comments-title { display: flex; align-items: center; gap: 8px; font-size: 1rem; font-weight: 600; margin-bottom: 1rem; }
 .comment-input-box { display: flex; gap: 8px; margin-bottom: 1.5rem; }
-.comment-input-box input { flex: 1; height: 40px; padding: 0 14px; border: 1px solid var(--border-clr); border-radius: var(--radius); background: var(--content-bg); color: var(--text-primary); font-size: 0.85rem; font-family: inherit; outline: none; }
-.comment-input-box input:focus { border-color: var(--accent); }
+.comment-input-box input { flex: 1; height: 40px; padding: 0 14px; border: 1px solid var(--border-clr); border-radius: var(--radius); background: var(--content-bg); color: var(--text-primary); font-size: 0.85rem; font-family: inherit; outline: none; white-space: pre; }
+.comment-input-box input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
 .comment-input-box button { padding: 0 20px; border: none; border-radius: var(--radius); background: var(--text-primary); color: var(--content-bg); font-size: 0.8rem; font-weight: 500; cursor: pointer; font-family: inherit; }
 .comment-input-box button:disabled { opacity: 0.4; cursor: not-allowed; }
 .comments-list { display: flex; flex-direction: column; gap: 4px; }
