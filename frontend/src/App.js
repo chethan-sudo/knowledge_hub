@@ -256,6 +256,31 @@ function renderInline(text) {
   return parts;
 }
 
+function MermaidDiagram({ chart }) {
+  const ref = useRef(null);
+  const [svg, setSvg] = useState("");
+  const [error, setError] = useState(null);
+  const { dark } = useTheme();
+
+  useEffect(() => {
+    const render = async () => {
+      try {
+        mermaid.initialize({ startOnLoad: false, theme: dark ? "dark" : "default", themeVariables: dark ? { primaryColor: "#4f46e5", primaryBorderColor: "#6366f1", primaryTextColor: "#fafafa", lineColor: "#71717a", secondaryColor: "#27272a", tertiaryColor: "#18181b" } : { primaryColor: "#4f46e5", primaryBorderColor: "#6366f1" } });
+        const id = `mermaid-${Math.random().toString(36).slice(2, 9)}`;
+        const { svg: renderedSvg } = await mermaid.render(id, chart.trim());
+        setSvg(renderedSvg);
+        setError(null);
+      } catch (e) {
+        setError(e.message);
+      }
+    };
+    render();
+  }, [chart, dark]);
+
+  if (error) return <div className="doc-codeblock"><div className="doc-codeblock-header"><span>mermaid (render error)</span></div><pre><code>{chart}</code></pre></div>;
+  return <div ref={ref} className="mermaid-diagram" data-testid="mermaid-diagram" dangerouslySetInnerHTML={{ __html: svg }} />;
+}
+
 function CodeBlock({ code, lang }) {
   const [copied, setCopied] = useState(false);
   const copy = () => { navigator.clipboard.writeText(code); setCopied(true); setTimeout(() => setCopied(false), 2000); };
