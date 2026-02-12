@@ -521,7 +521,7 @@ async def seed_data():
 
 @api_router.get("/")
 async def root():
-    return {"message": "Emergent Document Hub API"}
+    return {"message": "Emergent Knowledge Hub API"}
 
 app.include_router(api_router)
 
