@@ -1,0 +1,138 @@
+{
+  "project_name": "Emergent Document Hub",
+  "design_philosophy": {
+    "core_concept": "Emergence & Clarity",
+    "aesthetic": "Notion-like, Content-First, Structured, Calm",
+    "tone": "Intelligent, Organized, Reliable, Minimalist",
+    "principles": [
+      "Content is King: The UI recedes, content pops.",
+      "Micro-Interactions: Subtle feedback on every hover.",
+      "Density Control: Comfortable reading width (65ch) for docs, dense for sidebars.",
+      "Dark Mode First-Class: Not an afterthought, highly tuned contrast."
+    ]
+  },
+  "typography": {
+    "font_family": {
+      "headings": "Geist Sans, Inter, sans-serif",
+      "body": "Inter, sans-serif",
+      "code": "Geist Mono, JetBrains Mono, monospace"
+    },
+    "scale": {
+      "h1": "text-4xl md:text-5xl font-semibold tracking-tight",
+      "h2": "text-3xl font-medium tracking-tight mt-8 mb-4",
+      "h3": "text-2xl font-medium tracking-tight mt-6 mb-3",
+      "body": "text-base leading-7 text-foreground/90",
+      "small": "text-sm text-muted-foreground",
+      "mono": "font-mono text-sm bg-muted/50 px-[0.3rem] py-[0.2rem] rounded-[0.2rem]"
+    }
+  },
+  "colors": {
+    "theme_strategy": "Zinc (Neutral)",
+    "light_mode": {
+      "background": "#FFFFFF",
+      "sidebar_bg": "#F9F9FB",
+      "foreground": "#18181B",
+      "muted": "#F4F4F5",
+      "border": "#E4E4E7",
+      "primary": "#18181B"
+    },
+    "dark_mode": {
+      "background": "#09090B",
+      "sidebar_bg": "#121214",
+      "foreground": "#FAFAFA",
+      "muted": "#27272A",
+      "border": "#27272A",
+      "primary": "#FAFAFA"
+    },
+    "accents": {
+      "brand_primary": "slate-900 (Light) / slate-50 (Dark)",
+      "selection": "bg-indigo-500/10 text-indigo-500",
+      "link": "text-indigo-600 hover:text-indigo-700 dark:text-indigo-400"
+    }
+  },
+  "layout": {
+    "structure": "Sidebar + Main Content Area",
+    "sidebar": {
+      "width": "w-64",
+      "behavior": "Collapsible, Fixed, Scrollable",
+      "styling": "border-r border-border bg-sidebar/50 backdrop-blur-xl"
+    },
+    "main_content": {
+      "maxWidth": "max-w-4xl mx-auto",
+      "padding": "px-6 py-12 md:px-12",
+      "reading_mode": "Centered text column for documentation"
+    },
+    "grid_system": "Use 'Bento' style for dashboard overview, simple list for docs.",
+    "spacing": "Generous. Use p-6 or p-8 for cards. Gap-6 for grids."
+  },
+  "components": {
+    "buttons": {
+      "style": "h-9 px-4 py-2 rounded-md font-medium text-sm transition-colors",
+      "primary": "bg-primary text-primary-foreground shadow hover:bg-primary/90",
+      "ghost": "hover:bg-accent hover:text-accent-foreground",
+      "outline": "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground"
+    },
+    "cards": {
+      "style": "rounded-lg border bg-card text-card-foreground shadow-sm",
+      "hover_effect": "hover:shadow-md transition-shadow duration-200"
+    },
+    "inputs": {
+      "style": "h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+    },
+    "navigation": {
+      "breadcrumb": "text-sm text-muted-foreground flex items-center gap-1.5",
+      "sidebar_item": "flex items-center gap-2 px-2.5 py-1.5 text-sm font-medium rounded-md hover:bg-accent hover:text-accent-foreground transition-all group"
+    }
+  },
+  "visual_enhancers": {
+    "glassmorphism": "backdrop-blur-md bg-background/80 (for sticky headers)",
+    "borders": "1px solid border-border",
+    "shadows": "shadow-sm for subtle depth, shadow-xl for dropdowns/modals",
+    "micro_interactions": "Active states on sidebar items. Copy code button feedback.",
+    "radius": "rounded-md (0.5rem) or rounded-lg (0.75rem)"
+  },
+  "assets": {
+    "icons": {
+      "library": "lucide-react",
+      "style": "Stroke width 1.5px or 2px. Size 16px or 20px."
+    },
+    "images": {
+      "login_bg_light": "https://images.unsplash.com/photo-1769541607705-3b3c5095679b?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzF8MHwxfHNlYXJjaHwyfHxtaW5pbWFsaXN0JTIwM2QlMjBnZW9tZXRyaWMlMjBzaGFwZXMlMjBjb21wb3NpdGlvbiUyMHdoaXRlfGVufDB8fHx8MTc3MDkyMDE4OXww&ixlib=rb-4.1.0&q=85",
+      "login_bg_dark": "https://images.unsplash.com/photo-1711409254907-fda1c4e05be0?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2ODh8MHwxfHNlYXJjaHw0fHxhYnN0cmFjdCUyMGRhcmslMjBtZXNoJTIwZGF0YSUyMGZsb3d8ZW58MHx8fHwxNzcwOTIwMTg4fDA&ixlib=rb-4.1.0&q=85",
+      "empty_state": "https://images.unsplash.com/photo-1541415534056-fad380cd68a5?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA3MDR8MHwxfHNlYXJjaHwzfHxhYnN0cmFjdCUyMG5ldHdvcmslMjBub2RlcyUyMG1pbmltYWxpc3QlMjB3aGl0ZSUyMGJhY2tncm91bmR8ZW58MHx8fHwxNzcwOTIwMTg4fDA&ixlib=rb-4.1.0&q=85",
+      "logo_placeholder": "Use a simple Geometric shape (e.g., Triangle or Hexagon) using SVG or Lucide Icon"
+    }
+  },
+  "accessibility": {
+    "contrast": "Ensure text is slate-900 on white, slate-50 on slate-950.",
+    "focus_states": "Visible focus rings on all interactive elements (ring-2 ring-ring ring-offset-2).",
+    "aria_labels": "Required for all icon-only buttons (search, menu, close)."
+  },
+  "instructions_to_main_agent": [
+    "Use 'Geist Sans' via 'next/font' or Google Fonts 'Inter' if Geist is unavailable.",
+    "Implement a 'SidebarProvider' context to manage the collapsible state.",
+    "For the Document Editor, use a clean textarea or a lightweight markdown editor component (e.g., basic contenteditable or a library if permitted, otherwise simple textarea with preview).",
+    "Breadcrumbs are CRITICAL for navigation depth.",
+    "Search MUST be a modal dialog (Command Palette style) triggered by Cmd+K.",
+    "Dark mode toggle should be in the sidebar or top-right.",
+    "Use 'sonner' for all toast notifications.",
+    "Ensure 'data-testid' attributes are present on all interactive elements."
+  ],
+  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
+    "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients",
+    "Don't make generic centered layouts, simplistic gradients, and uniform styling.",
+    "Create depth through layered design elements with z-index hierarchy",
+    "Use glass-morphism effects with backdrop filters (12-24px blur)",
+    "You MUST NOT apply universal transition. Eg: 'transition: all'. This results in breaking transforms. Always add transitions for specific interactive elements like button, input excluding transforms",
+    "You MUST NOT center align the app container, ie do not add '.App { text-align: center; }' in the css file. This disrupts the human natural reading flow of text",
+    "Always use modern button styles like pill-shaped, or sharp button with interaction animations & color relevant to the app style",
+    "NEVER: use AI assistant Emoji characters like 🤖🧠 etc for icons.",
+    "Every interaction needs micro-animations - hover states, transitions, parallax effects, and entrance animations. Static = dead.",
+    "Use 2-3x more spacing than feels comfortable. Cramped designs look cheap.",
+    "Subtle grain textures, noise overlays, custom cursors, selection states, and loading animations: separates good from extraordinary.",
+    "Main agent relies on these image URLs. Missing categories = main agent will use placeholder text which is FORBIDDEN",
+    "Components MUST use named exports (export const ComponentName = ...)",
+    "Pages MUST use default exports (export default function PageName() {...})",
+    "Use 'sonner' for toasts"
+  ]
+}
