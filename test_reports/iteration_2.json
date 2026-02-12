@@ -1,0 +1,88 @@
+{
+  "summary": "Full regression testing of Emergent Document Hub after re-seeding. All 19 backend API tests passed (100%) and all frontend features verified working correctly via Playwright UI testing.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "/api/auth/register",
+        "issue": "Returns 400 'Email already registered' for test@test.com - expected behavior since user exists",
+        "priority": "NONE"
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "passed_tests": [
+    "Backend: API root health check",
+    "Backend: User registration (new user)",
+    "Backend: User login with valid credentials",
+    "Backend: Invalid login returns 401",
+    "Backend: GET /auth/me authenticated",
+    "Backend: GET /auth/me unauthenticated returns 401",
+    "Backend: GET /categories returns 34 categories",
+    "Backend: Categories parent-child structure (10 parents, 24 children)",
+    "Backend: Create new category",
+    "Backend: GET /documents returns 26 documents",
+    "Backend: 22+ documents have mermaid content",
+    "Backend: GET single document by ID",
+    "Backend: Document CRUD flow (Create -> Read -> Update -> Delete)",
+    "Backend: GET /bookmarks",
+    "Backend: Toggle bookmark on/off",
+    "Backend: Search 'kubernetes' returns results",
+    "Backend: Search 'agent' returns results",
+    "Backend: Short query returns empty",
+    "Frontend: Login page loads and login works",
+    "Frontend: Dashboard shows 10 category cards with document counts",
+    "Frontend: Sidebar navigation with collapsible categories",
+    "Frontend: Mermaid diagrams render as SVG (not code blocks) - VERIFIED",
+    "Frontend: Document viewer shows breadcrumb, title, content, TOC",
+    "Frontend: Tables render correctly in documents",
+    "Frontend: Search dialog opens with Ctrl+K",
+    "Frontend: Search dialog opens via sidebar button",
+    "Frontend: Search returns results for 'kubernetes'",
+    "Frontend: Dark/Light mode toggle works",
+    "Frontend: Bookmarks toggle and page work",
+    "Frontend: New document editor with title, category, content",
+    "Frontend: Sidebar collapse/expand",
+    "Frontend: Logout functionality"
+  ],
+  "test_report_links": [
+    "/app/backend/tests/test_api.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "App.js is ~700 lines - consider splitting into separate component files for maintainability",
+    "No error boundaries for graceful error handling in React",
+    "Console warnings about span elements in table structure (low priority)"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_api.py"
+  ],
+  "success_rate": {
+    "backend": "100% (19/19 tests passed)",
+    "frontend": "100% (all UI flows working)"
+  },
+  "test_credentials": {
+    "email": "test@test.com",
+    "password": "test1234"
+  },
+  "seed_data_creation": "Test category created during API tests, test documents created/deleted during CRUD tests",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Database is seeded with 34 categories and 26 documents. 22+ documents contain mermaid diagrams. All APIs working. Test user exists: test@test.com / test1234. Backend test file at /app/backend/tests/test_api.py can be reused for regression testing.",
+  "features_verified": {
+    "user_auth": "Registration, Login, Logout, JWT authentication all working",
+    "categories": "34 categories with proper parent-child structure, GET and POST working",
+    "documents": "26 documents, full CRUD operations working, mermaid content present",
+    "bookmarks": "Toggle on/off working, bookmarks page displaying correctly",
+    "search": "Search API and UI both working, Ctrl+K shortcut functional",
+    "mermaid_diagrams": "Rendering correctly as SVG graphics, not code blocks",
+    "dark_light_mode": "Toggle switching themes correctly, persists in localStorage",
+    "sidebar": "Navigation, collapse/expand, category tree all working",
+    "document_viewer": "Breadcrumbs, title, content, TOC all rendering correctly"
+  }
+}
