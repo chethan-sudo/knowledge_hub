@@ -260,7 +260,10 @@ function MermaidDiagram({ chart }) {
   useEffect(() => {
     const render = async () => {
       try {
-        mermaid.initialize({ startOnLoad: false, theme: dark ? "dark" : "default", themeVariables: dark ? { primaryColor: "#4f46e5", primaryBorderColor: "#6366f1", primaryTextColor: "#fafafa", lineColor: "#71717a", secondaryColor: "#27272a", tertiaryColor: "#18181b" } : { primaryColor: "#4f46e5", primaryBorderColor: "#6366f1" } });
+        const themeVars = dark
+          ? { primaryColor: "#4f46e5", primaryBorderColor: "#6366f1", primaryTextColor: "#e4e4e7", lineColor: "#71717a", secondaryColor: "#27272a", tertiaryColor: "#18181b", background: "transparent", mainBkg: "#27272a", nodeBorder: "#6366f1", clusterBkg: "#1a1a2e", titleColor: "#e4e4e7", edgeLabelBackground: "#18181b", nodeTextColor: "#e4e4e7" }
+          : { primaryColor: "#4f46e5", primaryBorderColor: "#6366f1", background: "transparent", mainBkg: "#eef2ff", nodeBorder: "#6366f1", edgeLabelBackground: "#ffffff" };
+        mermaid.initialize({ startOnLoad: false, theme: dark ? "dark" : "default", themeVariables: themeVars });
         const id = `mermaid-${Math.random().toString(36).slice(2, 9)}`;
         const { svg: renderedSvg } = await mermaid.render(id, chart.trim());
         setSvg(renderedSvg); setError(null);
@@ -268,6 +271,12 @@ function MermaidDiagram({ chart }) {
     };
     render();
   }, [chart, dark]);
+
+  useEffect(() => {
+    const handler = (e) => { if (e.key === "Escape" && expanded) setExpanded(false); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [expanded]);
 
   if (error) return <div className="doc-codeblock"><div className="doc-codeblock-header"><span>mermaid (render error)</span></div><pre><code>{chart}</code></pre></div>;
 
@@ -280,7 +289,7 @@ function MermaidDiagram({ chart }) {
       {expanded && (
         <div className="mermaid-modal" data-testid="mermaid-modal" onClick={() => setExpanded(false)}>
           <div className="mermaid-modal-content" onClick={e => e.stopPropagation()}>
-            <button className="mermaid-modal-close" data-testid="mermaid-modal-close" onClick={() => setExpanded(false)}><Icon name="X" size={20}/></button>
+            <button className="mermaid-modal-close" data-testid="mermaid-modal-close" onClick={() => setExpanded(false)}><Icon name="X" size={20}/> Close</button>
             <div className="mermaid-modal-svg" dangerouslySetInnerHTML={{ __html: svg }} />
           </div>
         </div>
