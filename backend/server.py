@@ -1,16 +1,17 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, Header
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, Header, Request, Response, Cookie
+from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
+import re
 from pathlib import Path
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel
 from typing import List, Optional
 import uuid
-from datetime import datetime, timezone
-import bcrypt
-import jwt
+from datetime import datetime, timezone, timedelta
+import httpx
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -18,7 +19,9 @@ load_dotenv(ROOT_DIR / '.env')
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
-JWT_SECRET = os.environ.get('JWT_SECRET', 'fallback_secret')
+
+ADMIN_EMAIL = "chethan@emergent.sh"
+EMERGENT_AUTH_URL = "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data"
 
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
@@ -27,20 +30,6 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 logger = logging.getLogger(__name__)
 
 # --- Models ---
-class UserCreate(BaseModel):
-    email: str
-    name: str
-    password: str
-
-class UserLogin(BaseModel):
-    email: str
-    password: str
-
-class UserResponse(BaseModel):
-    id: str
-    email: str
-    name: str
-
 class CategoryCreate(BaseModel):
     name: str
     icon: str = "FileText"
@@ -51,13 +40,6 @@ class CategoryUpdate(BaseModel):
     name: Optional[str] = None
     icon: Optional[str] = None
     order: Optional[int] = None
-
-class CategoryResponse(BaseModel):
-    id: str
-    name: str
-    icon: str
-    order: int
-    parent_id: Optional[str] = None
 
 class DocumentCreate(BaseModel):
     title: str
@@ -73,74 +55,111 @@ class DocumentUpdate(BaseModel):
     order: Optional[int] = None
     tags: Optional[List[str]] = None
 
-class DocumentResponse(BaseModel):
-    id: str
-    title: str
+class CommentCreate(BaseModel):
     content: str
-    category_id: str
-    author_id: str
-    created_at: str
-    updated_at: str
-    order: int
+    parent_id: Optional[str] = None
 
-class BookmarkResponse(BaseModel):
-    id: str
-    user_id: str
-    document_id: str
-    created_at: str
+class ToolCreate(BaseModel):
+    name: str
+    url: str
+    description: str = ""
+    category: str = "General"
+
+class ToolUpdate(BaseModel):
+    name: Optional[str] = None
+    url: Optional[str] = None
+    description: Optional[str] = None
+    category: Optional[str] = None
 
 # --- Auth Helpers ---
-def hash_password(password: str) -> str:
-    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-
-def verify_password(password: str, hashed: str) -> bool:
-    return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
-
-def create_token(user_id: str, email: str) -> str:
-    return jwt.encode({"user_id": user_id, "email": email}, JWT_SECRET, algorithm="HS256")
-
-async def get_current_user(authorization: str = Header(None)):
-    if not authorization or not authorization.startswith("Bearer "):
+async def get_current_user(request: Request, authorization: str = Header(None)):
+    """Check session_token cookie first, then Authorization header."""
+    session_token = request.cookies.get("session_token")
+    if not session_token and authorization and authorization.startswith("Bearer "):
+        session_token = authorization.split(" ")[1]
+    if not session_token:
         raise HTTPException(status_code=401, detail="Not authenticated")
-    token = authorization.split(" ")[1]
-    try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
-        user = await db.users.find_one({"id": payload["user_id"]}, {"_id": 0})
-        if not user:
-            raise HTTPException(status_code=401, detail="User not found")
-        return user
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid token")
+    session = await db.user_sessions.find_one({"session_token": session_token}, {"_id": 0})
+    if not session:
+        raise HTTPException(status_code=401, detail="Invalid session")
+    expires_at = session.get("expires_at")
+    if isinstance(expires_at, str):
+        expires_at = datetime.fromisoformat(expires_at)
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    if expires_at < datetime.now(timezone.utc):
+        raise HTTPException(status_code=401, detail="Session expired")
+    user = await db.users.find_one({"user_id": session["user_id"]}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+    return user
+
+def is_admin(user: dict) -> bool:
+    return user.get("role") == "admin" or user.get("email") == ADMIN_EMAIL
+
+async def require_admin(user=Depends(get_current_user)):
+    if not is_admin(user):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return user
 
 # --- Auth Routes ---
-@api_router.post("/auth/register")
-async def register(data: UserCreate):
-    existing = await db.users.find_one({"email": data.email})
+@api_router.post("/auth/session")
+async def create_session(request: Request):
+    """Exchange session_id from Emergent Auth for a session_token."""
+    body = await request.json()
+    session_id = body.get("session_id")
+    if not session_id:
+        raise HTTPException(status_code=400, detail="session_id required")
+    async with httpx.AsyncClient() as hc:
+        resp = await hc.get(EMERGENT_AUTH_URL, headers={"X-Session-ID": session_id})
+        if resp.status_code != 200:
+            raise HTTPException(status_code=401, detail="Invalid session_id")
+        data = resp.json()
+    email = data.get("email", "")
+    name = data.get("name", "")
+    picture = data.get("picture", "")
+    session_token = data.get("session_token", str(uuid.uuid4()))
+    role = "admin" if email == ADMIN_EMAIL else "viewer"
+    existing = await db.users.find_one({"email": email}, {"_id": 0})
     if existing:
-        raise HTTPException(status_code=400, detail="Email already registered")
-    user_id = str(uuid.uuid4())
-    user_doc = {
-        "id": user_id,
-        "email": data.email,
-        "name": data.name,
-        "password_hash": hash_password(data.password),
+        user_id = existing["user_id"]
+        await db.users.update_one({"email": email}, {"$set": {"name": name, "picture": picture, "role": role}})
+    else:
+        user_id = f"user_{uuid.uuid4().hex[:12]}"
+        await db.users.insert_one({
+            "user_id": user_id, "email": email, "name": name, "picture": picture,
+            "role": role, "created_at": datetime.now(timezone.utc).isoformat()
+        })
+    await db.user_sessions.delete_many({"user_id": user_id})
+    await db.user_sessions.insert_one({
+        "user_id": user_id, "session_token": session_token,
+        "expires_at": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
         "created_at": datetime.now(timezone.utc).isoformat()
-    }
-    await db.users.insert_one(user_doc)
-    token = create_token(user_id, data.email)
-    return {"token": token, "user": {"id": user_id, "email": data.email, "name": data.name}}
-
-@api_router.post("/auth/login")
-async def login(data: UserLogin):
-    user = await db.users.find_one({"email": data.email}, {"_id": 0})
-    if not user or not verify_password(data.password, user["password_hash"]):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    token = create_token(user["id"], user["email"])
-    return {"token": token, "user": {"id": user["id"], "email": user["email"], "name": user["name"]}}
+    })
+    response = JSONResponse(content={
+        "user": {"user_id": user_id, "email": email, "name": name, "picture": picture, "role": role}
+    })
+    response.set_cookie(
+        key="session_token", value=session_token, path="/",
+        httponly=True, secure=True, samesite="none", max_age=7*24*3600
+    )
+    return response
 
 @api_router.get("/auth/me")
 async def get_me(user=Depends(get_current_user)):
-    return {"id": user["id"], "email": user["email"], "name": user["name"]}
+    return {
+        "user_id": user["user_id"], "email": user["email"], "name": user["name"],
+        "picture": user.get("picture", ""), "role": user.get("role", "viewer")
+    }
+
+@api_router.post("/auth/logout")
+async def logout(request: Request):
+    session_token = request.cookies.get("session_token")
+    if session_token:
+        await db.user_sessions.delete_many({"session_token": session_token})
+    response = JSONResponse(content={"status": "logged out"})
+    response.delete_cookie(key="session_token", path="/", samesite="none", secure=True)
+    return response
 
 # --- Categories Routes ---
 @api_router.get("/categories")
@@ -149,14 +168,14 @@ async def get_categories(user=Depends(get_current_user)):
     return cats
 
 @api_router.post("/categories")
-async def create_category(data: CategoryCreate, user=Depends(get_current_user)):
+async def create_category(data: CategoryCreate, user=Depends(require_admin)):
     cat_id = str(uuid.uuid4())
     doc = {"id": cat_id, "name": data.name, "icon": data.icon, "order": data.order, "parent_id": data.parent_id}
     await db.categories.insert_one(doc)
     return {"id": cat_id, "name": data.name, "icon": data.icon, "order": data.order, "parent_id": data.parent_id}
 
 @api_router.put("/categories/{cat_id}")
-async def update_category(cat_id: str, data: CategoryUpdate, user=Depends(get_current_user)):
+async def update_category(cat_id: str, data: CategoryUpdate, user=Depends(require_admin)):
     cat = await db.categories.find_one({"id": cat_id}, {"_id": 0})
     if not cat:
         raise HTTPException(status_code=404, detail="Category not found")
@@ -168,12 +187,12 @@ async def update_category(cat_id: str, data: CategoryUpdate, user=Depends(get_cu
     return updated
 
 @api_router.delete("/categories/{cat_id}")
-async def delete_category(cat_id: str, user=Depends(get_current_user)):
+async def delete_category(cat_id: str, user=Depends(require_admin)):
     cat = await db.categories.find_one({"id": cat_id}, {"_id": 0})
     if not cat:
         raise HTTPException(status_code=404, detail="Category not found")
     children = await db.categories.count_documents({"parent_id": cat_id})
-    docs = await db.documents.count_documents({"category_id": cat_id})
+    docs = await db.documents.count_documents({"category_id": cat_id, "deleted": {"$ne": True}})
     if children > 0 or docs > 0:
         raise HTTPException(status_code=400, detail="Category has children or documents. Remove them first.")
     await db.categories.delete_one({"id": cat_id})
@@ -182,7 +201,7 @@ async def delete_category(cat_id: str, user=Depends(get_current_user)):
 # --- Documents Routes ---
 @api_router.get("/documents")
 async def get_documents(category_id: Optional[str] = None, user=Depends(get_current_user)):
-    query = {}
+    query = {"deleted": {"$ne": True}}
     if category_id:
         query["category_id"] = category_id
     docs = await db.documents.find(query, {"_id": 0}).sort("order", 1).to_list(1000)
@@ -190,37 +209,33 @@ async def get_documents(category_id: Optional[str] = None, user=Depends(get_curr
 
 @api_router.get("/documents/{doc_id}")
 async def get_document(doc_id: str, user=Depends(get_current_user)):
-    doc = await db.documents.find_one({"id": doc_id}, {"_id": 0})
+    doc = await db.documents.find_one({"id": doc_id, "deleted": {"$ne": True}}, {"_id": 0})
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
     return doc
 
 @api_router.post("/documents")
-async def create_document(data: DocumentCreate, user=Depends(get_current_user)):
+async def create_document(data: DocumentCreate, user=Depends(require_admin)):
     doc_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc).isoformat()
     doc = {
         "id": doc_id, "title": data.title, "content": data.content,
-        "category_id": data.category_id, "author_id": user["id"],
+        "category_id": data.category_id, "author_id": user["user_id"],
         "created_at": now, "updated_at": now, "order": data.order,
-        "tags": data.tags
+        "tags": data.tags, "deleted": False
     }
     await db.documents.insert_one(doc)
     return {k: v for k, v in doc.items() if k != "_id"}
 
 @api_router.put("/documents/{doc_id}")
-async def update_document(doc_id: str, data: DocumentUpdate, user=Depends(get_current_user)):
-    doc = await db.documents.find_one({"id": doc_id}, {"_id": 0})
+async def update_document(doc_id: str, data: DocumentUpdate, user=Depends(require_admin)):
+    doc = await db.documents.find_one({"id": doc_id, "deleted": {"$ne": True}}, {"_id": 0})
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
-    # Save version before updating
     version = {
-        "id": str(uuid.uuid4()),
-        "document_id": doc_id,
-        "title": doc.get("title", ""),
-        "content": doc.get("content", ""),
-        "edited_by": user["id"],
-        "created_at": datetime.now(timezone.utc).isoformat()
+        "id": str(uuid.uuid4()), "document_id": doc_id,
+        "title": doc.get("title", ""), "content": doc.get("content", ""),
+        "edited_by": user["user_id"], "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.doc_versions.insert_one(version)
     update = {k: v for k, v in data.model_dump().items() if v is not None}
@@ -229,62 +244,180 @@ async def update_document(doc_id: str, data: DocumentUpdate, user=Depends(get_cu
     updated = await db.documents.find_one({"id": doc_id}, {"_id": 0})
     return updated
 
+@api_router.delete("/documents/{doc_id}")
+async def soft_delete_document(doc_id: str, user=Depends(require_admin)):
+    doc = await db.documents.find_one({"id": doc_id, "deleted": {"$ne": True}}, {"_id": 0})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    await db.documents.update_one({"id": doc_id}, {"$set": {
+        "deleted": True, "deleted_at": datetime.now(timezone.utc).isoformat(),
+        "deleted_by": user["user_id"]
+    }})
+    return {"status": "moved to trash"}
+
+@api_router.get("/trash")
+async def get_trash(user=Depends(require_admin)):
+    docs = await db.documents.find({"deleted": True}, {"_id": 0}).sort("deleted_at", -1).to_list(200)
+    return docs
+
+@api_router.post("/trash/{doc_id}/restore")
+async def restore_document(doc_id: str, user=Depends(require_admin)):
+    doc = await db.documents.find_one({"id": doc_id, "deleted": True}, {"_id": 0})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found in trash")
+    await db.documents.update_one({"id": doc_id}, {"$set": {"deleted": False}, "$unset": {"deleted_at": "", "deleted_by": ""}})
+    return {"status": "restored"}
+
+@api_router.delete("/trash/{doc_id}")
+async def permanent_delete(doc_id: str, user=Depends(require_admin)):
+    result = await db.documents.delete_one({"id": doc_id, "deleted": True})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Document not found in trash")
+    await db.bookmarks.delete_many({"document_id": doc_id})
+    await db.doc_versions.delete_many({"document_id": doc_id})
+    await db.comments.delete_many({"document_id": doc_id})
+    return {"status": "permanently deleted"}
+
 @api_router.get("/documents/{doc_id}/versions")
 async def get_document_versions(doc_id: str, user=Depends(get_current_user)):
     versions = await db.doc_versions.find({"document_id": doc_id}, {"_id": 0}).sort("created_at", -1).to_list(50)
     return versions
 
-@api_router.get("/documents/{doc_id}/export")
-async def export_document(doc_id: str, user=Depends(get_current_user)):
-    doc = await db.documents.find_one({"id": doc_id}, {"_id": 0})
-    if not doc:
-        raise HTTPException(status_code=404, detail="Document not found")
-    from fastapi.responses import Response
-    md = f"# {doc['title']}\n\n{doc['content']}"
-    return Response(content=md, media_type="text/markdown", headers={"Content-Disposition": f'attachment; filename="{doc["title"]}.md"'})
-
 @api_router.get("/tags")
 async def get_all_tags(user=Depends(get_current_user)):
-    docs = await db.documents.find({"tags": {"$exists": True, "$ne": []}}, {"_id": 0, "tags": 1}).to_list(1000)
+    docs = await db.documents.find({"tags": {"$exists": True, "$ne": []}, "deleted": {"$ne": True}}, {"_id": 0, "tags": 1}).to_list(1000)
     all_tags = set()
     for d in docs:
         all_tags.update(d.get("tags", []))
     return sorted(list(all_tags))
 
-@api_router.delete("/documents/{doc_id}")
-async def delete_document(doc_id: str, user=Depends(get_current_user)):
-    result = await db.documents.delete_one({"id": doc_id})
-    if result.deleted_count == 0:
+# --- Comments Routes (Threaded) ---
+@api_router.get("/documents/{doc_id}/comments")
+async def get_comments(doc_id: str, user=Depends(get_current_user)):
+    comments = await db.comments.find({"document_id": doc_id}, {"_id": 0}).sort("created_at", 1).to_list(500)
+    return comments
+
+@api_router.post("/documents/{doc_id}/comments")
+async def add_comment(doc_id: str, data: CommentCreate, user=Depends(get_current_user)):
+    comment_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    comment = {
+        "id": comment_id, "document_id": doc_id, "content": data.content,
+        "parent_id": data.parent_id, "user_id": user["user_id"],
+        "user_name": user["name"], "user_picture": user.get("picture", ""),
+        "upvotes": [], "created_at": now, "updated_at": now
+    }
+    await db.comments.insert_one(comment)
+    return {k: v for k, v in comment.items() if k != "_id"}
+
+@api_router.post("/comments/{comment_id}/upvote")
+async def toggle_upvote(comment_id: str, user=Depends(get_current_user)):
+    comment = await db.comments.find_one({"id": comment_id}, {"_id": 0})
+    if not comment:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    upvotes = comment.get("upvotes", [])
+    uid = user["user_id"]
+    if uid in upvotes:
+        upvotes.remove(uid)
+    else:
+        upvotes.append(uid)
+    await db.comments.update_one({"id": comment_id}, {"$set": {"upvotes": upvotes}})
+    return {"upvotes": upvotes}
+
+@api_router.delete("/comments/{comment_id}")
+async def delete_comment(comment_id: str, user=Depends(get_current_user)):
+    comment = await db.comments.find_one({"id": comment_id}, {"_id": 0})
+    if not comment:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    if comment["user_id"] != user["user_id"] and not is_admin(user):
+        raise HTTPException(status_code=403, detail="Can only delete your own comments")
+    await db.comments.delete_one({"id": comment_id})
+    await db.comments.delete_many({"parent_id": comment_id})
+    return {"status": "deleted"}
+
+# --- Public Sharing ---
+@api_router.post("/documents/{doc_id}/share")
+async def toggle_share(doc_id: str, user=Depends(require_admin)):
+    doc = await db.documents.find_one({"id": doc_id, "deleted": {"$ne": True}}, {"_id": 0})
+    if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
-    await db.bookmarks.delete_many({"document_id": doc_id})
-    await db.doc_versions.delete_many({"document_id": doc_id})
+    share_id = doc.get("share_id")
+    if share_id:
+        await db.documents.update_one({"id": doc_id}, {"$unset": {"share_id": ""}})
+        return {"shared": False, "share_id": None}
+    new_share_id = uuid.uuid4().hex[:10]
+    await db.documents.update_one({"id": doc_id}, {"$set": {"share_id": new_share_id}})
+    return {"shared": True, "share_id": new_share_id}
+
+@api_router.get("/public/{share_id}")
+async def get_public_document(share_id: str):
+    """No auth required - public endpoint."""
+    doc = await db.documents.find_one({"share_id": share_id, "deleted": {"$ne": True}}, {"_id": 0})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found or not shared")
+    return {"title": doc["title"], "content": doc["content"], "tags": doc.get("tags", []),
+            "updated_at": doc.get("updated_at", ""), "author_id": doc.get("author_id", "")}
+
+# --- Tools Directory ---
+@api_router.get("/tools")
+async def get_tools(user=Depends(get_current_user)):
+    tools = await db.tools.find({}, {"_id": 0}).sort("category", 1).to_list(200)
+    return tools
+
+@api_router.post("/tools")
+async def create_tool(data: ToolCreate, user=Depends(require_admin)):
+    tool_id = str(uuid.uuid4())
+    tool = {"id": tool_id, "name": data.name, "url": data.url, "description": data.description,
+            "category": data.category, "created_at": datetime.now(timezone.utc).isoformat()}
+    await db.tools.insert_one(tool)
+    return {k: v for k, v in tool.items() if k != "_id"}
+
+@api_router.put("/tools/{tool_id}")
+async def update_tool(tool_id: str, data: ToolUpdate, user=Depends(require_admin)):
+    tool = await db.tools.find_one({"id": tool_id}, {"_id": 0})
+    if not tool:
+        raise HTTPException(status_code=404, detail="Tool not found")
+    update = {k: v for k, v in data.model_dump().items() if v is not None}
+    await db.tools.update_one({"id": tool_id}, {"$set": update})
+    updated = await db.tools.find_one({"id": tool_id}, {"_id": 0})
+    return updated
+
+@api_router.delete("/tools/{tool_id}")
+async def delete_tool(tool_id: str, user=Depends(require_admin)):
+    result = await db.tools.delete_one({"id": tool_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Tool not found")
     return {"status": "deleted"}
 
 # --- Bookmarks Routes ---
 @api_router.get("/bookmarks")
 async def get_bookmarks(user=Depends(get_current_user)):
-    bms = await db.bookmarks.find({"user_id": user["id"]}, {"_id": 0}).to_list(1000)
+    bms = await db.bookmarks.find({"user_id": user["user_id"]}, {"_id": 0}).to_list(1000)
     doc_ids = [b["document_id"] for b in bms]
-    docs = await db.documents.find({"id": {"$in": doc_ids}}, {"_id": 0}).to_list(1000)
+    docs = await db.documents.find({"id": {"$in": doc_ids}, "deleted": {"$ne": True}}, {"_id": 0}).to_list(1000)
     return {"bookmarks": bms, "documents": docs}
 
 @api_router.post("/bookmarks/{doc_id}")
 async def toggle_bookmark(doc_id: str, user=Depends(get_current_user)):
-    existing = await db.bookmarks.find_one({"user_id": user["id"], "document_id": doc_id})
+    existing = await db.bookmarks.find_one({"user_id": user["user_id"], "document_id": doc_id})
     if existing:
-        await db.bookmarks.delete_one({"user_id": user["id"], "document_id": doc_id})
+        await db.bookmarks.delete_one({"user_id": user["user_id"], "document_id": doc_id})
         return {"bookmarked": False}
-    bm = {"id": str(uuid.uuid4()), "user_id": user["id"], "document_id": doc_id, "created_at": datetime.now(timezone.utc).isoformat()}
+    bm = {"id": str(uuid.uuid4()), "user_id": user["user_id"], "document_id": doc_id,
+          "created_at": datetime.now(timezone.utc).isoformat()}
     await db.bookmarks.insert_one(bm)
     return {"bookmarked": True}
 
-# --- Search Route ---
+# --- Search Route (fuzzy, case-insensitive) ---
 @api_router.get("/search")
 async def search_documents(q: str = "", user=Depends(get_current_user)):
     if not q or len(q) < 2:
         return []
-    query = {"$or": [
-        {"title": {"$regex": q, "$options": "i"}},
+    # Build fuzzy regex: allow character gaps for typos
+    escaped = re.escape(q)
+    fuzzy_pattern = ".*".join(list(escaped))
+    query = {"deleted": {"$ne": True}, "$or": [
+        {"title": {"$regex": fuzzy_pattern, "$options": "i"}},
         {"content": {"$regex": q, "$options": "i"}}
     ]}
     docs = await db.documents.find(query, {"_id": 0}).to_list(50)
@@ -297,7 +430,7 @@ async def search_documents(q: str = "", user=Depends(get_current_user)):
             start = max(0, idx - 60)
             end = min(len(content), idx + len(q) + 60)
             snippet = ("..." if start > 0 else "") + content[start:end].replace("\n", " ") + ("..." if end < len(content) else "")
-        results.append({"id": d["id"], "title": d["title"], "category_id": d["category_id"], "snippet": snippet})
+        results.append({"id": d["id"], "title": d["title"], "category_id": d.get("category_id", ""), "snippet": snippet, "tags": d.get("tags", [])})
     return results
 
 # --- Seed Route ---
@@ -310,10 +443,11 @@ async def seed_data():
     for cat in CATEGORIES:
         await db.categories.insert_one(dict(cat))
     for doc in DOCUMENTS:
-        await db.documents.insert_one(dict(doc))
+        d = dict(doc)
+        d["deleted"] = False
+        await db.documents.insert_one(d)
     await db.categories.create_index("parent_id")
     await db.documents.create_index("category_id")
-    await db.documents.create_index([("title", "text"), ("content", "text")])
     return {"status": "seeded", "categories": len(CATEGORIES), "documents": len(DOCUMENTS)}
 
 @api_router.get("/")
