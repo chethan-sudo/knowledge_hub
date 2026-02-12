@@ -370,11 +370,30 @@ function Sidebar({ categories, documents, activeDocId, onSelectDoc, onNewDoc, co
   const { dark, toggle } = useTheme();
   const { logout, user } = useAuth();
   const navigate = useNavigate();
+  const navRef = useRef(null);
 
   const parentCats = categories.filter(c => !c.parent_id).sort((a,b) => a.order - b.order);
   const getChildren = (pid) => categories.filter(c => c.parent_id === pid).sort((a,b) => a.order - b.order);
   const getDocsForCat = (catId) => documents.filter(d => d.category_id === catId).sort((a,b) => a.order - b.order);
   const toggleCat = (id) => setExpanded(p => ({...p, [id]: !p[id]}));
+
+  // Keyboard navigation: ArrowUp/Down to move between docs
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (collapsed || !navRef.current) return;
+      if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+      const docBtns = navRef.current.querySelectorAll(".sidebar-doc");
+      if (!docBtns.length) return;
+      const ids = Array.from(docBtns).map(b => b.dataset.testid?.replace("sidebar-doc-", ""));
+      const curIdx = ids.indexOf(activeDocId);
+      let nextIdx;
+      if (e.key === "ArrowDown") nextIdx = curIdx < ids.length - 1 ? curIdx + 1 : 0;
+      else nextIdx = curIdx > 0 ? curIdx - 1 : ids.length - 1;
+      if (ids[nextIdx]) { e.preventDefault(); onSelectDoc(ids[nextIdx]); }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [collapsed, activeDocId, onSelectDoc]);
 
   return (
     <aside className={`sidebar ${collapsed ? "sidebar-collapsed" : ""}`} data-testid="sidebar">
