@@ -467,6 +467,32 @@ function Sidebar({ categories, documents, activeDocId, onSelectDoc, onNewDoc, co
 
 // --- Document Viewer ---
 function DocumentViewer({ doc, category, parentCategory, isBookmarked, onToggleBookmark, onEdit, onDelete }) {
+  const { api } = useAuth();
+  const [versions, setVersions] = useState([]);
+  const [showVersions, setShowVersions] = useState(false);
+  const [viewingVersion, setViewingVersion] = useState(null);
+
+  useEffect(() => { setShowVersions(false); setViewingVersion(null); setVersions([]); }, [doc?.id]);
+
+  const loadVersions = async () => {
+    if (!doc) return;
+    try {
+      const r = await api("get", `/documents/${doc.id}/versions`);
+      setVersions(r.data);
+      setShowVersions(true);
+    } catch (e) { console.error(e); }
+  };
+
+  const exportDoc = () => {
+    if (!doc) return;
+    const md = `# ${doc.title}\n\n${doc.content}`;
+    const blob = new Blob([md], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `${doc.title}.md`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
   if (!doc) return (
     <div className="doc-empty" data-testid="doc-empty">
       <Icon name="FileText" size={48}/>
@@ -475,8 +501,9 @@ function DocumentViewer({ doc, category, parentCategory, isBookmarked, onToggleB
     </div>
   );
 
-  // Extract TOC from headings
-  const headings = doc.content?.match(/^## .+/gm)?.map(h => ({ text: h.slice(3), id: h.slice(3).toLowerCase().replace(/[^a-z0-9]+/g, "-") })) || [];
+  const displayContent = viewingVersion ? viewingVersion.content : doc.content;
+  const headings = displayContent?.match(/^## .+/gm)?.map(h => ({ text: h.slice(3), id: h.slice(3).toLowerCase().replace(/[^a-z0-9]+/g, "-") })) || [];
+  const tags = doc.tags || [];
 
   return (
     <div className="doc-viewer" data-testid="doc-viewer">
@@ -486,8 +513,26 @@ function DocumentViewer({ doc, category, parentCategory, isBookmarked, onToggleB
         <span className="doc-breadcrumb-active">{doc.title}</span>
       </div>
       <div className="doc-header">
-        <h1 className="doc-title" data-testid="doc-title">{doc.title}</h1>
+        <div>
+          <h1 className="doc-title" data-testid="doc-title">{viewingVersion ? `${doc.title} (version)` : doc.title}</h1>
+          {tags.length > 0 && (
+            <div className="doc-tags" data-testid="doc-tags">
+              {tags.map((t, i) => <span key={i} className="doc-tag" data-testid={`doc-tag-${t}`}><Icon name="Tag" size={11}/>{t}</span>)}
+            </div>
+          )}
+        </div>
         <div className="doc-actions">
+          {viewingVersion && (
+            <button data-testid="version-back-btn" className="doc-action-btn" onClick={() => setViewingVersion(null)} title="Back to current">
+              <Icon name="ArrowLeft" size={18}/>
+            </button>
+          )}
+          <button data-testid="export-doc-btn" className="doc-action-btn" onClick={exportDoc} title="Export as Markdown">
+            <Icon name="Download" size={18}/>
+          </button>
+          <button data-testid="version-history-btn" className="doc-action-btn" onClick={loadVersions} title="Version history">
+            <Icon name="Clock" size={18}/>
+          </button>
           <button data-testid="bookmark-toggle-btn" className={`doc-action-btn ${isBookmarked ? "bookmarked" : ""}`} onClick={onToggleBookmark}>
             <Icon name={isBookmarked ? "BookmarkFilled" : "Bookmark"} size={18}/>
           </button>
@@ -497,14 +542,30 @@ function DocumentViewer({ doc, category, parentCategory, isBookmarked, onToggleB
       </div>
       <div className="doc-layout">
         <article className="doc-content" data-testid="doc-content">
-          <MarkdownContent content={doc.content} />
+          <MarkdownContent content={displayContent} />
         </article>
-        {headings.length > 2 && (
-          <aside className="doc-toc" data-testid="doc-toc">
-            <div className="doc-toc-title">On this page</div>
-            {headings.map((h, i) => <a key={i} href={`#${h.id}`} className="doc-toc-link">{h.text}</a>)}
-          </aside>
-        )}
+        <aside className="doc-sidebar-right">
+          {showVersions && (
+            <div className="doc-version-panel" data-testid="version-panel">
+              <div className="doc-toc-title">Version History</div>
+              {versions.length === 0 ? (
+                <p className="doc-version-empty">No previous versions</p>
+              ) : versions.map((v, i) => (
+                <button key={v.id} className={`doc-version-item ${viewingVersion?.id === v.id ? "active" : ""}`} data-testid={`version-item-${i}`} onClick={() => setViewingVersion(v)}>
+                  <span className="doc-version-date">{new Date(v.created_at).toLocaleString()}</span>
+                  <span className="doc-version-title">{v.title}</span>
+                </button>
+              ))}
+              <button className="doc-version-close" data-testid="version-close-btn" onClick={() => { setShowVersions(false); setViewingVersion(null); }}>Close</button>
+            </div>
+          )}
+          {headings.length > 2 && !showVersions && (
+            <div className="doc-toc" data-testid="doc-toc">
+              <div className="doc-toc-title">On this page</div>
+              {headings.map((h, i) => <a key={i} href={`#${h.id}`} className="doc-toc-link">{h.text}</a>)}
+            </div>
+          )}
+        </aside>
       </div>
     </div>
   );
