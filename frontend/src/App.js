@@ -262,8 +262,8 @@ function MermaidDiagram({ chart }) {
       try {
         const themeVars = dark
           ? { primaryColor: "#4f46e5", primaryBorderColor: "#6366f1", primaryTextColor: "#e4e4e7", lineColor: "#71717a", secondaryColor: "#27272a", tertiaryColor: "#18181b", background: "transparent", mainBkg: "#27272a", nodeBorder: "#6366f1", clusterBkg: "#1a1a2e", titleColor: "#e4e4e7", edgeLabelBackground: "#18181b", nodeTextColor: "#e4e4e7" }
-          : { primaryColor: "#4f46e5", primaryBorderColor: "#6366f1", background: "transparent", mainBkg: "#eef2ff", nodeBorder: "#6366f1", edgeLabelBackground: "#ffffff" };
-        mermaid.initialize({ startOnLoad: false, theme: dark ? "dark" : "default", themeVariables: themeVars });
+          : { primaryColor: "#4f46e5", primaryBorderColor: "#6366f1", primaryTextColor: "#18181b", lineColor: "#71717a", background: "transparent", mainBkg: "#eef2ff", secondaryColor: "#f0f0ff", tertiaryColor: "#f8f8ff", nodeBorder: "#6366f1", edgeLabelBackground: "#ffffff", nodeTextColor: "#18181b", clusterBkg: "#f5f5ff", titleColor: "#18181b", actorBkg: "#eef2ff", actorTextColor: "#18181b", actorLineColor: "#6366f1", signalColor: "#18181b", labelBoxBkgColor: "#eef2ff", noteBkgColor: "#f0f0ff" };
+        mermaid.initialize({ startOnLoad: false, theme: dark ? "dark" : "base", themeVariables: themeVars });
         const id = `mermaid-${Math.random().toString(36).slice(2, 9)}`;
         const { svg: renderedSvg } = await mermaid.render(id, chart.trim());
         setSvg(renderedSvg); setError(null);
