@@ -359,18 +359,35 @@ function InlineSearch({ categories, documents, onSelect }) {
         {searching && <span className="search-spinner"/>}
         <kbd>Ctrl+K</kbd>
       </div>
-      {focused && query.length >= 2 && (
+      {focused && query.length >= 1 && (
         <div className="inline-search-dropdown" data-testid="search-results">
-          {results.length > 0 ? results.map(d => (
-            <button key={d.id} className="search-result-item" data-testid={`search-result-${d.id}`} onMouseDown={() => { onSelect(d.id); setQuery(""); }}>
-              <Icon name="FileText" size={14}/>
-              <div>
-                <div className="search-result-title">{d.title}</div>
-                <div className="search-result-cat">{getCatName(d.category_id)}</div>
-                {d.snippet && <div className="search-result-snippet" data-testid="search-snippet">{d.snippet}</div>}
-              </div>
-            </button>
-          )) : <div className="search-empty">No results found</div>}
+          {catResults.length > 0 && (
+            <div className="search-group">
+              <div className="search-group-label">Categories</div>
+              {catResults.map(c => (
+                <button key={c.id} className="search-result-item" data-testid={`search-cat-${c.id}`} onMouseDown={() => { const doc = getFirstDocInCat(c.id); if (doc) onSelect(doc.id); setQuery(""); }}>
+                  <Icon name={c.icon || "FolderOpen"} size={14}/>
+                  <div><div className="search-result-title">{c.name}</div><div className="search-result-cat">{c.parent_id ? "Subcategory" : "Category"}</div></div>
+                </button>
+              ))}
+            </div>
+          )}
+          {results.length > 0 && (
+            <div className="search-group">
+              {catResults.length > 0 && <div className="search-group-label">Documents</div>}
+              {results.map(d => (
+                <button key={d.id} className="search-result-item" data-testid={`search-result-${d.id}`} onMouseDown={() => { onSelect(d.id); setQuery(""); }}>
+                  <Icon name="FileText" size={14}/>
+                  <div>
+                    <div className="search-result-title">{d.title}</div>
+                    <div className="search-result-cat">{getCatName(d.category_id)}</div>
+                    {d.snippet && <div className="search-result-snippet" data-testid="search-snippet">{d.snippet}</div>}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+          {catResults.length === 0 && results.length === 0 && !searching && <div className="search-empty">No results found</div>}
         </div>
       )}
     </div>
