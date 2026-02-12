@@ -375,3 +375,50 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 .chatbot-input input:focus { border-color: var(--accent); }
 .chatbot-input button { width: 38px; height: 38px; border-radius: 50%; background: var(--accent); color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .chatbot-input button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+
+/* Template Picker */
+.template-picker { margin-bottom: 1.5rem; border: 1px solid var(--border-clr); border-radius: var(--radius); overflow: hidden; }
+.template-picker-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--hover-bg); border-bottom: 1px solid var(--border-clr); }
+.template-picker-header h3 { font-size: 0.9rem; font-weight: 600; }
+.template-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; padding: 16px; }
+.template-card { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px 12px; border: 1px solid var(--border-clr); border-radius: var(--radius); background: var(--content-bg); cursor: pointer; font-family: inherit; color: var(--text-secondary); transition: all 0.15s; }
+.template-card:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+.template-card span { font-size: 0.75rem; font-weight: 500; text-align: center; }
+
+/* Tag Suggestions */
+.tag-input-wrap { position: relative; display: inline-flex; }
+.tag-suggestions { position: absolute; top: 100%; left: 0; min-width: 150px; background: var(--card-bg); border: 1px solid var(--border-clr); border-radius: var(--radius); box-shadow: var(--shadow-md); z-index: 20; padding: 4px; margin-top: 4px; }
+.tag-suggestion { display: block; width: 100%; padding: 6px 10px; border: none; background: none; color: var(--text-primary); font-size: 0.75rem; font-family: inherit; text-align: left; border-radius: 4px; cursor: pointer; }
+.tag-suggestion:hover { background: var(--accent-light); color: var(--accent); }
+
+/* Tag Cloud (Home Page) */
+.tag-cloud { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-bottom: 2rem; padding: 12px 16px; background: var(--card-bg); border: 1px solid var(--border-clr); border-radius: var(--radius); }
+.tag-cloud-label { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-right: 4px; }
+.tag-cloud-item { padding: 4px 12px; border: 1px solid var(--border-clr); border-radius: 16px; background: none; color: var(--text-secondary); font-size: 0.72rem; font-family: inherit; cursor: pointer; transition: all 0.1s; }
+.tag-cloud-item:hover { border-color: var(--accent); color: var(--accent); }
+.tag-cloud-item.active { background: var(--accent); color: white; border-color: var(--accent); }
+.tag-cloud-clear { padding: 4px 10px; border: none; background: none; color: var(--danger); font-size: 0.72rem; font-family: inherit; cursor: pointer; font-weight: 500; }
+.tag-results { margin-bottom: 2rem; }
+.tag-results h3 { font-size: 0.9rem; font-weight: 600; margin-bottom: 10px; color: var(--text-secondary); }
+
+/* Settings Page */
+.settings-section { margin-bottom: 2rem; }
+.settings-section-title { font-size: 1rem; font-weight: 600; margin-bottom: 12px; }
+.invite-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.invite-row input { flex: 1; min-width: 200px; height: 42px; padding: 0 14px; border: 1px solid var(--border-clr); border-radius: var(--radius); background: var(--content-bg); color: var(--text-primary); font-size: 0.85rem; font-family: inherit; outline: none; }
+.invite-row input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+.invite-role-picker { display: flex; gap: 6px; }
+.role-option { display: flex; align-items: center; gap: 5px; padding: 8px 14px; border: 1px solid var(--border-clr); border-radius: var(--radius); cursor: pointer; font-size: 0.8rem; color: var(--text-secondary); transition: all 0.1s; }
+.role-option input { display: none; }
+.role-option:hover { border-color: var(--accent); }
+.role-option.selected { border-color: var(--accent); background: var(--accent-light); color: var(--accent); font-weight: 500; }
+.users-list { border: 1px solid var(--border-clr); border-radius: var(--radius); overflow: hidden; }
+.users-header { display: grid; grid-template-columns: 1fr 120px 60px; padding: 8px 14px; background: var(--hover-bg); font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); border-bottom: 1px solid var(--border-clr); }
+.user-row { display: grid; grid-template-columns: 1fr 120px 60px; padding: 10px 14px; align-items: center; border-bottom: 1px solid var(--border-clr); }
+.user-row:last-child { border-bottom: none; }
+.user-row:hover { background: var(--hover-bg); }
+.user-info { display: flex; align-items: center; gap: 10px; }
+.user-name { font-size: 0.85rem; font-weight: 500; }
+.user-email { font-size: 0.7rem; color: var(--text-muted); }
+.user-role-select { height: 30px; padding: 0 8px; border: 1px solid var(--border-clr); border-radius: 4px; background: var(--content-bg); color: var(--text-primary); font-size: 0.75rem; font-family: inherit; }
