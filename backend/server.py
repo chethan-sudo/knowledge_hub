@@ -251,8 +251,18 @@ async def search_documents(q: str = "", user=Depends(get_current_user)):
         {"title": {"$regex": q, "$options": "i"}},
         {"content": {"$regex": q, "$options": "i"}}
     ]}
-    docs = await db.documents.find(query, {"_id": 0, "content": 0}).to_list(50)
-    return docs
+    docs = await db.documents.find(query, {"_id": 0}).to_list(50)
+    results = []
+    for d in docs:
+        snippet = ""
+        content = d.get("content", "")
+        idx = content.lower().find(q.lower())
+        if idx >= 0:
+            start = max(0, idx - 60)
+            end = min(len(content), idx + len(q) + 60)
+            snippet = ("..." if start > 0 else "") + content[start:end].replace("\n", " ") + ("..." if end < len(content) else "")
+        results.append({"id": d["id"], "title": d["title"], "category_id": d["category_id"], "snippet": snippet})
+    return results
 
 # --- Seed Route ---
 @api_router.post("/seed")
