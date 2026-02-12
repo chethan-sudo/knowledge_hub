@@ -616,6 +616,129 @@ function BookmarksPage({ bookmarkedDocs, categories, onSelectDoc, onToggleBookma
   );
 }
 
+// --- Category Manager Dialog ---
+function CategoryManager({ open, onClose, categories, onCategoriesChange }) {
+  const { api } = useAuth();
+  const [newName, setNewName] = useState("");
+  const [newIcon, setNewIcon] = useState("FileText");
+  const [newParent, setNewParent] = useState("");
+  const [editingId, setEditingId] = useState(null);
+  const [editName, setEditName] = useState("");
+  const [editIcon, setEditIcon] = useState("");
+  const [error, setError] = useState("");
+
+  const iconOptions = ["FileText","Layers","Cpu","Server","Monitor","Database","Rocket","Lock","FolderOpen","Sparkles","Telescope","Search"];
+  const parentCats = categories.filter(c => !c.parent_id).sort((a,b) => a.order - b.order);
+
+  const handleCreate = async () => {
+    if (!newName.trim()) return;
+    setError("");
+    try {
+      const maxOrder = categories.filter(c => newParent ? c.parent_id === newParent : !c.parent_id).length;
+      const r = await api("post", "/categories", { name: newName.trim(), icon: newIcon, order: maxOrder, parent_id: newParent || null });
+      onCategoriesChange([...categories, r.data]);
+      setNewName(""); setNewIcon("FileText"); setNewParent("");
+    } catch (e) { setError(e.response?.data?.detail || "Failed to create"); }
+  };
+
+  const handleUpdate = async (id) => {
+    setError("");
+    try {
+      const r = await api("put", `/categories/${id}`, { name: editName.trim(), icon: editIcon });
+      onCategoriesChange(categories.map(c => c.id === id ? r.data : c));
+      setEditingId(null);
+    } catch (e) { setError(e.response?.data?.detail || "Failed to update"); }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Delete this category? It must have no children or documents.")) return;
+    setError("");
+    try {
+      await api("delete", `/categories/${id}`);
+      onCategoriesChange(categories.filter(c => c.id !== id));
+    } catch (e) { setError(e.response?.data?.detail || "Cannot delete: has children or documents"); }
+  };
+
+  if (!open) return null;
+
+  return (
+    <div className="search-overlay" onClick={() => onClose()} data-testid="category-manager-overlay">
+      <div className="catmgr-dialog" onClick={e => e.stopPropagation()} data-testid="category-manager">
+        <div className="catmgr-header">
+          <h2>Manage Categories</h2>
+          <button className="catmgr-close" data-testid="catmgr-close-btn" onClick={onClose}><Icon name="X" size={18}/></button>
+        </div>
+        {error && <div className="auth-error" style={{margin:"0 20px"}}>{error}</div>}
+        <div className="catmgr-body">
+          <div className="catmgr-section">
+            <h3>Add new category</h3>
+            <div className="catmgr-add-row">
+              <input data-testid="catmgr-name-input" placeholder="Category name" value={newName} onChange={e => setNewName(e.target.value)} />
+              <select data-testid="catmgr-icon-select" value={newIcon} onChange={e => setNewIcon(e.target.value)}>
+                {iconOptions.map(i => <option key={i} value={i}>{i}</option>)}
+              </select>
+              <select data-testid="catmgr-parent-select" value={newParent} onChange={e => setNewParent(e.target.value)}>
+                <option value="">Top-level</option>
+                {parentCats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+              <button data-testid="catmgr-add-btn" className="editor-btn-primary" onClick={handleCreate} disabled={!newName.trim()}>Add</button>
+            </div>
+          </div>
+          <div className="catmgr-section">
+            <h3>Existing categories</h3>
+            <div className="catmgr-list">
+              {parentCats.map(cat => {
+                const children = categories.filter(c => c.parent_id === cat.id).sort((a,b) => a.order - b.order);
+                return (
+                  <div key={cat.id} className="catmgr-group">
+                    <div className="catmgr-item">
+                      <Icon name={cat.icon} size={16}/>
+                      {editingId === cat.id ? (
+                        <>
+                          <input className="catmgr-edit-input" value={editName} onChange={e => setEditName(e.target.value)} />
+                          <select className="catmgr-edit-select" value={editIcon} onChange={e => setEditIcon(e.target.value)}>
+                            {iconOptions.map(i => <option key={i} value={i}>{i}</option>)}
+                          </select>
+                          <button className="catmgr-action-btn" data-testid={`catmgr-save-${cat.id}`} onClick={() => handleUpdate(cat.id)}><Icon name="Check" size={14}/></button>
+                          <button className="catmgr-action-btn" onClick={() => setEditingId(null)}><Icon name="X" size={14}/></button>
+                        </>
+                      ) : (
+                        <>
+                          <span className="catmgr-name">{cat.name}</span>
+                          <button className="catmgr-action-btn" data-testid={`catmgr-edit-${cat.id}`} onClick={() => { setEditingId(cat.id); setEditName(cat.name); setEditIcon(cat.icon); }}><Icon name="Edit" size={14}/></button>
+                          <button className="catmgr-action-btn catmgr-danger" data-testid={`catmgr-delete-${cat.id}`} onClick={() => handleDelete(cat.id)}><Icon name="Trash" size={14}/></button>
+                        </>
+                      )}
+                    </div>
+                    {children.map(sub => (
+                      <div key={sub.id} className="catmgr-item catmgr-sub">
+                        <Icon name={sub.icon || "FileText"} size={14}/>
+                        {editingId === sub.id ? (
+                          <>
+                            <input className="catmgr-edit-input" value={editName} onChange={e => setEditName(e.target.value)} />
+                            <button className="catmgr-action-btn" data-testid={`catmgr-save-${sub.id}`} onClick={() => handleUpdate(sub.id)}><Icon name="Check" size={14}/></button>
+                            <button className="catmgr-action-btn" onClick={() => setEditingId(null)}><Icon name="X" size={14}/></button>
+                          </>
+                        ) : (
+                          <>
+                            <span className="catmgr-name">{sub.name}</span>
+                            <button className="catmgr-action-btn" data-testid={`catmgr-edit-${sub.id}`} onClick={() => { setEditingId(sub.id); setEditName(sub.name); setEditIcon(sub.icon); }}><Icon name="Edit" size={14}/></button>
+                            <button className="catmgr-action-btn catmgr-danger" data-testid={`catmgr-delete-${sub.id}`} onClick={() => handleDelete(sub.id)}><Icon name="Trash" size={14}/></button>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // --- Main Dashboard ---
 function Dashboard() {
   const { api } = useAuth();
