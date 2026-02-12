@@ -928,6 +928,82 @@ function PublicDocPage() {
   );
 }
 
+// --- Reading Progress Bar ---
+function ReadingProgress() {
+  const [progress, setProgress] = useState(0);
+  useEffect(() => {
+    const handler = () => {
+      const main = document.querySelector('.main-content');
+      if (!main) return;
+      const scrollTop = main.scrollTop;
+      const scrollHeight = main.scrollHeight - main.clientHeight;
+      setProgress(scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0);
+    };
+    const main = document.querySelector('.main-content');
+    main?.addEventListener('scroll', handler);
+    return () => main?.removeEventListener('scroll', handler);
+  }, []);
+  return <div className="reading-progress" data-testid="reading-progress" style={{width: `${progress}%`}} />;
+}
+
+// --- AI Chatbot ---
+function AIChatbot({ docId }) {
+  const { api, user } = useAuth();
+  const [open, setOpen] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const sessionId = useRef(`chat_${user?.user_id}_${Date.now()}`);
+  const endRef = useRef(null);
+
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+
+  const send = async () => {
+    if (!input.trim() || loading) return;
+    const msg = input.trim();
+    setInput("");
+    setMessages(prev => [...prev, { role: "user", text: msg }]);
+    setLoading(true);
+    try {
+      const r = await api("post", "/chat", { message: msg, session_id: sessionId.current, doc_id: docId || null });
+      setMessages(prev => [...prev, { role: "ai", text: r.data.response }]);
+    } catch (e) {
+      setMessages(prev => [...prev, { role: "ai", text: "Sorry, I encountered an error. Please try again." }]);
+    }
+    setLoading(false);
+  };
+
+  return (
+    <>
+      <button className="chatbot-fab" data-testid="chatbot-fab" onClick={() => setOpen(!open)} title="Ask AI">
+        <Icon name="MessageSquare" size={22}/>
+      </button>
+      {open && (
+        <div className="chatbot-panel" data-testid="chatbot-panel">
+          <div className="chatbot-header">
+            <span>Ask AI about docs</span>
+            <button onClick={() => setOpen(false)} data-testid="chatbot-close"><Icon name="X" size={16}/></button>
+          </div>
+          <div className="chatbot-messages" data-testid="chatbot-messages">
+            {messages.length === 0 && <div className="chatbot-welcome">Ask me anything about the documentation!</div>}
+            {messages.map((m, i) => (
+              <div key={i} className={`chatbot-msg ${m.role}`} data-testid={`chatbot-msg-${i}`}>
+                <div className="chatbot-msg-bubble">{m.text}</div>
+              </div>
+            ))}
+            {loading && <div className="chatbot-msg ai"><div className="chatbot-msg-bubble chatbot-typing">Thinking...</div></div>}
+            <div ref={endRef} />
+          </div>
+          <div className="chatbot-input">
+            <input data-testid="chatbot-input" placeholder="Ask a question..." value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter") send(); }} />
+            <button data-testid="chatbot-send" onClick={send} disabled={!input.trim() || loading}><Icon name="ChevronRight" size={18}/></button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 // --- Main Dashboard ---
 function Dashboard() {
   const { api, user } = useAuth();
