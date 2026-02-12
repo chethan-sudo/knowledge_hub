@@ -6,7 +6,7 @@ import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import "@/App.css";
 
-mermaid.initialize({ startOnLoad: false, theme: "dark" });
+mermaid.initialize({ startOnLoad: false, theme: "dark", themeVariables: { primaryColor: "#4f46e5", primaryBorderColor: "#6366f1", primaryTextColor: "#e4e4e7", lineColor: "#71717a", secondaryColor: "#27272a", tertiaryColor: "#18181b", background: "#18181b", mainBkg: "#27272a", nodeBorder: "#6366f1", clusterBkg: "#1a1a2e", titleColor: "#e4e4e7" } });
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
