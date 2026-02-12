@@ -202,7 +202,8 @@ async def create_document(data: DocumentCreate, user=Depends(get_current_user)):
     doc = {
         "id": doc_id, "title": data.title, "content": data.content,
         "category_id": data.category_id, "author_id": user["id"],
-        "created_at": now, "updated_at": now, "order": data.order
+        "created_at": now, "updated_at": now, "order": data.order,
+        "tags": data.tags
     }
     await db.documents.insert_one(doc)
     return {k: v for k, v in doc.items() if k != "_id"}
@@ -212,11 +213,43 @@ async def update_document(doc_id: str, data: DocumentUpdate, user=Depends(get_cu
     doc = await db.documents.find_one({"id": doc_id}, {"_id": 0})
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
+    # Save version before updating
+    version = {
+        "id": str(uuid.uuid4()),
+        "document_id": doc_id,
+        "title": doc.get("title", ""),
+        "content": doc.get("content", ""),
+        "edited_by": user["id"],
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.doc_versions.insert_one(version)
     update = {k: v for k, v in data.model_dump().items() if v is not None}
     update["updated_at"] = datetime.now(timezone.utc).isoformat()
     await db.documents.update_one({"id": doc_id}, {"$set": update})
     updated = await db.documents.find_one({"id": doc_id}, {"_id": 0})
     return updated
+
+@api_router.get("/documents/{doc_id}/versions")
+async def get_document_versions(doc_id: str, user=Depends(get_current_user)):
+    versions = await db.doc_versions.find({"document_id": doc_id}, {"_id": 0}).sort("created_at", -1).to_list(50)
+    return versions
+
+@api_router.get("/documents/{doc_id}/export")
+async def export_document(doc_id: str, user=Depends(get_current_user)):
+    doc = await db.documents.find_one({"id": doc_id}, {"_id": 0})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    from fastapi.responses import Response
+    md = f"# {doc['title']}\n\n{doc['content']}"
+    return Response(content=md, media_type="text/markdown", headers={"Content-Disposition": f'attachment; filename="{doc["title"]}.md"'})
+
+@api_router.get("/tags")
+async def get_all_tags(user=Depends(get_current_user)):
+    docs = await db.documents.find({"tags": {"$exists": True, "$ne": []}}, {"_id": 0, "tags": 1}).to_list(1000)
+    all_tags = set()
+    for d in docs:
+        all_tags.update(d.get("tags", []))
+    return sorted(list(all_tags))
 
 @api_router.delete("/documents/{doc_id}")
 async def delete_document(doc_id: str, user=Depends(get_current_user)):
@@ -224,6 +257,7 @@ async def delete_document(doc_id: str, user=Depends(get_current_user)):
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Document not found")
     await db.bookmarks.delete_many({"document_id": doc_id})
+    await db.doc_versions.delete_many({"document_id": doc_id})
     return {"status": "deleted"}
 
 # --- Bookmarks Routes ---
