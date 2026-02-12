@@ -163,7 +163,11 @@ function MarkdownContent({ content }) {
         codeLines.push(lines[i]); i++;
       }
       i++; // skip closing ```
-      elements.push(<CodeBlock key={elements.length} code={codeLines.join("\n")} lang={lang} />);
+      if (lang === "mermaid") {
+        elements.push(<MermaidDiagram key={elements.length} chart={codeLines.join("\n")} />);
+      } else {
+        elements.push(<CodeBlock key={elements.length} code={codeLines.join("\n")} lang={lang} />);
+      }
       continue;
     }
     // Headings
