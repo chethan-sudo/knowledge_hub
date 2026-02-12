@@ -164,7 +164,7 @@ function MarkdownContent({ content }) {
       continue;
     }
     // Headings
-    if (line.startsWith("# ")) { elements.push(<h1 key={elements.length} className="doc-h1">{line.slice(2)}</h1>); i++; continue; }
+    if (line.startsWith("# ")) { i++; continue; } // Skip H1, shown in doc header
     if (line.startsWith("## ")) { elements.push(<h2 key={elements.length} className="doc-h2" id={line.slice(3).toLowerCase().replace(/[^a-z0-9]+/g,"-")}>{line.slice(3)}</h2>); i++; continue; }
     if (line.startsWith("### ")) { elements.push(<h3 key={elements.length} className="doc-h3">{line.slice(4)}</h3>); i++; continue; }
     // Table
