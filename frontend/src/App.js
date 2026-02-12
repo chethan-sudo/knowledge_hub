@@ -647,7 +647,7 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<AuthPage />} />
-            <Route path="/bookmarks" element={<ProtectedRoute><DashboardWithBookmarks /></ProtectedRoute>} />
+            <Route path="/bookmarks" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/doc/:docId" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           </Routes>
