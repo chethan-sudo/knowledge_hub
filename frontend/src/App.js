@@ -485,18 +485,27 @@ function CommentsSection({ docId }) {
 }
 
 // --- Sidebar ---
-function Sidebar({ categories, documents, activeDocId, onSelectDoc, onNewDoc, collapsed, setCollapsed, bookmarkedIds, onManageCategories, isAdmin }) {
+function Sidebar({ categories, documents, activeDocId, onSelectDoc, onNewDoc, collapsed, setCollapsed, bookmarkedIds, onManageCategories, isAdmin, sidebarWidth, onResizeSidebar }) {
   const [expanded, setExpanded] = useState({});
   const { dark, toggle } = useTheme();
   const { logout, user } = useAuth();
   const navigate = useNavigate();
   const navRef = useRef(null);
+  const resizing = useRef(false);
 
-  // All categories collapsed by default - expand only when clicked
   const parentCats = categories.filter(c => !c.parent_id).sort((a,b) => a.order - b.order);
   const getChildren = (pid) => categories.filter(c => c.parent_id === pid).sort((a,b) => a.order - b.order);
   const getDocsForCat = (catId) => documents.filter(d => d.category_id === catId).sort((a,b) => a.order - b.order);
   const toggleCat = (id) => setExpanded(p => ({...p, [id]: !p[id]}));
+
+  const handleMouseDown = (e) => {
+    e.preventDefault();
+    resizing.current = true;
+    const move = (ev) => { if (resizing.current) onResizeSidebar(Math.max(200, Math.min(500, ev.clientX))); };
+    const up = () => { resizing.current = false; document.removeEventListener("mousemove", move); document.removeEventListener("mouseup", up); };
+    document.addEventListener("mousemove", move);
+    document.addEventListener("mouseup", up);
+  };
 
   useEffect(() => {
     const handleKey = (e) => {
