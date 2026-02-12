@@ -396,6 +396,14 @@ function Sidebar({ categories, documents, activeDocId, onSelectDoc, onNewDoc, co
                       {children.map(sub => {
                         const subDocs = getDocsForCat(sub.id);
                         const subExpanded = expanded[sub.id] !== false;
+                        // Flatten: if subcategory has exactly 1 doc, show doc directly under parent
+                        if (subDocs.length === 1) {
+                          return (
+                            <button key={sub.id} className={`sidebar-doc ${activeDocId === subDocs[0].id ? "active" : ""}`} data-testid={`sidebar-doc-${subDocs[0].id}`} onClick={() => onSelectDoc(subDocs[0].id)}>
+                              <span>{subDocs[0].title}</span>
+                            </button>
+                          );
+                        }
                         return (
                           <div key={sub.id} className="sidebar-subcategory">
                             <button className="sidebar-sub-header" onClick={() => toggleCat(sub.id)}>
