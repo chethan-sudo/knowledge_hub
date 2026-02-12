@@ -995,6 +995,7 @@ function AIChatbot({ docId }) {
       const r = await api("post", "/chat", { message: msg, session_id: sessionId.current, doc_id: docId || null });
       setMessages(prev => [...prev, { role: "ai", text: r.data.response }]);
     } catch (e) {
+      console.error("Chatbot error:", e);
       setMessages(prev => [...prev, { role: "ai", text: "Sorry, I encountered an error. Please try again." }]);
     }
     setLoading(false);
