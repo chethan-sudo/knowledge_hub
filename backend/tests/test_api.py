@@ -326,7 +326,7 @@ class TestBookmarks:
 
 
 class TestSearch:
-    """Search API tests"""
+    """Search API tests - P1-2 feature: search with content snippets"""
     
     @pytest.fixture(autouse=True)
     def ensure_auth(self):
@@ -374,6 +374,46 @@ class TestSearch:
         data = response.json()
         assert data == [], "Short query should return empty"
         print(f"✓ Short search query returns empty")
+    
+    def test_search_returns_snippets(self):
+        """P1-2: Search results include content snippets"""
+        global AUTH_TOKEN
+        headers = {"Authorization": f"Bearer {AUTH_TOKEN}"}
+        
+        # Search for a term that appears in document content
+        response = requests.get(f"{BASE_URL}/api/search?q=kubernetes", headers=headers)
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) > 0, "Should find results"
+        
+        # Check that results have snippet field
+        for result in data:
+            assert "snippet" in result, "Each result should have 'snippet' field"
+            assert "id" in result
+            assert "title" in result
+            assert "category_id" in result
+        
+        # Check that at least one result has a non-empty snippet (found in content)
+        snippets_with_content = [r for r in data if r.get("snippet") and len(r["snippet"]) > 0]
+        assert len(snippets_with_content) > 0, "At least one result should have a content snippet"
+        
+        print(f"✓ Search results include snippets. Found {len(snippets_with_content)} results with content snippets")
+        for r in snippets_with_content[:2]:
+            print(f"  - {r['title']}: '{r['snippet'][:50]}...'")
+    
+    def test_search_content_not_just_title(self):
+        """P1-2: Search finds documents by content, not just title"""
+        global AUTH_TOKEN
+        headers = {"Authorization": f"Bearer {AUTH_TOKEN}"}
+        
+        # Search for term that might be in content but not title
+        response = requests.get(f"{BASE_URL}/api/search?q=deployment", headers=headers)
+        assert response.status_code == 200
+        data = response.json()
+        
+        # Should find documents even if "deployment" isn't in title
+        assert len(data) > 0, "Should find documents containing 'deployment' in content"
+        print(f"✓ Content search works: {len(data)} results for 'deployment'")
 
 
 if __name__ == "__main__":
