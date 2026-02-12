@@ -1219,4 +1219,558 @@ flowchart LR
 - The role of "developer" transforms into "director of AI agents"
 """
     },
+
+    # ===== LLM PROXY =====
+    {
+        "id": _id(), "title": "LLM Proxy Architecture", "category_id": SUB_LLM_PROXY, "author_id": SYSTEM_AUTHOR,
+        "created_at": NOW, "updated_at": NOW, "order": 0,
+        "content": """# LLM Proxy Architecture
+
+The LLM Proxy is one of the most critical infrastructure components in the Emergent platform. It sits between the E1 orchestrator and all external LLM providers, acting as a gateway, router, and cost controller.
+
+## What Is the LLM Proxy?
+
+The LLM Proxy is a reverse-proxy layer that intercepts every LLM API call made by E1 or any subagent. Instead of calling OpenAI, Anthropic, or Google directly, all requests route through this proxy.
+
+```mermaid
+flowchart LR
+    E1[E1 Orchestrator] -->|API call| LP[LLM Proxy]
+    SA[Subagents] -->|API call| LP
+    LP -->|route| OAI[OpenAI GPT-5.2]
+    LP -->|route| ANT[Anthropic Claude]
+    LP -->|route| GEM[Google Gemini]
+    LP -->|fallback| FB[Fallback Provider]
+```
+
+## Why a Proxy?
+
+| Purpose | How It Works |
+|---------|-------------|
+| **Universal Key** | One API key works across all providers. Users don't need separate keys for OpenAI, Anthropic, Google |
+| **Cost Tracking** | Every token is counted and attributed to a user, session, or organization |
+| **Rate Limiting** | Prevents runaway loops from burning through budget |
+| **Provider Routing** | Automatically selects the best provider based on model, latency, and availability |
+| **Fallback Logic** | If OpenAI is down, automatically routes to an alternative provider |
+| **Caching** | Identical prompts can return cached responses to save cost and latency |
+
+## The Universal Key
+
+The Universal Key (also called "Emergent LLM Key") is a single API key that the platform provides to every user. Under the hood, the LLM Proxy maps this key to the appropriate provider credentials.
+
+- Users never handle raw OpenAI/Anthropic keys
+- Balance is managed centrally via the user's account
+- Auto top-up can be enabled to prevent service interruption
+- Usage is tracked per-model, per-session, per-agent
+
+## Request Flow
+
+1. **E1 decides** to call an LLM (e.g., GPT-5.2 for code generation)
+2. **Request hits LLM Proxy** with the Universal Key and model specification
+3. **Proxy validates**: checks key, budget, rate limits
+4. **Proxy routes**: selects the provider endpoint (OpenAI, Anthropic, etc.)
+5. **Provider responds**: tokens streamed back through proxy
+6. **Proxy logs**: records token counts, latency, cost, and metadata
+7. **Response delivered** to E1 or subagent
+
+```mermaid
+sequenceDiagram
+    participant E1 as E1 Orchestrator
+    participant LP as LLM Proxy
+    participant DB as Usage DB
+    participant OAI as OpenAI
+    E1->>LP: POST /chat/completions (Universal Key)
+    LP->>LP: Validate key & budget
+    LP->>DB: Log request start
+    LP->>OAI: Forward to provider
+    OAI-->>LP: Stream tokens
+    LP->>DB: Log tokens & cost
+    LP-->>E1: Stream response
+```
+
+## Cost Attribution
+
+Every LLM call is broken down into:
+- **Input tokens**: The prompt sent to the model
+- **Output tokens**: The response generated
+- **Model multiplier**: Different models have different costs per token
+- **Total cost**: Computed and deducted from user balance in real-time
+
+## Provider Selection Logic
+
+The proxy uses a priority system:
+1. If the user specifies a model (e.g., `gpt-5.2`), route to that provider
+2. If the provider is experiencing latency > threshold, try fallback
+3. If a provider returns a 5xx error, automatic retry on alternate provider
+4. If all providers fail, return a clear error to E1
+
+## Caching Layer
+
+- Exact-match cache: identical prompt + model + temperature = cached response
+- Cache TTL: configurable per-use case (code gen vs. creative writing)
+- Cache hit rate typically 5-15% for development workloads
+- Reduces cost and latency for repetitive operations
+
+## Rate Limiting
+
+The proxy enforces multiple rate limit tiers:
+- **Per-user**: Maximum requests per minute
+- **Per-session**: Prevents infinite loops from burning budget
+- **Per-organization**: Aggregate limits across all users
+- **Global**: Platform-wide safety limits
+
+## Key Budget Management
+
+- Users can view usage in Profile -> Universal Key
+- Add balance manually or enable auto top-up
+- Budget alerts at configurable thresholds (50%, 80%, 95%)
+- Hard stop when balance reaches zero (no negative balance)
+"""
+    },
+
+    # ===== TEST CASES =====
+    {
+        "id": _id(), "title": "Authentication Test Cases", "category_id": SUB_TC_AUTH, "author_id": SYSTEM_AUTHOR,
+        "created_at": NOW, "updated_at": NOW, "order": 0,
+        "content": """# Authentication Test Cases
+
+Comprehensive test suite for the Emergent platform authentication system.
+
+## TC-AUTH-001: Google OAuth Login Flow
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Navigate to login page | Login page loads with "Sign in with Google" button |
+| 2 | Click "Sign in with Google" | Redirects to Google OAuth consent screen |
+| 3 | Select Google account | Redirects back to app with session_id in URL hash |
+| 4 | App processes session_id | Session cookie set, user redirected to dashboard |
+| 5 | Refresh the page | User remains logged in (session persists) |
+
+## TC-AUTH-002: Session Persistence
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Login successfully | Session cookie set with 7-day expiry |
+| 2 | Close browser tab | Session not lost |
+| 3 | Open app in new tab | User auto-authenticated, no login required |
+| 4 | Wait 7+ days | Session expires, redirect to login |
+
+## TC-AUTH-003: Session Invalidation
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Login successfully | Dashboard loads |
+| 2 | Click "Logout" | Session cookie deleted, redirect to login |
+| 3 | Press browser back button | Login page shown, not dashboard |
+| 4 | Try accessing /dashboard URL directly | Redirect to login |
+
+## TC-AUTH-004: Multiple Device Login
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Login on Device A | Dashboard loads |
+| 2 | Login on Device B (same account) | New session created, old session invalidated |
+| 3 | Return to Device A | Redirect to login (old session expired) |
+
+## TC-AUTH-005: API Authentication
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Call GET /api/auth/me without token | 401 Unauthorized |
+| 2 | Call with valid session cookie | 200 with user data |
+| 3 | Call with expired session | 401 Session expired |
+| 4 | Call with invalid token | 401 Invalid session |
+
+## TC-AUTH-006: Admin Role Assignment
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Login as chethan@emergent.sh | User role = "admin" |
+| 2 | Login as any other email | User role = "viewer" |
+| 3 | Admin sees edit/delete buttons | Buttons visible |
+| 4 | Viewer does NOT see edit/delete | Buttons hidden |
+
+## TC-AUTH-007: Protected Route Guard
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Navigate to /dashboard without auth | Redirect to /login |
+| 2 | Navigate to /doc/{id} without auth | Redirect to /login |
+| 3 | Navigate to /bookmarks without auth | Redirect to /login |
+| 4 | Navigate to /login while authenticated | Redirect to /dashboard |
+"""
+    },
+    {
+        "id": _id(), "title": "Document CRUD Test Cases", "category_id": SUB_TC_DOCS, "author_id": SYSTEM_AUTHOR,
+        "created_at": NOW, "updated_at": NOW, "order": 0,
+        "content": """# Document CRUD Test Cases
+
+## TC-DOC-001: Create Document (Admin)
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Login as admin | Dashboard loads |
+| 2 | Click "New page" in sidebar | Editor opens with empty fields |
+| 3 | Enter title "Test Document" | Title field populated |
+| 4 | Select category from dropdown | Category selected |
+| 5 | Type markdown content | Content appears in textarea |
+| 6 | Check live preview panel | Preview renders markdown correctly |
+| 7 | Add tags: "test", "qa" | Tags appear as pills |
+| 8 | Click "Save" | Document saved, viewer opens |
+| 9 | Verify in sidebar | Document appears under selected category |
+
+## TC-DOC-002: Create Document (Viewer - Should Fail)
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Login as non-admin user | Dashboard loads |
+| 2 | "New page" button should be hidden | Button not visible |
+| 3 | POST /api/documents directly | 403 Admin access required |
+
+## TC-DOC-003: Edit Document (Admin)
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Open existing document | Document viewer loads |
+| 2 | Click edit (pencil) icon | Editor opens with pre-filled data |
+| 3 | Modify title and content | Changes visible in editor |
+| 4 | Check preview panel | Preview shows updated content |
+| 5 | Click "Save" | Document updated |
+| 6 | Check version history | Previous version saved |
+
+## TC-DOC-004: Soft Delete Document
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Open document as admin | Document viewer loads |
+| 2 | Click delete (trash) icon | Confirmation dialog appears |
+| 3 | Confirm delete | Document moved to trash, not permanently deleted |
+| 4 | Document disappears from sidebar | Not visible in main list |
+| 5 | Check trash (admin) | Document appears in trash |
+
+## TC-DOC-005: Restore from Trash
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Go to Trash page (admin) | Deleted documents listed |
+| 2 | Click "Restore" on document | Document restored |
+| 3 | Check sidebar | Document reappears in original category |
+| 4 | Open document | Content intact |
+
+## TC-DOC-006: Version History
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Edit a document and save | Version created |
+| 2 | Click version history (clock) icon | Version panel opens |
+| 3 | Click on a previous version | Document shows old content |
+| 4 | Click "Back to current" | Current version restored |
+
+## TC-DOC-007: Document Export (PDF)
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Open document with mermaid diagrams | Document renders correctly |
+| 2 | Click export/download button | PDF generated |
+| 3 | Open PDF | Mermaid diagrams rendered as images |
+| 4 | Check formatting | Headers, lists, tables preserved |
+
+## TC-DOC-008: Tags System
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Create document with tags "api", "testing" | Tags saved |
+| 2 | View document | Tags displayed as colored pills |
+| 3 | Edit document, remove "testing" tag | Tag removed |
+| 4 | Save and verify | Only "api" tag remains |
+
+## TC-DOC-009: Public Sharing
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Admin clicks share on document | Share link generated |
+| 2 | Copy share URL | URL like /share/{id} |
+| 3 | Open URL in incognito (no auth) | Document renders (read-only) |
+| 4 | Admin disables sharing | Share link deactivated |
+| 5 | Revisit old URL | 404 or "not shared" message |
+"""
+    },
+    {
+        "id": _id(), "title": "Search & Navigation Test Cases", "category_id": SUB_TC_SEARCH, "author_id": SYSTEM_AUTHOR,
+        "created_at": NOW, "updated_at": NOW, "order": 0,
+        "content": """# Search & Navigation Test Cases
+
+## TC-SEARCH-001: Basic Search
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Click search in sidebar | Search input appears inline |
+| 2 | Type "kubernetes" | Results appear with matching documents |
+| 3 | Results show title + category + snippet | Content snippet with match highlighted |
+| 4 | Click on result | Navigate to document |
+
+## TC-SEARCH-002: Case-Insensitive Search
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Search "KUBERNETES" | Same results as "kubernetes" |
+| 2 | Search "Kubernetes" | Same results |
+| 3 | Search "kUbErNeTeS" | Same results |
+
+## TC-SEARCH-003: Fuzzy / Partial Match
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Search "kubrnetes" (typo) | Still finds kubernetes documents |
+| 2 | Search "auth" | Finds authentication, authorization docs |
+| 3 | Search "trans" | Finds transformer architecture doc |
+
+## TC-SEARCH-004: Multi-Word Search
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Search "session lifecycle" | Finds session lifecycle document |
+| 2 | Search "react hooks" | Finds React Virtual DOM & Hooks doc |
+| 3 | Search "rate limit" | Finds Rate Limiting document |
+
+## TC-SEARCH-005: Content Search (Not Just Title)
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Search "FastAPI" | Finds docs that mention FastAPI in content |
+| 2 | Check snippet | Snippet shows context around "FastAPI" match |
+| 3 | Search "CORS" | Finds SSL/TLS & CORS and other docs mentioning CORS |
+
+## TC-NAV-001: Sidebar Navigation
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Click category header | Expands/collapses subcategories |
+| 2 | Click document in sidebar | Document loads in viewer |
+| 3 | Active document highlighted in sidebar | Visual indicator |
+| 4 | Click "Home" | Returns to category grid |
+
+## TC-NAV-002: Keyboard Navigation
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Press Arrow Down | Moves to next document in sidebar |
+| 2 | Press Arrow Up | Moves to previous document |
+| 3 | Press Ctrl+K | Opens search |
+| 4 | Press Escape | Closes search |
+
+## TC-NAV-003: Breadcrumb Navigation
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Open nested document | Breadcrumb shows: Category > Subcategory > Document |
+| 2 | Breadcrumb path is correct | Not showing wrong categories |
+
+## TC-NAV-004: Mermaid Chart Expansion
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | View document with mermaid diagram | Diagram renders inline |
+| 2 | Click expand/fullscreen button | Diagram opens in fullscreen modal |
+| 3 | Diagram is zoomable/scrollable | Can see full detail |
+| 4 | Click close or press Escape | Returns to document view |
+
+## TC-NAV-005: Dark/Light Mode
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Toggle to light mode | All components switch to light theme |
+| 2 | Toggle back to dark mode | All components switch to dark theme |
+| 3 | Refresh page | Theme preference persists |
+| 4 | Mermaid diagrams adapt to theme | Diagram colors change |
+"""
+    },
+    {
+        "id": _id(), "title": "Admin & Permissions Test Cases", "category_id": SUB_TC_ADMIN, "author_id": SYSTEM_AUTHOR,
+        "created_at": NOW, "updated_at": NOW, "order": 0,
+        "content": """# Admin & Permissions Test Cases
+
+## TC-ADMIN-001: Admin CRUD Operations
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Login as chethan@emergent.sh | Role = admin, full UI visible |
+| 2 | Create new category | Category created successfully |
+| 3 | Edit category name | Name updated |
+| 4 | Delete empty category | Category removed |
+| 5 | Create new document | Document created |
+| 6 | Edit existing document | Document updated, version saved |
+| 7 | Delete document | Moved to trash |
+| 8 | Restore from trash | Document restored |
+
+## TC-ADMIN-002: Viewer Restrictions
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Login as non-admin | Role = viewer |
+| 2 | Try to create document | Button hidden, API returns 403 |
+| 3 | Try to edit document | Edit button hidden, API returns 403 |
+| 4 | Try to delete document | Delete button hidden, API returns 403 |
+| 5 | Try to manage categories | Button hidden, API returns 403 |
+| 6 | Try to access trash | Not visible, API returns 403 |
+| 7 | Can view documents | Full read access |
+| 8 | Can bookmark documents | Bookmark works |
+| 9 | Can comment on documents | Comment posted |
+| 10 | Can search documents | Search works |
+
+## TC-ADMIN-003: Tools Management
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Admin navigates to Tools page | Tools directory visible |
+| 2 | Admin clicks "Add Tool" | Form appears with name, URL, description |
+| 3 | Fill in tool details and save | Tool added to directory |
+| 4 | Edit existing tool | Tool updated |
+| 5 | Delete tool | Tool removed |
+| 6 | Viewer sees tool list | Read-only, no add/edit/delete |
+
+## TC-ADMIN-004: Public Sharing Control
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Admin clicks share icon on document | Share link generated |
+| 2 | Copy and open share link | Document visible without login |
+| 3 | Admin clicks share again | Sharing disabled |
+| 4 | Open old share link | "Not found" or "Not shared" |
+| 5 | Viewer tries to share | Share button not visible |
+
+## TC-ADMIN-005: Comment Moderation
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Viewer posts a comment | Comment appears |
+| 2 | Another viewer replies | Thread created |
+| 3 | Admin deletes inappropriate comment | Comment removed |
+| 4 | Viewer tries to delete another user's comment | 403 Forbidden |
+| 5 | Viewer can delete own comment | Comment removed |
+"""
+    },
+    {
+        "id": _id(), "title": "Edge Cases & Error Handling", "category_id": SUB_TC_EDGE, "author_id": SYSTEM_AUTHOR,
+        "created_at": NOW, "updated_at": NOW, "order": 0,
+        "content": """# Edge Cases & Error Handling Test Cases
+
+## TC-EDGE-001: Empty States
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | New user, no bookmarks | "No bookmarks yet" message |
+| 2 | Search with no results | "No results found" message |
+| 3 | Empty category | Category shown but no documents listed |
+| 4 | Document with no content | Empty document viewer, no crash |
+| 5 | Trash is empty | "Trash is empty" message |
+
+## TC-EDGE-002: Long Content
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Create doc with 10000+ characters | Saves and renders correctly |
+| 2 | Document with 50+ headings | TOC scrollable |
+| 3 | Very long document title | Truncated in sidebar, full in viewer |
+| 4 | Very long comment | Wraps correctly |
+
+## TC-EDGE-003: Special Characters
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Title with quotes and brackets | Renders correctly |
+| 2 | Content with HTML tags | Escaped, not executed |
+| 3 | Search with special regex chars | No regex error |
+| 4 | Tags with spaces | Trimmed properly |
+| 5 | Comment with markdown | Renders as plain text |
+
+## TC-EDGE-004: Network Errors
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Slow network on document load | Loading spinner shown |
+| 2 | API returns 500 | Error message displayed |
+| 3 | Session expires mid-use | Redirect to login |
+| 4 | Offline mode | Graceful error handling |
+
+## TC-EDGE-005: Concurrent Operations
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Two admins edit same document | Last save wins, version history preserves both |
+| 2 | Delete document while another user views it | Viewer sees "not found" on next action |
+| 3 | Bookmark a document that gets deleted | Bookmark quietly removed |
+
+## TC-EDGE-006: URL Manipulation
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Navigate to /doc/nonexistent-id | "Document not found" message |
+| 2 | Navigate to /share/invalid-id | "Not found" page |
+| 3 | Manipulate API URLs | Proper 404/401/403 responses |
+"""
+    },
+    {
+        "id": _id(), "title": "Performance & Stress Test Cases", "category_id": SUB_TC_PERF, "author_id": SYSTEM_AUTHOR,
+        "created_at": NOW, "updated_at": NOW, "order": 0,
+        "content": """# Performance & Stress Test Cases
+
+## TC-PERF-001: Page Load Times
+
+| Metric | Target | How to Measure |
+|--------|--------|----------------|
+| Login page load | < 2s | Lighthouse / DevTools |
+| Dashboard initial load | < 3s | First Contentful Paint |
+| Document viewer load | < 1s | Time from click to render |
+| Search results | < 500ms | Time from keystroke to results |
+| Mermaid diagram render | < 2s | Time from load to SVG visible |
+
+## TC-PERF-002: Data Volume Tests
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Load with 100+ documents | Sidebar loads without lag |
+| 2 | Load with 50+ categories | Navigation remains smooth |
+| 3 | Document with 20+ mermaid charts | All render correctly |
+| 4 | 500+ comments on one document | Comments paginate or scroll smoothly |
+
+## TC-PERF-003: Memory & Resource Usage
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Navigate between 20+ documents | No memory leak in browser |
+| 2 | Toggle dark/light mode 50 times | No degradation |
+| 3 | Open/close search 50 times | Responsive throughout |
+| 4 | Mermaid re-renders on theme toggle | No orphaned SVG elements |
+
+## TC-PERF-004: API Response Times
+
+| Endpoint | Target | Payload |
+|----------|--------|---------|
+| GET /api/categories | < 100ms | 40+ categories |
+| GET /api/documents | < 200ms | 100+ documents |
+| GET /api/search?q=test | < 300ms | Full-text search |
+| POST /api/documents | < 200ms | Document creation |
+| GET /api/documents/{id}/comments | < 150ms | 100+ comments |
+
+## TC-PERF-005: Browser Compatibility
+
+| Browser | Version | Status |
+|---------|---------|--------|
+| Chrome | Latest | Must pass all tests |
+| Firefox | Latest | Must pass all tests |
+| Safari | Latest | Must pass all tests |
+| Edge | Latest | Must pass all tests |
+| Mobile Chrome | Latest | Responsive layout verified |
+| Mobile Safari | Latest | Responsive layout verified |
+
+## TC-PERF-006: Accessibility Tests
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Tab through all interactive elements | Focus visible and logical order |
+| 2 | Screen reader on document viewer | Content readable |
+| 3 | High contrast mode | Text remains legible |
+| 4 | Zoom to 200% | Layout doesn't break |
+"""
+    },
 ]
