@@ -273,3 +273,25 @@ body {
 .catmgr-danger:hover { color: var(--danger); }
 .catmgr-edit-input { height: 28px; padding: 0 8px; border: 1px solid var(--accent); border-radius: 4px; background: var(--content-bg); color: var(--text-primary); font-size: 0.8rem; font-family: inherit; outline: none; flex: 1; }
 .catmgr-edit-select { height: 28px; padding: 0 6px; border: 1px solid var(--border-clr); border-radius: 4px; background: var(--content-bg); color: var(--text-primary); font-size: 0.75rem; font-family: inherit; }
+
+
+/* --- Tags --- */
+.doc-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.doc-tag { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; background: var(--accent-light); color: var(--accent); border-radius: 12px; font-size: 0.7rem; font-weight: 500; }
+.editor-tags-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; padding: 8px 0; color: var(--text-muted); }
+.editor-tag { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; background: var(--accent-light); color: var(--accent); border-radius: 12px; font-size: 0.72rem; font-weight: 500; }
+.editor-tag button { background: none; border: none; color: var(--accent); cursor: pointer; padding: 0; display: flex; opacity: 0.7; }
+.editor-tag button:hover { opacity: 1; }
+.editor-tag-input { border: none; background: none; outline: none; font-size: 0.8rem; font-family: inherit; color: var(--text-primary); min-width: 80px; }
+.editor-tag-input::placeholder { color: var(--text-muted); }
+
+/* --- Version History Panel --- */
+.doc-version-panel { width: 100%; }
+.doc-version-empty { font-size: 0.75rem; color: var(--text-muted); }
+.doc-version-item { display: flex; flex-direction: column; width: 100%; padding: 8px 10px; border: none; background: none; cursor: pointer; border-radius: 6px; font-family: inherit; text-align: left; border-left: 2px solid var(--border-clr); margin-bottom: 4px; }
+.doc-version-item:hover { background: var(--hover-bg); border-color: var(--accent); }
+.doc-version-item.active { background: var(--accent-light); border-color: var(--accent); }
+.doc-version-date { font-size: 0.68rem; color: var(--text-muted); }
+.doc-version-title { font-size: 0.75rem; color: var(--text-primary); font-weight: 500; margin-top: 2px; }
+.doc-version-close { margin-top: 8px; padding: 4px 12px; border: 1px solid var(--border-clr); border-radius: var(--radius); background: none; color: var(--text-secondary); cursor: pointer; font-size: 0.72rem; font-family: inherit; }
+.doc-version-close:hover { background: var(--hover-bg); }
