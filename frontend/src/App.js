@@ -1304,6 +1304,7 @@ function AppRouter() {
       <Route path="/bookmarks" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/tools" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/trash" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/settings" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/doc/:docId" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
     </Routes>
