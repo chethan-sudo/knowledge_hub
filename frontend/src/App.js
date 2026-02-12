@@ -517,7 +517,7 @@ function Sidebar({ categories, documents, activeDocId, onSelectDoc, onNewDoc, co
                       {catDocs.map(d => <button key={d.id} className={`sidebar-doc ${activeDocId === d.id ? "active" : ""}`} data-testid={`sidebar-doc-${d.id}`} onClick={() => onSelectDoc(d.id)}><span>{d.title}</span></button>)}
                       {children.map(sub => {
                         const subDocs = getDocsForCat(sub.id);
-                        const subExpanded = expanded[sub.id] !== false;
+                        const subExpanded = expanded[sub.id] === true;
                         if (subDocs.length === 1) return <button key={sub.id} className={`sidebar-doc ${activeDocId === subDocs[0].id ? "active" : ""}`} data-testid={`sidebar-doc-${subDocs[0].id}`} onClick={() => onSelectDoc(subDocs[0].id)}><span>{subDocs[0].title}</span></button>;
                         return (
                           <div key={sub.id} className="sidebar-subcategory">
