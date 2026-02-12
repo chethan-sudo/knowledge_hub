@@ -178,8 +178,8 @@ function MarkdownContent({ content }) {
       }
       elements.push(
         <div key={elements.length} className="doc-table-wrap">
-          <table className="doc-table"><thead><tr>{headers.map((h,j) => <th key={j}>{renderInline(h)}</th>)}</tr></thead>
-          <tbody>{rows.map((r,j) => <tr key={j}>{r.map((c,k) => <td key={k}>{renderInline(c)}</td>)}</tr>)}</tbody></table>
+          <table className="doc-table"><thead><tr>{headers.map((h,j) => <th key={j} dangerouslySetInnerHTML={{__html: renderInlineHtml(h)}} />)}</tr></thead>
+          <tbody>{rows.map((r,j) => <tr key={j}>{r.map((c,k) => <td key={k} dangerouslySetInnerHTML={{__html: renderInlineHtml(c)}} />)}</tr>)}</tbody></table>
         </div>
       );
       continue;
