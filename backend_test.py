@@ -156,7 +156,9 @@ class EmergentDocHubTester:
             200,
             data={"title": title, "content": content, "category_id": category_id, "order": 0}
         )
-        return success, response.get('id') if success else None
+        if success and 'id' in response:
+            return response['id']
+        return None
 
     def test_get_document(self, doc_id):
         """Test get specific document"""
