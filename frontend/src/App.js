@@ -101,7 +101,7 @@ function LoginPage() {
       <div className="auth-left">
         <div className="auth-brand">
           <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><polygon points="16,2 30,28 2,28" stroke="currentColor" strokeWidth="2" fill="none"/><circle cx="16" cy="18" r="4" fill="currentColor"/></svg>
-          <span>Emergent Document Hub</span>
+          <span>Emergent Knowledge Hub</span>
         </div>
         <div className="auth-tagline">Your AI knowledge base.<br/>Organized. Searchable. Beautiful.</div>
       </div>
