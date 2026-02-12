@@ -46,6 +46,17 @@ SUB_RAG = _id()
 SUB_FRAMEWORKS = _id()
 SUB_PROMPT = _id()
 
+# New categories
+CAT_TESTCASES = _id()
+SUB_TC_AUTH = _id()
+SUB_TC_DOCS = _id()
+SUB_TC_SEARCH = _id()
+SUB_TC_ADMIN = _id()
+SUB_TC_EDGE = _id()
+SUB_TC_PERF = _id()
+CAT_TOOLS = _id()
+SUB_LLM_PROXY = _id()
+
 CATEGORIES = [
     {"id": CAT_PLATFORM, "name": "Platform Architecture", "icon": "Layers", "order": 0, "parent_id": None},
     {"id": SUB_E1, "name": "E1 Orchestrator", "icon": "Brain", "order": 0, "parent_id": CAT_PLATFORM},
