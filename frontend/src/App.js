@@ -658,6 +658,31 @@ function DocumentViewer({ doc, category, parentCategory, isBookmarked, onToggleB
           )}
         </aside>
       </div>
+      {showShare && (
+        <div className="search-overlay" onClick={() => setShowShare(false)} data-testid="share-dialog-overlay">
+          <div className="share-dialog" onClick={e => e.stopPropagation()} data-testid="share-dialog">
+            <div className="catmgr-header"><h2>Share Settings</h2><button className="catmgr-close" onClick={() => setShowShare(false)}><Icon name="X" size={18}/></button></div>
+            <div className="share-dialog-body">
+              {shareId ? (
+                <>
+                  <p className="share-status active">Public sharing is <strong>enabled</strong></p>
+                  <div className="share-link-row">
+                    <input readOnly value={`${window.location.origin}/share/${shareId}`} className="share-link-input" data-testid="share-link-input" />
+                    <button className="editor-btn-primary" data-testid="copy-share-link" onClick={copyShareLink}>{copied ? "Copied!" : "Copy"}</button>
+                  </div>
+                  <button className="editor-btn-secondary share-disable-btn" data-testid="disable-sharing-btn" onClick={async () => { await toggleShare(); }}>Disable sharing</button>
+                </>
+              ) : (
+                <>
+                  <p className="share-status">Public sharing is <strong>disabled</strong></p>
+                  <p className="share-desc">Enable sharing to generate a public link anyone can view without signing in.</p>
+                  <button className="editor-btn-primary" data-testid="enable-sharing-btn" onClick={async () => { await toggleShare(); }}>Enable public sharing</button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
