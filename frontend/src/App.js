@@ -523,7 +523,7 @@ function Sidebar({ categories, documents, activeDocId, onSelectDoc, onNewDoc, co
       </div>
       {!collapsed && (
         <>
-          <InlineSearch categories={categories} onSelect={onSelectDoc} />
+          <InlineSearch categories={categories} documents={documents} onSelect={onSelectDoc} />
           <nav className="sidebar-nav" ref={navRef} data-testid="sidebar-nav">
             <button className={`sidebar-item ${!activeDocId ? "active" : ""}`} data-testid="sidebar-home-btn" onClick={() => navigate("/")}><Icon name="Home" size={16}/><span>Home</span></button>
             <button className="sidebar-item" data-testid="sidebar-bookmarks-btn" onClick={() => navigate("/bookmarks")}><Icon name="Bookmark" size={16}/><span>Bookmarks</span>{bookmarkedIds.length > 0 && <span className="sidebar-badge">{bookmarkedIds.length}</span>}</button>
