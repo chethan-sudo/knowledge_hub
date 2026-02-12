@@ -47,6 +47,11 @@ class CategoryCreate(BaseModel):
     order: int = 0
     parent_id: Optional[str] = None
 
+class CategoryUpdate(BaseModel):
+    name: Optional[str] = None
+    icon: Optional[str] = None
+    order: Optional[int] = None
+
 class CategoryResponse(BaseModel):
     id: str
     name: str
