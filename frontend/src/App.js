@@ -411,7 +411,7 @@ function Sidebar({ categories, documents, activeDocId, onSelectDoc, onNewDoc, co
           <button className="sidebar-search-btn" data-testid="sidebar-search-btn" onClick={() => navigate("?search=1")}>
             <Icon name="Search" size={16}/><span>Search</span><kbd>Ctrl+K</kbd>
           </button>
-          <nav className="sidebar-nav" data-testid="sidebar-nav">
+          <nav className="sidebar-nav" ref={navRef} data-testid="sidebar-nav">
             <button className={`sidebar-item ${!activeDocId ? "active" : ""}`} data-testid="sidebar-home-btn" onClick={() => navigate("/")}>
               <Icon name="Home" size={16}/><span>Home</span>
             </button>
