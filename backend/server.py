@@ -64,12 +64,14 @@ class DocumentCreate(BaseModel):
     content: str = ""
     category_id: str
     order: int = 0
+    tags: List[str] = []
 
 class DocumentUpdate(BaseModel):
     title: Optional[str] = None
     content: Optional[str] = None
     category_id: Optional[str] = None
     order: Optional[int] = None
+    tags: Optional[List[str]] = None
 
 class DocumentResponse(BaseModel):
     id: str
