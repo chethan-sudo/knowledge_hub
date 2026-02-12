@@ -1,7 +1,10 @@
-import { useState, useEffect, createContext, useContext, useCallback } from "react";
+import { useState, useEffect, createContext, useContext, useCallback, useRef } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import axios from "axios";
+import mermaid from "mermaid";
 import "@/App.css";
+
+mermaid.initialize({ startOnLoad: false, theme: "dark", themeVariables: { primaryColor: "#4f46e5", primaryBorderColor: "#6366f1", primaryTextColor: "#fafafa", lineColor: "#71717a", secondaryColor: "#27272a", tertiaryColor: "#18181b" } });
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
