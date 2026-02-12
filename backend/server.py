@@ -408,28 +408,37 @@ async def toggle_bookmark(doc_id: str, user=Depends(get_current_user)):
     await db.bookmarks.insert_one(bm)
     return {"bookmarked": True}
 
-# --- Search Route (fuzzy, case-insensitive) ---
+# --- Search Route (fuzzy, case-insensitive, searches headings too) ---
 @api_router.get("/search")
 async def search_documents(q: str = "", user=Depends(get_current_user)):
-    if not q or len(q) < 2:
+    if not q or len(q) < 1:
         return []
-    # Build fuzzy regex: allow character gaps for typos
     escaped = re.escape(q)
     fuzzy_pattern = ".*".join(list(escaped))
     query = {"deleted": {"$ne": True}, "$or": [
         {"title": {"$regex": fuzzy_pattern, "$options": "i"}},
-        {"content": {"$regex": q, "$options": "i"}}
+        {"content": {"$regex": fuzzy_pattern, "$options": "i"}}
     ]}
     docs = await db.documents.find(query, {"_id": 0}).to_list(50)
     results = []
     for d in docs:
         snippet = ""
         content = d.get("content", "")
-        idx = content.lower().find(q.lower())
-        if idx >= 0:
-            start = max(0, idx - 60)
-            end = min(len(content), idx + len(q) + 60)
-            snippet = ("..." if start > 0 else "") + content[start:end].replace("\n", " ") + ("..." if end < len(content) else "")
+        # Search in headings and content
+        lines = content.split("\n")
+        heading_match = None
+        for line in lines:
+            if line.startswith("#") and q.lower() in line.lower():
+                heading_match = line.lstrip("#").strip()
+                break
+        if heading_match:
+            snippet = f"Section: {heading_match}"
+        else:
+            idx = content.lower().find(q.lower())
+            if idx >= 0:
+                start = max(0, idx - 60)
+                end = min(len(content), idx + len(q) + 60)
+                snippet = ("..." if start > 0 else "") + content[start:end].replace("\n", " ") + ("..." if end < len(content) else "")
         results.append({"id": d["id"], "title": d["title"], "category_id": d.get("category_id", ""), "snippet": snippet, "tags": d.get("tags", [])})
     return results
 
