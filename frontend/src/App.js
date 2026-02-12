@@ -300,9 +300,12 @@ function CodeBlock({ code, lang }) {
 }
 
 // --- Search Dialog ---
-function SearchDialog({ open, onClose, documents, categories, onSelect }) {
+function SearchDialog({ open, onClose, categories, onSelect }) {
   const [query, setQuery] = useState("");
-  const results = query.length >= 2 ? documents.filter(d => d.title.toLowerCase().includes(query.toLowerCase())) : [];
+  const [results, setResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const { api } = useAuth();
+  const timerRef = useRef(null);
 
   useEffect(() => {
     const handler = (e) => { if ((e.metaKey || e.ctrlKey) && e.key === "k") { e.preventDefault(); onClose(!open); } if (e.key === "Escape") onClose(false); };
@@ -310,7 +313,21 @@ function SearchDialog({ open, onClose, documents, categories, onSelect }) {
     return () => window.removeEventListener("keydown", handler);
   }, [open, onClose]);
 
-  useEffect(() => { if (open) setQuery(""); }, [open]);
+  useEffect(() => { if (open) { setQuery(""); setResults([]); } }, [open]);
+
+  useEffect(() => {
+    if (query.length < 2) { setResults([]); return; }
+    clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const r = await api("get", `/search?q=${encodeURIComponent(query)}`);
+        setResults(r.data);
+      } catch (e) { console.error(e); }
+      setSearching(false);
+    }, 250);
+    return () => clearTimeout(timerRef.current);
+  }, [query, api]);
 
   if (!open) return null;
   const getCatName = (id) => categories.find(c => c.id === id)?.name || "";
@@ -321,6 +338,7 @@ function SearchDialog({ open, onClose, documents, categories, onSelect }) {
         <div className="search-input-wrap">
           <Icon name="Search" size={20} />
           <input data-testid="search-input" autoFocus placeholder="Search documents..." value={query} onChange={e => setQuery(e.target.value)} />
+          {searching && <span className="search-spinner" />}
           <kbd>ESC</kbd>
         </div>
         {results.length > 0 && (
@@ -328,12 +346,16 @@ function SearchDialog({ open, onClose, documents, categories, onSelect }) {
             {results.map(d => (
               <button key={d.id} className="search-result-item" data-testid={`search-result-${d.id}`} onClick={() => { onSelect(d.id); onClose(false); }}>
                 <Icon name="FileText" size={16} />
-                <div><div className="search-result-title">{d.title}</div><div className="search-result-cat">{getCatName(d.category_id)}</div></div>
+                <div>
+                  <div className="search-result-title">{d.title}</div>
+                  <div className="search-result-cat">{getCatName(d.category_id)}</div>
+                  {d.snippet && <div className="search-result-snippet" data-testid="search-snippet">{d.snippet}</div>}
+                </div>
               </button>
             ))}
           </div>
         )}
-        {query.length >= 2 && results.length === 0 && <div className="search-empty">No results found</div>}
+        {query.length >= 2 && !searching && results.length === 0 && <div className="search-empty">No results found</div>}
       </div>
     </div>
   );
