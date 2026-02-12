@@ -273,8 +273,8 @@ class TestDataCounts:
             headers={"Authorization": f"Bearer {ADMIN_TOKEN}"}
         )
         data = response.json()
-        ai_agent_docs = [d for d in data if "AI Agent" in d.get("title", "")]
-        assert len(ai_agent_docs) > 0, "AI Agent test cases document should exist"
+        ai_agent_docs = [d for d in data if d.get("title") == "AI Agent & Orchestration Test Cases"]
+        assert len(ai_agent_docs) > 0, "AI Agent & Orchestration Test Cases document should exist"
         
         doc_id = ai_agent_docs[0]["id"]
         doc_response = requests.get(
