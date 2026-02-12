@@ -486,12 +486,13 @@ Documentation context:
         user_msg = UserMessage(text=data.message)
         response = await chat.send_message(user_msg)
         # Store in DB for history
+        chat_msg_id = str(uuid.uuid4())
         await db.chat_messages.insert_one({
+            "id": chat_msg_id,
             "session_id": data.session_id, "user_id": user["user_id"],
             "user_message": data.message, "ai_response": response,
-            "doc_id": data.doc_id, "created_at": datetime.now(timezone.utc).isoformat(), "_id": None
+            "doc_id": data.doc_id, "created_at": datetime.now(timezone.utc).isoformat()
         })
-        await db.chat_messages.update_many({"_id": None}, {"$unset": {"_id": ""}})
         return {"response": response}
     except Exception as e:
         logger.error(f"Chat error: {e}")
