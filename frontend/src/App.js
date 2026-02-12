@@ -578,15 +578,25 @@ function DocumentEditor({ doc, categories, onSave, onCancel }) {
   const [categoryId, setCategoryId] = useState(doc?.category_id || "");
   const [saving, setSaving] = useState(false);
   const [showPreview, setShowPreview] = useState(true);
+  const [tags, setTags] = useState(doc?.tags || []);
+  const [tagInput, setTagInput] = useState("");
 
   const subCats = categories.filter(c => c.parent_id);
 
   const handleSave = async () => {
     if (!title.trim() || !categoryId) return;
     setSaving(true);
-    await onSave({ title, content, category_id: categoryId });
+    await onSave({ title, content, category_id: categoryId, tags });
     setSaving(false);
   };
+
+  const addTag = () => {
+    const t = tagInput.trim().toLowerCase();
+    if (t && !tags.includes(t)) { setTags([...tags, t]); }
+    setTagInput("");
+  };
+
+  const removeTag = (t) => setTags(tags.filter(x => x !== t));
 
   return (
     <div className="doc-editor" data-testid="doc-editor">
@@ -606,6 +616,13 @@ function DocumentEditor({ doc, categories, onSave, onCancel }) {
         {subCats.map(c => <option key={c.id} value={c.id}>{categories.find(p=>p.id===c.parent_id)?.name} / {c.name}</option>)}
         {categories.filter(c => !c.parent_id).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
       </select>
+      <div className="editor-tags-row" data-testid="editor-tags-row">
+        <Icon name="Tag" size={14}/>
+        {tags.map(t => (
+          <span key={t} className="editor-tag" data-testid={`editor-tag-${t}`}>{t}<button onClick={() => removeTag(t)}><Icon name="X" size={10}/></button></span>
+        ))}
+        <input data-testid="editor-tag-input" className="editor-tag-input" placeholder="Add tag..." value={tagInput} onChange={e => setTagInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addTag(); } }} />
+      </div>
       <div className={`editor-split ${showPreview ? "editor-split-active" : ""}`}>
         <textarea data-testid="editor-content-textarea" className="editor-textarea" placeholder="Write your content in markdown..." value={content} onChange={e => setContent(e.target.value)} />
         {showPreview && (
