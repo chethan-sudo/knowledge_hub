@@ -657,14 +657,4 @@ function App() {
   );
 }
 
-function DashboardWithBookmarks() {
-  return <DashboardViewWrapper view="bookmarks" />;
-}
-
-function DashboardViewWrapper({ view: initialView }) {
-  // This is a wrapper to pass initial view to Dashboard
-  // We'll use URL-based routing instead
-  return <Dashboard />;
-}
-
 export default App;
