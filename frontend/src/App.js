@@ -512,6 +512,7 @@ function DocumentEditor({ doc, categories, onSave, onCancel }) {
   const [content, setContent] = useState(doc?.content || "");
   const [categoryId, setCategoryId] = useState(doc?.category_id || "");
   const [saving, setSaving] = useState(false);
+  const [showPreview, setShowPreview] = useState(true);
 
   const subCats = categories.filter(c => c.parent_id);
 
@@ -527,6 +528,9 @@ function DocumentEditor({ doc, categories, onSave, onCancel }) {
       <div className="editor-header">
         <h2>{doc ? "Edit page" : "New page"}</h2>
         <div className="editor-actions">
+          <button data-testid="editor-preview-toggle" className={`editor-btn-toggle ${showPreview ? "active" : ""}`} onClick={() => setShowPreview(!showPreview)}>
+            <Icon name="Monitor" size={14}/><span>{showPreview ? "Hide preview" : "Show preview"}</span>
+          </button>
           <button data-testid="editor-cancel-btn" className="editor-btn-secondary" onClick={onCancel}>Cancel</button>
           <button data-testid="editor-save-btn" className="editor-btn-primary" onClick={handleSave} disabled={saving || !title.trim() || !categoryId}>{saving ? "Saving..." : "Save"}</button>
         </div>
@@ -537,7 +541,19 @@ function DocumentEditor({ doc, categories, onSave, onCancel }) {
         {subCats.map(c => <option key={c.id} value={c.id}>{categories.find(p=>p.id===c.parent_id)?.name} / {c.name}</option>)}
         {categories.filter(c => !c.parent_id).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
       </select>
-      <textarea data-testid="editor-content-textarea" className="editor-textarea" placeholder="Write your content in markdown..." value={content} onChange={e => setContent(e.target.value)} />
+      <div className={`editor-split ${showPreview ? "editor-split-active" : ""}`}>
+        <textarea data-testid="editor-content-textarea" className="editor-textarea" placeholder="Write your content in markdown..." value={content} onChange={e => setContent(e.target.value)} />
+        {showPreview && (
+          <div className="editor-preview" data-testid="editor-preview">
+            <div className="editor-preview-header">Preview</div>
+            <div className="editor-preview-content">
+              {title && <h1 className="doc-title" style={{marginBottom:"1rem"}}>{title}</h1>}
+              <MarkdownContent content={content} />
+              {!content && <p className="editor-preview-empty">Start typing to see a live preview...</p>}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
