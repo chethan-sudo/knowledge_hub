@@ -207,6 +207,14 @@ function MarkdownContent({ content }) {
   return <>{elements}</>;
 }
 
+function renderInlineHtml(text) {
+  if (!text) return "";
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/`([^`]+)`/g, '<code class="doc-inline-code">$1</code>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="doc-link" target="_blank" rel="noreferrer">$1</a>');
+}
+
 function renderInline(text) {
   if (!text) return text;
   const parts = [];
