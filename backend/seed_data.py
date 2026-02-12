@@ -54,6 +54,7 @@ SUB_TC_SEARCH = _id()
 SUB_TC_ADMIN = _id()
 SUB_TC_EDGE = _id()
 SUB_TC_PERF = _id()
+SUB_TC_AGENT = _id()
 CAT_TOOLS = _id()
 SUB_LLM_PROXY = _id()
 
