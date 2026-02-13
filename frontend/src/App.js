@@ -1065,7 +1065,7 @@ function PublicDocPage() {
   );
 }
 
-// --- Reading Progress Panel ---
+// --- Reading Progress (Finshots style - sticky right side) ---
 function ReadingProgress() {
   const [progress, setProgress] = useState(0);
   useEffect(() => {
@@ -1080,11 +1080,17 @@ function ReadingProgress() {
     main?.addEventListener('scroll', handler);
     return () => main?.removeEventListener('scroll', handler);
   }, []);
-  if (progress < 1) return null;
+  if (progress < 2) return null;
+  const r = 20;
+  const circ = 2 * Math.PI * r;
+  const offset = circ - (progress / 100) * circ;
   return (
-    <div className="reading-progress-panel" data-testid="reading-progress">
-      <div className="reading-progress-bar" style={{width: `${progress}%`}} />
-      <span className="reading-progress-pct">{progress}%</span>
+    <div className="progress-indicator" data-testid="reading-progress">
+      <svg width="52" height="52" viewBox="0 0 52 52">
+        <circle cx="26" cy="26" r={r} fill="none" stroke="var(--border-clr)" strokeWidth="3" />
+        <circle cx="26" cy="26" r={r} fill="none" stroke="var(--accent)" strokeWidth="3" strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round" transform="rotate(-90 26 26)" style={{transition:"stroke-dashoffset 0.2s"}} />
+      </svg>
+      <span className="progress-pct">{progress}%</span>
     </div>
   );
 }
