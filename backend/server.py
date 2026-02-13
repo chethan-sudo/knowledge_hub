@@ -618,6 +618,49 @@ async def root():
 
 app.include_router(api_router)
 
+# --- WebSocket Collaboration Endpoint (must be on app, not router) ---
+@app.websocket("/api/ws/collab/{doc_id}")
+async def ws_collab(ws: WebSocket, doc_id: str):
+    user_id = ws.query_params.get("user_id", str(uuid.uuid4()))
+    user_name = ws.query_params.get("name", "Anonymous")
+    color = ws.query_params.get("color", "#6366f1")
+    await collab.connect(doc_id, user_id, user_name, color, ws)
+    try:
+        while True:
+            data = await ws.receive_json()
+            msg_type = data.get("type")
+            if msg_type == "content_update":
+                await collab.broadcast_content(doc_id, user_id, data.get("content", ""), data.get("cursor", 0))
+            elif msg_type == "cursor_update":
+                await collab.broadcast_cursor(doc_id, user_id, data.get("cursor", 0), data.get("selection_end", 0))
+            elif msg_type == "mode_change":
+                await collab.set_mode(doc_id, user_id, data.get("mode", "viewing"))
+            elif msg_type == "save":
+                # Auto-save: persist to DB
+                content = data.get("content")
+                title = data.get("title")
+                if content is not None or title is not None:
+                    doc = await db.documents.find_one({"id": doc_id, "deleted": {"$ne": True}}, {"_id": 0})
+                    if doc:
+                        version = {"id": str(uuid.uuid4()), "document_id": doc_id,
+                                   "title": doc.get("title", ""), "content": doc.get("content", ""),
+                                   "edited_by": user_id, "created_at": datetime.now(timezone.utc).isoformat()}
+                        await db.doc_versions.insert_one(version)
+                        update = {"updated_at": datetime.now(timezone.utc).isoformat()}
+                        if content is not None:
+                            update["content"] = content
+                        if title is not None:
+                            update["title"] = title
+                        await db.documents.update_one({"id": doc_id}, {"$set": update})
+                        await collab.broadcast_saved(doc_id, user_id)
+    except WebSocketDisconnect:
+        pass
+    except Exception as e:
+        logger.error(f"WebSocket error for doc {doc_id}: {e}")
+    finally:
+        collab.disconnect(doc_id, user_id)
+        await collab.broadcast_presence(doc_id)
+
 # CORS: When credentials are used, origin must not be wildcard
 origins = os.environ.get('CORS_ORIGINS', '*').split(',')
 if origins == ['*']:
