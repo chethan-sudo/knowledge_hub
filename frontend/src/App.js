@@ -92,10 +92,25 @@ function Icon({ name, size = 18 }) {
 }
 
 // --- Markdown Renderer ---
+// Collapsible section for H2 headings
+function CollapsibleH2({ text, id, children }) {
+  const [open, setOpen] = useState(true);
+  return (
+    <div className="collapsible-section" data-testid={`section-${id}`}>
+      <h2 className="doc-h2 collapsible-h2" id={id} onClick={() => setOpen(!open)}>
+        <span className="collapse-icon">{open ? "−" : "+"}</span>
+        {text}
+      </h2>
+      {open && <div className="collapsible-body">{children}</div>}
+    </div>
+  );
+}
+
 function MarkdownContent({ content }) {
   if (!content) return null;
   const lines = content.split("\n");
-  const elements = [];
+  // First pass: parse all elements
+  const parsed = [];
   let i = 0;
   while (i < lines.length) {
     const line = lines[i];
@@ -105,39 +120,76 @@ function MarkdownContent({ content }) {
       i++;
       while (i < lines.length && !lines[i].startsWith("```")) { codeLines.push(lines[i]); i++; }
       i++;
-      if (lang === "mermaid") {
-        elements.push(<MermaidDiagram key={elements.length} chart={codeLines.join("\n")} />);
-      } else {
-        elements.push(<CodeBlock key={elements.length} code={codeLines.join("\n")} lang={lang} />);
-      }
+      if (lang === "mermaid") parsed.push({ type: "mermaid", content: codeLines.join("\n") });
+      else parsed.push({ type: "code", content: codeLines.join("\n"), lang });
       continue;
     }
     if (line.startsWith("# ")) { i++; continue; }
-    if (line.startsWith("## ")) { elements.push(<h2 key={elements.length} className="doc-h2" id={line.slice(3).toLowerCase().replace(/[^a-z0-9]+/g,"-")}>{line.slice(3)}</h2>); i++; continue; }
-    if (line.startsWith("### ")) { elements.push(<h3 key={elements.length} className="doc-h3">{line.slice(4)}</h3>); i++; continue; }
+    if (line.startsWith("## ")) { parsed.push({ type: "h2", text: line.slice(3), id: line.slice(3).toLowerCase().replace(/[^a-z0-9]+/g,"-") }); i++; continue; }
+    if (line.startsWith("### ")) { parsed.push({ type: "h3", text: line.slice(4) }); i++; continue; }
     if (line.includes("|") && lines[i+1]?.includes("---")) {
       const headers = line.split("|").map(c=>c.trim()).filter(Boolean);
       i += 2;
       const rows = [];
       while (i < lines.length && lines[i].includes("|")) { rows.push(lines[i].split("|").map(c=>c.trim()).filter(Boolean)); i++; }
-      elements.push(
-        <div key={elements.length} className="doc-table-wrap">
-          <table className="doc-table"><thead><tr>{headers.map((h,j) => <th key={j} dangerouslySetInnerHTML={{__html: renderInlineHtml(h)}} />)}</tr></thead>
-          <tbody>{rows.map((r,j) => <tr key={j}>{r.map((c,k) => <td key={k} dangerouslySetInnerHTML={{__html: renderInlineHtml(c)}} />)}</tr>)}</tbody></table>
-        </div>
-      );
+      parsed.push({ type: "table", headers, rows });
       continue;
     }
     if (line.startsWith("- ")) {
       const items = [];
       while (i < lines.length && lines[i].startsWith("- ")) { items.push(lines[i].slice(2)); i++; }
-      elements.push(<ul key={elements.length} className="doc-ul">{items.map((item, j) => <li key={j}>{renderInline(item)}</li>)}</ul>);
+      parsed.push({ type: "ul", items });
       continue;
     }
     if (/^\d+\.\s/.test(line)) {
       const items = [];
       while (i < lines.length && /^\d+\.\s/.test(lines[i])) { items.push(lines[i].replace(/^\d+\.\s/, "")); i++; }
-      elements.push(<ol key={elements.length} className="doc-ol">{items.map((item, j) => <li key={j}>{renderInline(item)}</li>)}</ol>);
+      parsed.push({ type: "ol", items });
+      continue;
+    }
+    if (!line.trim()) { i++; continue; }
+    parsed.push({ type: "p", text: line });
+    i++;
+  }
+  // Second pass: group into collapsible H2 sections
+  const elements = [];
+  let idx = 0;
+  while (idx < parsed.length) {
+    const item = parsed[idx];
+    if (item.type === "h2") {
+      const sectionItems = [];
+      idx++;
+      while (idx < parsed.length && parsed[idx].type !== "h2") { sectionItems.push(parsed[idx]); idx++; }
+      elements.push(
+        <CollapsibleH2 key={elements.length} text={item.text} id={item.id}>
+          {sectionItems.map((si, j) => renderParsedItem(si, `${elements.length}-${j}`))}
+        </CollapsibleH2>
+      );
+    } else {
+      elements.push(renderParsedItem(item, elements.length));
+      idx++;
+    }
+  }
+  return <>{elements}</>;
+}
+
+function renderParsedItem(item, key) {
+  switch (item.type) {
+    case "mermaid": return <MermaidDiagram key={key} chart={item.content} />;
+    case "code": return <CodeBlock key={key} code={item.content} lang={item.lang} />;
+    case "h3": return <h3 key={key} className="doc-h3">{item.text}</h3>;
+    case "table": return (
+      <div key={key} className="doc-table-wrap">
+        <table className="doc-table"><thead><tr>{item.headers.map((h,j) => <th key={j} dangerouslySetInnerHTML={{__html: renderInlineHtml(h)}} />)}</tr></thead>
+        <tbody>{item.rows.map((r,j) => <tr key={j}>{r.map((c,k) => <td key={k} dangerouslySetInnerHTML={{__html: renderInlineHtml(c)}} />)}</tr>)}</tbody></table>
+      </div>
+    );
+    case "ul": return <ul key={key} className="doc-ul">{item.items.map((it, j) => <li key={j}>{renderInline(it)}</li>)}</ul>;
+    case "ol": return <ol key={key} className="doc-ol">{item.items.map((it, j) => <li key={j}>{renderInline(it)}</li>)}</ol>;
+    case "p": return <p key={key} className="doc-p">{renderInline(item.text)}</p>;
+    default: return null;
+  }
+}
       continue;
     }
     if (!line.trim()) { i++; continue; }
