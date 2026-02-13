@@ -1123,7 +1123,16 @@ sequenceDiagram
     App->>User: Create session, return JWT
 ```
 
-User never shares Google password with your app. You get verified identity with 2FA.
+**Flow Explanation — OAuth 2.0 Google Auth Flow:**
+
+- **What:** This shows the OAuth 2.0 authorization code flow with Google, step by step
+- **Step 1 — User clicks login:** User clicks "Sign in with Google" on your app. Your app redirects the browser to Google's OAuth consent page
+- **Step 2 — Google login:** The user enters their Google credentials directly on Google's page. Your app NEVER sees the user's Google password
+- **Step 3 — Authorization code:** After the user consents, Google redirects back to your app with a one-time authorization code in the URL
+- **Step 4 — Exchange code for token:** Your backend (NOT the browser) sends this code to Google's token endpoint, along with your client_id and client_secret. Google verifies and returns an access token
+- **Step 5 — Get user profile:** Your backend uses the access token to call Google's userinfo API. Google returns the user's email, name, and profile picture
+- **Step 6 — Create session:** Your app creates a user record (if new) and generates a JWT session token. The user is now logged in
+- **Why OAuth?** Security. The user's Google password never touches your app. You get a verified email (Google has already confirmed it). You get free 2FA (if the user has it enabled on Google). Users don't need to create yet another password
 """
     },
 
