@@ -59,7 +59,8 @@ function AuthProvider({ children }) {
   const saveToken = (t) => { setToken(t); localStorage.setItem("ekh-token", t); };
 
   const logout = async () => {
-    try { await axios.post(`${API}/auth/logout`, {}, { headers: token ? { Authorization: `Bearer ${token}` } : {} }); } catch {}
+    const t = token || localStorage.getItem("ekh-token");
+    try { await axios.post(`${API}/auth/logout`, {}, { headers: t ? { Authorization: `Bearer ${t}` } : {}, withCredentials: true }); } catch {}
     setUser(null); setToken(null); localStorage.removeItem("ekh-token");
   };
 
