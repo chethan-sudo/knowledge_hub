@@ -1301,9 +1301,21 @@ function ReadingProgress() {
       const scrollHeight = main.scrollHeight - main.clientHeight;
       setProgress(scrollHeight > 0 ? Math.round((scrollTop / scrollHeight) * 100) : 0);
     };
-    const main = document.querySelector('.main-content');
-    main?.addEventListener('scroll', handler);
-    return () => main?.removeEventListener('scroll', handler);
+    // Use interval to re-attach if element isn't ready yet
+    const attach = () => {
+      const main = document.querySelector('.main-content');
+      if (main) {
+        main.addEventListener('scroll', handler);
+        handler(); // initial calc
+      }
+    };
+    attach();
+    const retryTimer = setTimeout(attach, 500);
+    return () => {
+      clearTimeout(retryTimer);
+      const main = document.querySelector('.main-content');
+      main?.removeEventListener('scroll', handler);
+    };
   }, []);
   if (progress < 2) return null;
   const r = 20;
