@@ -57,10 +57,10 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 
 /* Dashboard */
 .dashboard { display: flex; min-height: 100vh; }
-.main-content { flex: 1; min-height: 100vh; overflow-y: auto; background: var(--content-bg); }
+.main-content { flex: 1; min-height: 100vh; overflow-y: auto; background: var(--content-bg); margin-left: var(--sidebar-w); }
 
 /* Sidebar */
-.sidebar { width: var(--sidebar-w); min-height: 100vh; background: var(--sidebar-bg); border-right: 1px solid var(--border-clr); display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow: hidden; flex-shrink: 0; position: relative; }
+.sidebar { width: var(--sidebar-w); background: var(--sidebar-bg); border-right: 1px solid var(--border-clr); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; overflow: hidden; z-index: 40; }
 .sidebar-collapsed { width: 48px; }
 .sidebar-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 12px 8px; }
 .sidebar-brand { display: flex; align-items: center; gap: 8px; font-size: 0.875rem; font-weight: 600; color: var(--text-primary); }
