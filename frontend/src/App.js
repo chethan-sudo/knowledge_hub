@@ -792,7 +792,7 @@ function DocumentViewer({ doc, category, parentCategory, isBookmarked, onToggleB
   );
 }
 
-// --- Document Editor ---
+// --- Document Editor (Collaborative) ---
 function DocumentEditor({ doc, categories, onSave, onCancel }) {
   const { api } = useAuth();
   const [title, setTitle] = useState(doc?.title || "");
@@ -805,7 +805,57 @@ function DocumentEditor({ doc, categories, onSave, onCancel }) {
   const [tagSuggestions, setTagSuggestions] = useState([]);
   const [templates, setTemplates] = useState([]);
   const [showTemplates, setShowTemplates] = useState(!doc);
+  const [autoSaveStatus, setAutoSaveStatus] = useState(null); // null | "saving" | "saved"
+  const textareaRef = useRef(null);
+  const autoSaveTimer = useRef(null);
+  const lastSavedContent = useRef(doc?.content || "");
   const subCats = categories.filter(c => c.parent_id);
+
+  // Collaboration
+  const { users, remoteContent, saved, identity, sendContent, sendMode, sendSave } = useCollaboration(doc?.id, !!doc);
+  const otherEditors = users.filter(u => u.user_id !== identity?.id);
+  const editingUsers = otherEditors.filter(u => u.mode === "editing");
+
+  // Notify server we're editing
+  useEffect(() => {
+    sendMode("editing");
+    return () => sendMode("viewing");
+  }, [sendMode]);
+
+  // Receive remote content updates
+  useEffect(() => {
+    if (!remoteContent || remoteContent.senderId === identity?.id) return;
+    const ta = textareaRef.current;
+    const cursorPos = ta?.selectionStart || 0;
+    setContent(remoteContent.content);
+    // Restore cursor position after remote update
+    requestAnimationFrame(() => {
+      if (ta) { ta.selectionStart = cursorPos; ta.selectionEnd = cursorPos; }
+    });
+  }, [remoteContent, identity?.id]);
+
+  // Show "saved by someone else" notification
+  useEffect(() => {
+    if (saved && saved.senderId !== identity?.id) {
+      setAutoSaveStatus("saved");
+      setTimeout(() => setAutoSaveStatus(null), 2000);
+    }
+  }, [saved, identity?.id]);
+
+  // Auto-save with debounce (only for existing docs)
+  useEffect(() => {
+    if (!doc) return;
+    if (content === lastSavedContent.current) return;
+    clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(() => {
+      setAutoSaveStatus("saving");
+      sendSave(content, title);
+      lastSavedContent.current = content;
+      setTimeout(() => setAutoSaveStatus("saved"), 500);
+      setTimeout(() => setAutoSaveStatus(null), 2500);
+    }, 3000);
+    return () => clearTimeout(autoSaveTimer.current);
+  }, [content, title, doc, sendSave]);
 
   useEffect(() => {
     if (!doc) api("get", "/templates").then(r => setTemplates(r.data)).catch(() => {});
@@ -813,7 +863,20 @@ function DocumentEditor({ doc, categories, onSave, onCancel }) {
 
   const applyTemplate = (t) => { setTitle(t.name); setContent(t.content); setShowTemplates(false); };
 
-  const handleSave = async () => { if (!title.trim() || !categoryId) return; setSaving(true); await onSave({ title, content, category_id: categoryId, tags }); setSaving(false); };
+  const handleContentChange = (e) => {
+    const val = e.target.value;
+    setContent(val);
+    sendContent(val, e.target.selectionStart);
+  };
+
+  const handleSave = async () => {
+    if (!title.trim() || !categoryId) return;
+    setSaving(true);
+    clearTimeout(autoSaveTimer.current);
+    await onSave({ title, content, category_id: categoryId, tags });
+    lastSavedContent.current = content;
+    setSaving(false);
+  };
   const addTag = () => { const t = tagInput.trim().toLowerCase(); if (t && !tags.includes(t)) setTags([...tags, t]); setTagInput(""); setTagSuggestions([]); };
   const removeTag = (t) => setTags(tags.filter(x => x !== t));
 
@@ -826,6 +889,35 @@ function DocumentEditor({ doc, categories, onSave, onCancel }) {
 
   return (
     <div className="doc-editor" data-testid="doc-editor">
+      {/* Collaboration Banner */}
+      {doc && (
+        <div className="collab-banner" data-testid="collab-banner">
+          <div className="collab-banner-left">
+            <Icon name="Wifi" size={14}/>
+            <span className="collab-live-dot" />
+            <span>Live editing</span>
+            {editingUsers.length > 0 && (
+              <span className="collab-editors-info">
+                {editingUsers.map(u => u.name).join(", ")} also editing
+              </span>
+            )}
+          </div>
+          <div className="collab-banner-right">
+            {otherEditors.length > 0 && (
+              <div className="collab-mini-avatars">
+                {otherEditors.slice(0, 5).map(u => (
+                  <div key={u.user_id} className="collab-mini-avatar" style={{ backgroundColor: u.color }} title={u.name}>
+                    {u.name[0]?.toUpperCase()}
+                  </div>
+                ))}
+                {otherEditors.length > 5 && <span className="collab-more">+{otherEditors.length - 5}</span>}
+              </div>
+            )}
+            {autoSaveStatus === "saving" && <span className="collab-save-status" data-testid="autosave-saving">Saving...</span>}
+            {autoSaveStatus === "saved" && <span className="collab-save-status saved" data-testid="autosave-saved"><Icon name="Check" size={12}/>Saved</span>}
+          </div>
+        </div>
+      )}
       {showTemplates && templates.length > 0 && !doc && (
         <div className="template-picker" data-testid="template-picker">
           <div className="template-picker-header">
@@ -850,7 +942,7 @@ function DocumentEditor({ doc, categories, onSave, onCancel }) {
           {!doc && <button data-testid="editor-templates-btn" className="editor-btn-toggle" onClick={() => setShowTemplates(!showTemplates)}><Icon name="Layers" size={14}/><span>Templates</span></button>}
           <button data-testid="editor-preview-toggle" className={`editor-btn-toggle ${showPreview ? "active" : ""}`} onClick={() => setShowPreview(!showPreview)}><Icon name="Monitor" size={14}/><span>{showPreview ? "Hide preview" : "Show preview"}</span></button>
           <button data-testid="editor-cancel-btn" className="editor-btn-secondary" onClick={onCancel}>Cancel</button>
-          <button data-testid="editor-save-btn" className="editor-btn-primary" onClick={handleSave} disabled={saving || !title.trim() || !categoryId}>{saving ? "Saving..." : "Save"}</button>
+          <button data-testid="editor-save-btn" className="editor-btn-primary" onClick={handleSave} disabled={saving || !title.trim() || !categoryId}><Icon name="Save" size={14}/>{saving ? "Saving..." : "Save"}</button>
         </div>
       </div>
       <input data-testid="editor-title-input" className="editor-title" placeholder="Page title" value={title} onChange={e => setTitle(e.target.value)} />
@@ -871,7 +963,7 @@ function DocumentEditor({ doc, categories, onSave, onCancel }) {
         </div>
       </div>
       <div className={`editor-split ${showPreview ? "editor-split-active" : ""}`}>
-        <textarea data-testid="editor-content-textarea" className="editor-textarea" placeholder="Write in markdown..." value={content} onChange={e => setContent(e.target.value)} />
+        <textarea ref={textareaRef} data-testid="editor-content-textarea" className="editor-textarea" placeholder="Write in markdown..." value={content} onChange={handleContentChange} />
         {showPreview && <div className="editor-preview" data-testid="editor-preview"><div className="editor-preview-header">Preview</div><div className="editor-preview-content">{title && <h1 className="doc-title" style={{marginBottom:"1rem"}}>{title}</h1>}<MarkdownContent content={content} />{!content && <p className="editor-preview-empty">Start typing to see preview...</p>}</div></div>}
       </div>
     </div>
