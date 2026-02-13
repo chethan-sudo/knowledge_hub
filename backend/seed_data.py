@@ -656,6 +656,14 @@ flowchart TD
     P4 --> RESULT[Production Model]
 ```
 
+**Flow Explanation — The Four Training Phases:**
+
+- **What:** This shows the complete journey from raw neural network to production-ready LLM
+- **Phase 1 — Pre-Training:** The model processes trillions of tokens from the internet (books, code, Wikipedia, forums). Objective: predict the next token. This is unsupervised — no human labels required. Takes months on thousands of GPUs. Cost: $10M-$100M+. Result: a base model that understands language patterns but is raw, unaligned, and may produce toxic or unhelpful output. Why so expensive? Because the model must see enough data to learn grammar, facts, reasoning patterns, and code structure
+- **Phase 2 — Instruction Tuning:** Human annotators create thousands to millions of instruction-response pairs (e.g., "Summarize this article" → [good summary]). The model is fine-tuned on these. Result: a model that can follow instructions and format output properly. Without this phase, the base model would just autocomplete text rather than answer questions
+- **Phase 3 — RLHF/RLAIF:** Reinforcement Learning from Human (or AI) Feedback. Humans rate model outputs as helpful/harmful/honest. A reward model is trained on these ratings. The LLM is then fine-tuned using reinforcement learning to maximize the reward. RLAIF uses AI judges instead of humans for scale. Result: a model that is helpful, harmless, and honest. This is what prevents the model from generating harmful content
+- **Phase 4 — Tool Use Training:** Specific to agent-capable models. The model is trained on examples of structured function calls, JSON schemas, and multi-turn tool conversations. Result: a model that can output structured tool calls (e.g., `create_file(path="/app/server.py", content="...")`) instead of just text. This is what makes E1 possible — without this training, the LLM couldn't generate the structured JSON that E1's tool execution engine needs
+
 ### Phase 1: Pre-Training
 Data from the entire internet — books, code, Wikipedia, documentation. Objective: predict the next token. Requires thousands of GPUs for months. Result: a base model that knows language but is raw and unaligned.
 
