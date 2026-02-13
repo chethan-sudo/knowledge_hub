@@ -184,9 +184,14 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 .mermaid-expand-btn:hover { color: var(--accent); border-color: var(--accent); opacity: 1 !important; background: var(--card-bg); }
 .mermaid-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 24px; }
 .mermaid-modal-content { position: relative; width: 90vw; height: 85vh; background: var(--card-bg); border-radius: 12px; box-shadow: var(--shadow-lg); display: flex; flex-direction: column; }
-.mermaid-modal-close { position: sticky; top: 0; align-self: flex-end; background: var(--hover-bg); border: 1px solid var(--border-clr); color: var(--text-primary); cursor: pointer; padding: 8px 16px; border-radius: 6px; display: flex; align-items: center; gap: 6px; z-index: 1; font-size: 0.8rem; font-family: inherit; font-weight: 500; margin: 12px 12px 0; flex-shrink: 0; }
-.mermaid-modal-svg { flex: 1; overflow: auto; padding: 16px; display: flex; align-items: flex-start; justify-content: flex-start; }
-.mermaid-modal-svg svg { min-width: 900px; min-height: 500px; height: auto; }
+.mermaid-modal-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid var(--border-clr); flex-shrink: 0; }
+.mermaid-zoom-controls { display: flex; align-items: center; gap: 6px; }
+.mermaid-zoom-controls button { padding: 4px 12px; border: 1px solid var(--border-clr); border-radius: 4px; background: var(--content-bg); color: var(--text-primary); cursor: pointer; font-size: 0.8rem; font-family: inherit; }
+.mermaid-zoom-controls button:hover { border-color: var(--accent); color: var(--accent); }
+.mermaid-zoom-controls span { font-size: 0.75rem; color: var(--text-muted); min-width: 40px; text-align: center; }
+.mermaid-modal-close { background: var(--hover-bg); border: 1px solid var(--border-clr); color: var(--text-primary); cursor: pointer; padding: 6px 14px; border-radius: 6px; display: flex; align-items: center; gap: 4px; font-size: 0.8rem; font-family: inherit; }
+.mermaid-modal-svg { flex: 1; overflow: auto; padding: 16px; }
+.mermaid-modal-svg svg { height: auto; }
 
 /* Tags */
 .doc-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
