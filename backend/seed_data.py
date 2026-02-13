@@ -270,7 +270,7 @@ E1 operates in a continuous loop:
 - **LLM Proxy mediates all AI calls.** Universal Key, cost tracking, rate limiting, failover all handled transparently
 - **MongoDB is the source of truth.** Jobs, audits, chat history, metadata, user data everything persists in MongoDB
 """
-
+    },
 
     # ===== E1 ORCHESTRATOR =====
     {
