@@ -284,7 +284,7 @@ function MermaidDiagram({ chart }) {
     <>
       <div ref={ref} className="mermaid-diagram" data-testid="mermaid-diagram">
         <div dangerouslySetInnerHTML={{ __html: svg }} />
-        <button className="mermaid-expand-btn" data-testid="mermaid-expand-btn" onClick={() => setExpanded(true)} title="Expand"><Icon name="Maximize" size={12}/></button>
+        <button className="mermaid-expand-btn" data-testid="mermaid-expand-btn" onClick={() => setExpanded(true)}><Icon name="Maximize" size={12}/>Expand</button>
       </div>
       {expanded && (
         <div className="mermaid-modal" data-testid="mermaid-modal" onClick={() => setExpanded(false)}>
