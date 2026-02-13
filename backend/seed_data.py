@@ -1374,7 +1374,15 @@ flowchart TD
     AVAIL -->|archive| BASH[bash: unzip + explore]
 ```
 
-Screenshots are taken at quality=20 to save tokens (80%+ savings). Full quality screenshots would consume excessive tokens in the LLM context window.
+**Flow Explanation — Asset Processing Pipeline:**
+
+- **What:** This shows how user-uploaded files are processed and made available to E1
+- **Upload:** The user drags a file into the chat or uses the attachment button. Supported formats include images (.png, .jpg), documents (.pdf, .docx), code files (.py, .js), and archives (.zip)
+- **Validation:** The system checks file type and size limits. Unsupported or oversized files are rejected with a clear error
+- **Cloud Storage:** Valid files are uploaded to persistent cloud storage, generating a URL that persists beyond the session
+- **Metadata:** File info (name, type, size, URL) is saved in the database and linked to the current job
+- **Processing by type:** Images are sent to multimodal LLMs (Claude, GPT-4o) that can "see" and describe them. Documents are processed by extract_file_tool which extracts text, tables, and structured data. Archives are unzipped via bash, and E1 explores the contents
+- **Why screenshots are low quality:** Screenshots taken by the screenshot_tool use quality=20 (80% compression). This saves significant tokens in the LLM context window. A full-quality screenshot could consume 10,000+ tokens; a compressed one uses ~2,000
 """
     },
 
