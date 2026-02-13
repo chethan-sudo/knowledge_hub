@@ -567,7 +567,12 @@ flowchart LR
     end
 ```
 
-E1 maximizes parallel execution for speed, but respects dependencies between operations.
+**Flow Explanation — Parallel vs Sequential:**
+
+- **What:** This shows which tool operations E1 can safely run simultaneously vs which must wait for each other
+- **Parallel (safe):** Creating multiple independent files (server.py, App.js, App.css) can happen in parallel because they don't depend on each other. Reading multiple files, running independent linters, or making independent API calls can also be parallelized. E1 is instructed to maximize parallel execution for speed
+- **Sequential (must wait):** Installing a package MUST complete before importing it in code. Editing a .env file MUST complete before restarting the service that reads it. Creating a database table MUST complete before inserting data. E1 chains these with && in bash or waits for each tool call to complete before the next
+- **Why this matters:** Parallel execution significantly speeds up development. If E1 needs to create 5 files, doing it in parallel takes 1 tool call round-trip instead of 5. But getting dependencies wrong (e.g., importing before installing) causes errors that waste time debugging
 """
     },
 
