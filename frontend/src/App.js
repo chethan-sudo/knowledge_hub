@@ -31,34 +31,42 @@ function ThemeProvider({ children }) {
 function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [token, setToken] = useState(() => localStorage.getItem("ekh-token"));
 
   const api = useCallback(async (method, url, data) => {
-    return axios({ method, url: `${API}${url}`, data, withCredentials: true });
-  }, []);
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    return axios({ method, url: `${API}${url}`, data, headers });
+  }, [token]);
 
   const checkAuth = useCallback(async () => {
+    if (!token) { setLoading(false); return; }
     try {
-      const r = await axios.get(`${API}/auth/me`, { withCredentials: true });
+      const r = await axios.get(`${API}/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
       setUser(r.data);
     } catch {
       setUser(null);
+      setToken(null);
+      localStorage.removeItem("ekh-token");
     }
     setLoading(false);
-  }, []);
+  }, [token]);
 
   useEffect(() => { checkAuth(); }, [checkAuth]);
 
+  const saveToken = (t) => { setToken(t); localStorage.setItem("ekh-token", t); };
+
   const logout = async () => {
-    try { await axios.post(`${API}/auth/logout`, {}, { withCredentials: true }); } catch {}
-    setUser(null);
+    try { await axios.post(`${API}/auth/logout`, {}, { headers: token ? { Authorization: `Bearer ${token}` } : {} }); } catch {}
+    setUser(null); setToken(null); localStorage.removeItem("ekh-token");
   };
 
-  return <AuthContext.Provider value={{ user, loading, api, logout, checkAuth, setUser }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ user, loading, api, logout, checkAuth, setUser, saveToken }}>{children}</AuthContext.Provider>;
 }
 
 // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
 function AuthCallback() {
   const navigate = useNavigate();
+  const { saveToken, setUser } = useAuth();
   const hasProcessed = useRef(false);
 
   useEffect(() => {
@@ -68,12 +76,16 @@ function AuthCallback() {
     const match = hash.match(/session_id=([^&]+)/);
     if (!match) { navigate("/login"); return; }
     const sessionId = match[1];
-    axios.post(`${API}/auth/session`, { session_id: sessionId }, { withCredentials: true })
+    axios.post(`${API}/auth/session`, { session_id: sessionId })
       .then(r => {
+        // Store token from response and save user
+        const sessionToken = r.data.session_token || r.data.user?.session_token;
+        if (sessionToken) saveToken(sessionToken);
+        if (r.data.user) setUser(r.data.user);
         window.location.replace("/");
       })
       .catch(() => navigate("/login"));
-  }, [navigate]);
+  }, [navigate, saveToken, setUser]);
 
   return <div className="edh-loading"><div className="edh-spinner" /></div>;
 }
