@@ -1,20 +1,18 @@
 # Emergent Knowledge Hub - PRD
 
-## All Features (36 docs, 46 categories)
-- [x] Cover images (2D illustrations, Zerodha Varsity style) on category cards + docs
-- [x] Collapsible H2 sections with +/- toggle icons
-- [x] Finshots-style circular reading progress indicator (bottom-right, shows %)
-- [x] Fixed sidebar (position: fixed, doesn't scroll with main content)
-- [x] Mermaid zoom controls in expanded view (+/- buttons, reset, % display)
-- [x] Mermaid text overlap fixed (shortened edge labels, increased spacing 60/70px)
-- [x] Tools UI redesigned (grid form, hover cards)
-- [x] Removed confusing "Manage categories" button
-- [x] System Architecture with flow explanations for each mermaid diagram
-- [x] Emergent Platform UI Guide (actual platform UI, not knowledge hub)
-- [x] AI Chatbot, templates, tags, search, dark/light mode, all features
+## Stats: 37 documents, 47 categories, 14 unique cover images
+
+## All Implemented Features
+- [x] 14 unique cover images (2D illustrations, distinct per category)
+- [x] Collapsible H2 sections with +/- toggle
+- [x] Finshots-style circular reading progress (bottom-right, SVG circle with %)
+- [x] Fixed sidebar (position: fixed, independent scroll)
+- [x] Mermaid zoom controls (+/- reset in expanded view)
+- [x] Mermaid text overlap fixed (shortened labels, 60/70px spacing)
+- [x] Flow explanations added to 23 docs with mermaid diagrams
+- [x] Complete QA Verification Guide (8,320 chars, DB verification, API testing, E2E scenarios)
+- [x] All previous features (chatbot, templates, tags, search, etc.)
 
 ## Backlog
-- Generate unique cover images for all categories (some share same images currently)
-- Add flow explanations to ALL remaining mermaid diagrams across all docs
-- Complete QA test cases with DB verification steps
 - Drag-and-drop document reordering
+- Collaborative editing
