@@ -286,6 +286,11 @@ async def get_document_versions(doc_id: str, user=Depends(get_current_user)):
     versions = await db.doc_versions.find({"document_id": doc_id}, {"_id": 0}).sort("created_at", -1).to_list(50)
     return versions
 
+# --- Collaboration Presence ---
+@api_router.get("/documents/{doc_id}/presence")
+async def get_document_presence(doc_id: str):
+    return collab.get_presence(doc_id)
+
 @api_router.get("/tags")
 async def get_all_tags(user=Depends(get_current_user)):
     docs = await db.documents.find({"tags": {"$exists": True, "$ne": []}, "deleted": {"$ne": True}}, {"_id": 0, "tags": 1}).to_list(1000)
