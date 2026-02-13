@@ -458,31 +458,46 @@ class ChatRequest(BaseModel):
 @api_router.post("/chat")
 async def chat_with_ai(data: ChatRequest, user=Depends(get_current_user)):
     from emergentintegrations.llm.chat import LlmChat, UserMessage
-    # Build context from documents
     context_parts = []
+    # If on a specific doc, include its FULL content
     if data.doc_id:
         doc = await db.documents.find_one({"id": data.doc_id, "deleted": {"$ne": True}}, {"_id": 0})
         if doc:
-            context_parts.append(f"Current document: {doc['title']}\n{doc['content'][:3000]}")
-    # Also get top relevant docs via keyword search from message
-    words = data.message.split()[:5]
-    search_q = " ".join(words)
-    if search_q:
+            context_parts.append(f"CURRENT DOCUMENT: {doc['title']}\n{doc['content'][:6000]}")
+    # Search for relevant docs using individual keywords from the message
+    msg_lower = data.message.lower()
+    keywords = [w for w in data.message.split() if len(w) > 2]
+    matched_ids = set()
+    for kw in keywords[:8]:
+        escaped_kw = re.escape(kw)
         query = {"deleted": {"$ne": True}, "$or": [
-            {"title": {"$regex": search_q, "$options": "i"}},
-            {"content": {"$regex": search_q, "$options": "i"}}
+            {"title": {"$regex": escaped_kw, "$options": "i"}},
+            {"content": {"$regex": escaped_kw, "$options": "i"}}
         ]}
-        related = await db.documents.find(query, {"_id": 0, "title": 1, "content": 1}).to_list(3)
-        for r in related:
-            context_parts.append(f"Related doc: {r['title']}\n{r['content'][:1500]}")
+        docs = await db.documents.find(query, {"_id": 0, "id": 1, "title": 1, "content": 1}).to_list(5)
+        for d in docs:
+            if d["id"] not in matched_ids:
+                matched_ids.add(d["id"])
+                context_parts.append(f"RELATED DOC: {d['title']}\n{d['content'][:4000]}")
+            if len(matched_ids) >= 5:
+                break
+        if len(matched_ids) >= 5:
+            break
+    # If still no context, provide doc titles as overview
     if not context_parts:
-        all_docs = await db.documents.find({"deleted": {"$ne": True}}, {"_id": 0, "title": 1}).to_list(100)
-        titles = ", ".join([d["title"] for d in all_docs])
-        context_parts.append(f"Available documents: {titles}")
-    context = "\n\n---\n\n".join(context_parts)
-    system = f"""You are the Emergent Knowledge Hub AI assistant. Answer questions about the documentation.
-Be concise, accurate, and helpful. Reference specific document names when possible.
-If you don't know something, say so honestly.
+        all_docs = await db.documents.find({"deleted": {"$ne": True}}, {"_id": 0, "title": 1, "content": 1}).to_list(100)
+        for d in all_docs[:10]:
+            context_parts.append(f"DOC: {d['title']}\n{d['content'][:2000]}")
+    context = "\n\n---\n\n".join(context_parts[:6])
+    system = f"""You are the Emergent Knowledge Hub AI assistant. You have deep knowledge of the Emergent platform documentation.
+
+IMPORTANT RULES:
+- Answer ONLY based on the documentation context provided below
+- Be detailed and thorough - include specific technical details from the docs
+- Reference document names when citing information
+- If the docs contain mermaid diagrams or tables, describe them in text
+- If asked about system architecture, explain the FULL flow: User -> Frontend -> Agent Service -> E1 Orchestrator -> LLM/Tools/Subagents -> Response
+- Never make up information not in the docs
 
 Documentation context:
 {context}"""
