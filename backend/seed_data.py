@@ -778,7 +778,13 @@ flowchart LR
     POD_A -.-|"NO ACCESS"| POD_B
 ```
 
-Each user gets an isolated pod with separate filesystem, database, environment variables, and network. Enforced by Kubernetes namespaces and network policies.
+**Flow Explanation — Multi-User Isolation:**
+
+- **What:** This shows how Kubernetes isolates users from each other
+- **User A Namespace:** Each user's workspace is deployed in its own Kubernetes namespace. A namespace is a virtual cluster boundary. Inside it, User A has their own pod containing a backend (FastAPI), frontend (React), and MongoDB instance
+- **User B Namespace:** Completely separate namespace with its own pod and services. User B's data, code, environment variables, and database are entirely independent of User A
+- **NO ACCESS:** Kubernetes network policies enforce that pods in different namespaces cannot communicate. User A cannot access User B's database, filesystem, or services. This is enforced at the network level, not just application level
+- **Why this architecture:** Multi-tenant isolation is critical for a development platform. Users write and run arbitrary code. Without isolation, one user's buggy code could crash another user's services, or a malicious user could read another user's API keys
 """
     },
 
