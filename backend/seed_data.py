@@ -1245,6 +1245,14 @@ flowchart TD
     L3 -->|passed| OK[Request Processed]
 ```
 
+**Flow Explanation — Three-Layer Rate Limiting:**
+
+- **What:** This shows the three levels of protection that prevent abuse and overuse
+- **Layer 1 — Infrastructure:** At the Kubernetes ingress/load balancer level. Limits requests per IP address. Login endpoints get stricter limits to prevent brute-force password attacks. If blocked here, the request never reaches your application. Returns 429 Too Many Requests
+- **Layer 2 — Application:** Inside your FastAPI application. Limits per-user and per-endpoint. For example, an API might allow 100 requests per minute per user. Expensive operations (search, file upload) get stricter limits than cheap ones (read a document). Uses token bucket or sliding window algorithms
+- **Layer 3 — LLM/Integration:** At the Emergent proxy level. Checks Universal Key balance before each LLM call. Enforces provider-side rate limits (OpenAI, Anthropic have their own limits). Daily spending caps prevent runaway costs. If balance is depleted, LLM calls fail with a clear error message directing the user to add balance
+- **Why three layers?** Defense in depth. Each layer catches different types of abuse. Infrastructure stops DDoS attacks. Application stops individual user abuse. LLM layer prevents cost overruns. A single layer would leave gaps
+
 ### Layer 1: Infrastructure
 Per-IP limits at the ingress/load balancer. Login endpoints get stricter limits (brute force protection).
 
