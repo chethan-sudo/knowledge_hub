@@ -527,7 +527,7 @@ function Sidebar({ categories, documents, activeDocId, onSelectDoc, onNewDoc, co
   return (
     <aside className={`sidebar ${collapsed ? "sidebar-collapsed" : ""}`} data-testid="sidebar" style={!collapsed ? {width: sidebarWidth} : undefined}>
       <div className="sidebar-header">
-        {!collapsed && <div className="sidebar-brand" data-testid="sidebar-brand"><svg width="22" height="22" viewBox="0 0 32 32" fill="none"><rect x="4" y="4" width="24" height="24" rx="6" stroke="currentColor" strokeWidth="2.5" fill="none"/><path d="M10 16h12M16 10v12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><circle cx="10" cy="10" r="2" fill="currentColor"/><circle cx="22" cy="22" r="2" fill="currentColor"/></svg><span>EKH</span></div>}
+        {!collapsed && <div className="sidebar-brand" data-testid="sidebar-brand"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="M8 7h6"/><path d="M8 11h4"/></svg><span>Knowledge Hub</span></div>}
         <button className="sidebar-collapse-btn" data-testid="sidebar-collapse-btn" onClick={() => setCollapsed(!collapsed)}><Icon name="PanelLeft" size={18}/></button>
       </div>
       {!collapsed && (
