@@ -507,7 +507,6 @@ function Sidebar({ categories, documents, activeDocId, onSelectDoc, onNewDoc, co
           </nav>
           <div className="sidebar-footer">
             <button className="sidebar-footer-btn" data-testid="theme-toggle-btn" onClick={toggle}>{dark ? <Icon name="Sun" size={16}/> : <Icon name="Moon" size={16}/>}<span>{dark ? "Light mode" : "Dark mode"}</span></button>
-            {isAdmin && <button className="sidebar-footer-btn" data-testid="manage-categories-btn" onClick={onManageCategories}><Icon name="FolderOpen" size={16}/><span>Manage categories</span></button>}
             {isAdmin && <button className="sidebar-footer-btn" data-testid="new-doc-btn" onClick={onNewDoc}><Icon name="Plus" size={16}/><span>New page</span></button>}
             <div className="sidebar-user">
               <div className="sidebar-user-avatar">{user?.name?.[0]?.toUpperCase() || "U"}</div>
