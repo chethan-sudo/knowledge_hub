@@ -190,14 +190,6 @@ function renderParsedItem(item, key) {
     default: return null;
   }
 }
-      continue;
-    }
-    if (!line.trim()) { i++; continue; }
-    elements.push(<p key={elements.length} className="doc-p">{renderInline(line)}</p>);
-    i++;
-  }
-  return <>{elements}</>;
-}
 
 function renderInlineHtml(text) {
   if (!text) return "";
