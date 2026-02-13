@@ -1021,6 +1021,18 @@ flowchart TD
     MW2 --> RESP[HTTP Response]
 ```
 
+**Flow Explanation — FastAPI Request Lifecycle:**
+
+- **What:** This shows every stage an HTTP request passes through inside a FastAPI application
+- **Uvicorn ASGI Server:** Receives the raw TCP connection and parses it into an ASGI event. Uvicorn is the server that actually listens on the port (8001). It handles concurrent connections using Python's asyncio event loop
+- **Middleware Stack:** Each request passes through all registered middleware in order. CORS middleware adds Access-Control headers. Auth middleware validates tokens. Logging middleware records request details. Middleware can modify the request, reject it, or modify the response
+- **Routing:** FastAPI matches the URL path and HTTP method to a registered route handler. /api/documents with GET matches `get_documents()`. Unmatched routes return 404
+- **Dependency Injection:** Before the handler runs, FastAPI resolves all dependencies declared with Depends(). For example, `user=Depends(get_current_user)` calls `get_current_user()` and passes the result as the `user` parameter. Dependencies can themselves have dependencies, forming a tree
+- **Pydantic Validation:** All request data (path params, query params, request body) is validated against Pydantic models. If a field is declared as `int` but receives a string, FastAPI returns 422 Unprocessable Entity with a detailed error message before your handler code even runs
+- **Route Handler:** Your actual business logic executes. All I/O operations (database queries, HTTP calls) should be awaited to keep the event loop free for other requests
+- **Response Serialization:** Pydantic models serialize the return value to JSON. ObjectId, datetime, and other non-JSON types must be handled explicitly or excluded
+- **Middleware Reverse:** The response passes back through middleware in reverse order. CORS headers are added here
+
 ## Dependency Injection
 
 FastAPI's most powerful feature. Dependencies are resolved automatically before your handler runs:
