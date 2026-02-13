@@ -144,9 +144,9 @@ flowchart TD
     LLP -->|tokens counted| E1
     E1 -->|tool calls| TE[Tool Engine]
     E1 -->|subagent calls| SA[Subagent]
-    E1 -->|decision| DEC{Decision}
-    DEC -->|more work| E1
-    DEC -->|respond| RESP[Send Response]
+    E1 -->|decides| DEC{Next?}
+    DEC -->|continue| E1
+    DEC -->|done| RESP[Response]
     TE -->|executes| POD[K8s Pod]
     SA -->|spawns LLM| SALLM[Subagent LLM]
     POD -->|result| E1
