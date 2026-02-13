@@ -87,14 +87,21 @@ class UserRoleUpdate(BaseModel):
     role: str
 
 # --- Auth Helpers ---
+def hash_pw(password: str) -> str:
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+def verify_pw(password: str, hashed: str) -> bool:
+    return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
+
 async def get_current_user(request: Request, authorization: str = Header(None)):
-    """Check session_token cookie first, then Authorization header."""
-    session_token = request.cookies.get("session_token")
-    if not session_token and authorization and authorization.startswith("Bearer "):
-        session_token = authorization.split(" ")[1]
-    if not session_token:
+    token = None
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization.split(" ")[1]
+    if not token:
+        token = request.cookies.get("session_token")
+    if not token:
         raise HTTPException(status_code=401, detail="Not authenticated")
-    session = await db.user_sessions.find_one({"session_token": session_token}, {"_id": 0})
+    session = await db.user_sessions.find_one({"session_token": token}, {"_id": 0})
     if not session:
         raise HTTPException(status_code=401, detail="Invalid session")
     expires_at = session.get("expires_at")
@@ -118,48 +125,41 @@ async def require_admin(user=Depends(get_current_user)):
     return user
 
 # --- Auth Routes ---
-@api_router.post("/auth/session")
-async def create_session(request: Request):
-    """Exchange session_id from Emergent Auth for a session_token."""
-    body = await request.json()
-    session_id = body.get("session_id")
-    if not session_id:
-        raise HTTPException(status_code=400, detail="session_id required")
-    async with httpx.AsyncClient() as hc:
-        resp = await hc.get(EMERGENT_AUTH_URL, headers={"X-Session-ID": session_id})
-        if resp.status_code != 200:
-            raise HTTPException(status_code=401, detail="Invalid session_id")
-        data = resp.json()
-    email = data.get("email", "")
-    name = data.get("name", "")
-    picture = data.get("picture", "")
-    session_token = data.get("session_token", str(uuid.uuid4()))
-    role = "admin" if email == ADMIN_EMAIL else "viewer"
-    existing = await db.users.find_one({"email": email}, {"_id": 0})
+@api_router.post("/auth/register")
+async def register(data: UserRegister):
+    existing = await db.users.find_one({"email": data.email})
     if existing:
-        user_id = existing["user_id"]
-        await db.users.update_one({"email": email}, {"$set": {"name": name, "picture": picture, "role": role}})
-    else:
-        user_id = f"user_{uuid.uuid4().hex[:12]}"
-        await db.users.insert_one({
-            "user_id": user_id, "email": email, "name": name, "picture": picture,
-            "role": role, "created_at": datetime.now(timezone.utc).isoformat()
-        })
-    await db.user_sessions.delete_many({"user_id": user_id})
+        raise HTTPException(status_code=400, detail="Email already registered")
+    user_id = f"user_{uuid.uuid4().hex[:12]}"
+    role = "admin" if data.email == ADMIN_EMAIL else "viewer"
+    await db.users.insert_one({
+        "user_id": user_id, "email": data.email, "name": data.name,
+        "password_hash": hash_pw(data.password), "picture": "", "role": role,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    session_token = str(uuid.uuid4())
     await db.user_sessions.insert_one({
         "user_id": user_id, "session_token": session_token,
         "expires_at": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
         "created_at": datetime.now(timezone.utc).isoformat()
     })
-    response = JSONResponse(content={
-        "user": {"user_id": user_id, "email": email, "name": name, "picture": picture, "role": role},
-        "session_token": session_token
+    return {"token": session_token, "user": {"user_id": user_id, "email": data.email, "name": data.name, "role": role}}
+
+@api_router.post("/auth/login")
+async def login(data: UserLogin):
+    user = await db.users.find_one({"email": data.email}, {"_id": 0})
+    if not user or not user.get("password_hash"):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    if not verify_pw(data.password, user["password_hash"]):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    session_token = str(uuid.uuid4())
+    await db.user_sessions.delete_many({"user_id": user["user_id"]})
+    await db.user_sessions.insert_one({
+        "user_id": user["user_id"], "session_token": session_token,
+        "expires_at": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
+        "created_at": datetime.now(timezone.utc).isoformat()
     })
-    response.set_cookie(
-        key="session_token", value=session_token, path="/",
-        httponly=True, secure=True, samesite="none", max_age=7*24*3600
-    )
-    return response
+    return {"token": session_token, "user": {"user_id": user["user_id"], "email": user["email"], "name": user["name"], "role": user.get("role", "viewer")}}
 
 @api_router.get("/auth/me")
 async def get_me(user=Depends(get_current_user)):
