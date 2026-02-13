@@ -784,7 +784,10 @@ function HomePage({ categories, documents, onSelectDoc }) {
         <button key={cat.id} className="home-card" data-testid={`home-card-${cat.id}`} onClick={() => {
           const firstDoc = documents.find(d => { const children = categories.filter(c => c.parent_id === cat.id); return d.category_id === cat.id || children.some(c => c.id === d.category_id); });
           if (firstDoc) onSelectDoc(firstDoc.id);
-        }}><div className="home-card-icon"><Icon name={cat.icon} size={24}/></div><h3>{cat.name}</h3><p className="home-card-count">{getChildCount(cat.id)} documents</p></button>
+        }}>
+          {cat.cover_image && <div className="home-card-cover" style={{backgroundImage: `url(${cat.cover_image})`}} />}
+          <div className="home-card-body"><div className="home-card-icon"><Icon name={cat.icon} size={24}/></div><h3>{cat.name}</h3><p className="home-card-count">{getChildCount(cat.id)} documents</p></div>
+        </button>
       ))}</div>
     </div>
   );
