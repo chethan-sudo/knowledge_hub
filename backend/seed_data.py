@@ -410,7 +410,15 @@ flowchart TD
     MODIFY --> FINISH
 ```
 
-E1 is the conductor of an orchestra. The LLM is its musical knowledge. The tools are the instruments. The Agent Service is the concert hall.
+**Flow Explanation — E1 Decision Making:**
+
+- **What:** This diagram shows exactly how E1 decides what to do when it receives a user message
+- **First message check:** On the very FIRST message of a session, E1 MUST call ask_human to clarify requirements before doing anything else. This is a hard rule in the system prompt. Why? Because ambiguous instructions lead to wasted work and tokens
+- **Platform question path:** If the user asks about Emergent capabilities (e.g., "Can I deploy to Vercel?"), E1 delegates to support_agent rather than trying to answer itself. Why? Because support_agent has specific knowledge about platform features, billing, and capabilities that E1 might get wrong
+- **New app path (Explore, Design, Build, Test):** For new applications, E1 follows a strict sequence: (1) Explore the existing codebase if any, (2) Call design_agent for UI/UX guidelines if frontend is involved, (3) Build the code using tools, (4) Call testing_agent to verify. Each step must complete before the next begins
+- **Bug fix path (Reproduce, Investigate, Fix, Test):** For bugs, E1 first reproduces the issue (runs the code, checks logs), then investigates (reads relevant files, checks git log for recent changes), then applies a fix, then tests. If stuck after 2+ attempts, E1 escalates to troubleshoot_agent
+- **Modify path (Understand, Modify, Test):** For modifications to existing code, E1 reads the relevant files first (never edits blind), makes targeted changes using search_replace (not create_file with overwrite), then tests
+- **Finish:** Every completed task ends with the finish tool, which provides a summary of what was done, what to test, and next steps
 """
     },
 
