@@ -448,6 +448,17 @@ flowchart TD
     DEP -->|validation report| E1
 ```
 
+**Flow Explanation — Subagent Delegation:**
+
+- **What:** This diagram shows every subagent E1 can delegate to and what each returns
+- **When does E1 delegate?** E1 delegates when a task requires specialized expertise that is better handled by a focused agent with its own system prompt and tools
+- **Testing Agent:** Called AFTER E1 implements features or fixes bugs. E1 sends the full problem statement, list of features to test, file references, and credentials. The testing agent writes and runs automated tests (Playwright for frontend, pytest for backend, curl for APIs), then returns a JSON test report at /app/test_reports/iteration_N.json plus any git diff of fixes it made. E1 MUST read this report and fix all issues before finishing
+- **Design Agent:** Called BEFORE building UI. E1 sends the app type, target audience, and functionality list. The design agent returns design_guidelines.json with color palette, typography, spacing rules, and component styles. E1 follows these guidelines when writing frontend code
+- **Integration Expert:** Called when the user needs third-party services (Stripe, OpenAI, SendGrid, etc.). Returns a verified playbook with exact code, required API keys, and setup steps. E1 MUST use this playbook rather than its own knowledge, because SDK versions change frequently
+- **Troubleshoot Agent:** Called after E1 fails to fix a bug after 2+ attempts. Has READ-ONLY access to the codebase. Performs systematic root cause analysis in 10 steps or less. Returns diagnosis and recommended fixes that E1 then implements
+- **Support Agent:** Called for platform questions (billing, GitHub, deployment capabilities). Returns accurate platform information. E1 passes the response directly to the user without modification
+- **Deployment Agent:** Called when deployment fails. Checks for hardcoded env variables, port conflicts, disk issues, and reviews deployed app logs
+
 ## Subagent Details
 
 | Subagent | When Invoked | Has Own Tools? | Returns |
