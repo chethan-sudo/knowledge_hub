@@ -1544,6 +1544,14 @@ flowchart LR
     MID --> FAR["2030+<br/>Natural language programming"]
 ```
 
+**Flow Explanation — AI Agent Evolution Timeline:**
+
+- **What:** This shows the projected evolution of AI agent capabilities over the next 5+ years
+- **2026 (Current):** Agents like E1 work in single sessions — they receive text instructions, use tools (file ops, bash, search), and build software iteratively. Memory is limited to the current conversation. Each session starts fresh
+- **2027 (Near):** Persistent memory means agents remember your preferences, coding style, and project context across sessions. Proactive agents monitor deployed apps, detect errors in logs, and fix them without being asked. Multi-agent collaboration means specialized agents (frontend, backend, DevOps) work as a coordinated team on the same project
+- **2028-2029 (Medium):** Describe a SaaS product in natural language and receive a fully built, deployed, and tested application. Agents learn from all past sessions globally, continuously improving their coding patterns and error handling. Multimodal input means drawing wireframes on a whiteboard or describing features via voice
+- **2030+ (Far):** The role of "developer" transforms into "director of AI agents." Humans define what to build (product management), agents handle the how (implementation). Applications self-maintain — automatically patching vulnerabilities, scaling infrastructure, and adapting to user feedback
+
 ## Near Future (2026-2027)
 - **Persistent Memory**: Agents remember across sessions, learn your preferences
 - **Proactive Agents**: Monitor apps, auto-fix bugs, suggest improvements without being asked
