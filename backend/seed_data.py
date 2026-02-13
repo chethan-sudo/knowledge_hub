@@ -1097,7 +1097,16 @@ sequenceDiagram
     Server->>User: Return data
 ```
 
-JWT structure: `header.payload.signature`. Payload is NOT encrypted — anyone can read it. But the signature proves it wasn't tampered with.
+**Flow Explanation — JWT Authentication Flow:**
+
+- **What:** This shows how token-based authentication works from login to accessing protected resources
+- **Step 1 — Login:** User submits email and password via POST /login. The server verifies credentials against the database (hashed password comparison)
+- **Step 2 — Create JWT:** On successful login, the server creates a JSON Web Token containing the user ID, role, and expiration time. The token is signed with a secret key (JWT_SECRET in .env). The signature proves the token wasn't tampered with
+- **Step 3 — Return token:** The JWT is sent back to the browser in the response body
+- **Step 4 — Store token:** The browser stores the token in localStorage (or sessionStorage). This persists across page refreshes
+- **Step 5 — Authenticated requests:** For every subsequent API call, the browser sends the token in the Authorization header: `Authorization: Bearer eyJhbG...`. The server extracts the token, verifies the signature, and extracts the user information
+- **Step 6 — Return data:** If the token is valid and not expired, the server processes the request and returns data. If invalid or expired, it returns 401 Unauthorized
+- **Why JWT?** Stateless authentication. The server doesn't need to store session data. The token itself contains all the information needed to identify the user. This scales better than session-based auth because any server can verify the token without checking a central session store
 
 ## OAuth 2.0 (Google Auth)
 
