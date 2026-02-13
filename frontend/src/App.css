@@ -342,7 +342,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 .sidebar, .main-content, .auth-page, .home-card, .bookmark-item { transition: background-color 0.2s, border-color 0.2s; }
 
 /* Reading Progress */
-.reading-progress { position: fixed; top: 0; left: 0; height: 3px; background: var(--accent); z-index: 999; transition: width 0.1s; border-radius: 0 2px 2px 0; }
+.reading-progress { position: fixed; top: 0; left: 0; height: 4px; background: linear-gradient(90deg, var(--accent), #a78bfa); z-index: 999; transition: width 0.15s; border-radius: 0 2px 2px 0; box-shadow: 0 0 8px rgba(129,140,248,0.4); }
 
 /* Share Dialog */
 .share-dialog { width: 480px; max-width: 90vw; background: var(--card-bg); border: 1px solid var(--border-clr); border-radius: 12px; box-shadow: var(--shadow-lg); }
