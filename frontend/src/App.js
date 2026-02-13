@@ -29,44 +29,20 @@ function ThemeProvider({ children }) {
 }
 
 function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [token, setToken] = useState(() => localStorage.getItem("ekh-token"));
+  const [user] = useState({ user_id: "default", email: "admin@emergent.sh", name: "Admin", role: "admin", picture: "" });
+  const [loading] = useState(false);
 
   const api = useCallback(async (method, url, data) => {
-    const headers = {};
-    if (token) headers.Authorization = `Bearer ${token}`;
-    return axios({ method, url: `${API}${url}`, data, headers });
-  }, [token]);
+    return axios({ method, url: `${API}${url}`, data });
+  }, []);
 
-  useEffect(() => {
-    if (!token) { setLoading(false); return; }
-    axios.get(`${API}/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => setUser(r.data))
-      .catch(() => { setToken(null); localStorage.removeItem("ekh-token"); setUser(null); })
-      .finally(() => setLoading(false));
-  }, [token]);
+  const logout = () => {};
 
-  const login = async (email, password) => {
-    const r = await axios.post(`${API}/auth/login`, { email, password });
-    setToken(r.data.token); setUser(r.data.user); localStorage.setItem("ekh-token", r.data.token);
-  };
-  const register = async (email, name, password) => {
-    const r = await axios.post(`${API}/auth/register`, { email, name, password });
-    setToken(r.data.token); setUser(r.data.user); localStorage.setItem("ekh-token", r.data.token);
-  };
-  const logout = async () => {
-    try { await axios.post(`${API}/auth/logout`, {}, { headers: token ? { Authorization: `Bearer ${token}` } : {} }); } catch {}
-    setUser(null); setToken(null); localStorage.removeItem("ekh-token");
-  };
-
-  return <AuthContext.Provider value={{ user, loading, api, login, register, logout, setUser }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ user, loading, api, logout, setUser: () => {} }}>{children}</AuthContext.Provider>;
 }
 
 function ProtectedRoute({ children }) {
-  const { user, loading } = useAuth();
-  if (loading) return <div className="edh-loading"><div className="edh-spinner" /></div>;
-  return user ? children : <Navigate to="/login" />;
+  return children;
 }
 
 // --- Login Page ---
