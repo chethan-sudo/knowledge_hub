@@ -9,7 +9,12 @@ import "@/App.css";
 mermaid.initialize({ startOnLoad: false, theme: "dark", themeVariables: { primaryColor: "#4f46e5", primaryBorderColor: "#6366f1", primaryTextColor: "#e4e4e7", lineColor: "#71717a", secondaryColor: "#27272a", tertiaryColor: "#18181b", background: "#18181b", mainBkg: "#27272a", nodeBorder: "#6366f1", clusterBkg: "#1a1a2e", titleColor: "#e4e4e7" } });
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
-const WS_BASE = process.env.REACT_APP_BACKEND_URL.replace(/^http/, "ws");
+// For WebSocket: the proxy redirects external URL to internal, so construct WS URL from the page's actual location
+const WS_BASE = (() => {
+  const backendUrl = process.env.REACT_APP_BACKEND_URL;
+  // Replace http(s) with ws(s)
+  return backendUrl.replace(/^http/, "ws");
+})();
 
 // --- Collaboration Identity ---
 const COLLAB_COLORS = ["#ef4444","#f97316","#eab308","#22c55e","#06b6d4","#3b82f6","#8b5cf6","#ec4899","#14b8a6","#f43f5e"];
