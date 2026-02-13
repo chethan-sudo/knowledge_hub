@@ -6,7 +6,7 @@ import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://emergent-docs-6.preview.emergentagent.com')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://emergent-docs-dev.preview.emergentagent.com')
 
 # Test tokens (pre-created in MongoDB)
 ADMIN_TOKEN = "test_admin_session_token"
