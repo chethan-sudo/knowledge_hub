@@ -718,7 +718,14 @@ flowchart LR
     PROXY -->|deduct balance| BAL[(Your Balance)]
 ```
 
-One key, one balance, all providers. Supports text generation, image generation (GPT Image 1, Nano Banana), video (Sora 2), and speech (Whisper, TTS).
+**Flow Explanation — Universal Key Flow:**
+
+- **What:** This shows how one API key (the Universal Key) works across multiple AI providers
+- **Your App:** Any code that needs LLM capabilities — your backend calling OpenAI for text generation, your app generating images, or E1 itself making LLM calls during development
+- **Emergent Proxy:** A reverse proxy operated by Emergent that intercepts all LLM API calls. It authenticates using your Universal Key (sk-emergent-xxx), routes the request to the correct provider based on the model parameter, tracks token usage for billing, and handles failover if a provider is down
+- **Provider Routing:** The proxy reads the model parameter. "gpt-5.2" routes to OpenAI. "claude-sonnet-4-5" routes to Anthropic. "gemini-3-flash" routes to Google. Your code uses the same SDK and key regardless of provider
+- **Balance Deduction:** After each successful call, the proxy calculates the cost (input tokens x rate + output tokens x rate) and deducts from your balance. Different models have different per-token rates. You can view detailed usage breakdown in Profile > Universal Key
+- **Why this exists:** Without the Universal Key, you would need separate API keys and billing accounts for each provider. The Universal Key simplifies this to one key, one balance. It also enables E1 to seamlessly switch between providers when needed
 """
     },
 
