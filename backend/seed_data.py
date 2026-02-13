@@ -978,7 +978,16 @@ sequenceDiagram
     Browser->>Browser: Parse + Render
 ```
 
-First request: ~50-200ms. Subsequent: ~5-20ms (cached DNS + kept-alive connection).
+**Flow Explanation — DNS to Response:**
+
+- **What:** This shows every network step that happens when your browser loads a page
+- **DNS Resolution:** The browser asks a DNS server to convert the domain name (e.g., myapp.emergentagent.com) into an IP address. This is cached after the first lookup. Takes 10-100ms for the first request
+- **TCP Handshake:** A three-way handshake (SYN → SYN-ACK → ACK) establishes a reliable connection between browser and server. Takes one round-trip (~20-50ms)
+- **TLS Handshake:** For HTTPS, the browser and server negotiate encryption. The server presents its SSL certificate. The browser verifies it against trusted authorities. They agree on encryption keys. Takes another 1-2 round-trips
+- **HTTP Request:** The browser sends the actual request (GET /page, POST /api/data). Includes headers like Content-Type, Authorization, Cookie
+- **HTTP Response:** The server processes the request and sends back the response with status code (200 OK, 404, 500), headers, and body (HTML, JSON, etc.)
+- **Parse + Render:** The browser parses the response and renders it (see the rendering pipeline diagram above)
+- **Subsequent requests:** Much faster because DNS is cached, the TCP connection is kept alive (HTTP keep-alive), and TLS is already established. First request: ~50-200ms. Subsequent: ~5-20ms
 """
     },
 
