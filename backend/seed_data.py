@@ -135,15 +135,15 @@ A complete map of how the Emergent platform works — every component, every dat
 
 ```mermaid
 flowchart TD
-    U[User] -->|types message| FE[Emergent Frontend]
-    FE -->|sends via WebSocket API| AS[Agent Service]
-    AS -->|routes to E1 stores in DB| E1[E1 Orchestrator]
-    E1 -->|reasoning request| LLP[LLM Proxy]
-    LLP -->|routes to provider| LLM[LLM Provider]
-    LLM -->|text response| LLP
-    LLP -->|tokens counted| E1
-    E1 -->|tool calls| TE[Tool Engine]
-    E1 -->|subagent calls| SA[Subagent]
+    U[User] -->|message| FE[Frontend]
+    FE -->|WebSocket| AS[Agent Service]
+    AS -->|route + store| E1[E1 Orchestrator]
+    E1 -->|reason| LLP[LLM Proxy]
+    LLP -->|forward| LLM[LLM Provider]
+    LLM -->|response| LLP
+    LLP -->|tokens| E1
+    E1 -->|tools| TE[Tool Engine]
+    E1 -->|delegate| SA[Subagent]
     E1 -->|decides| DEC{Next?}
     DEC -->|continue| E1
     DEC -->|done| RESP[Response]
