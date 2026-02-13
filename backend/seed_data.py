@@ -156,6 +156,20 @@ flowchart TD
     AS -->|stores| DB[(MongoDB)]
 ```
 
+**Diagram Explanation:**
+
+- **User**: The developer typing in the Emergent chat interface
+- **Emergent Frontend**: React web app that provides the chat UI, file browser, and preview panel
+- **Agent Service**: Python backend that receives messages, manages session state, and routes to E1. It also persists every message to MongoDB
+- **E1 Orchestrator**: The core AI agent. NOT an LLM itself — it is a software system that uses an LLM for reasoning but makes its own decisions about what tools to call
+- **LLM Proxy**: A reverse proxy that sits between E1 and all LLM providers. It routes requests, tracks token usage, enforces budget limits, and handles failover between providers
+- **LLM Provider**: The actual AI model (Claude, GPT, Gemini) that generates text responses
+- **Tool Engine**: Executes file operations, bash commands, screenshots, web searches inside the users Kubernetes pod
+- **Subagent**: Specialized workers (testing, design, troubleshooting) that E1 delegates tasks to. Each subagent gets its own LLM instance
+- **Decision**: After every LLM response, E1 decides whether to call more tools, delegate to a subagent, or send a final response to the user
+- **K8s Pod**: The isolated Kubernetes container where the users code lives
+- **MongoDB**: Stores everything — chat history, job audits, user data, session state
+
 ## Component Roles
 
 | Component | What It Is | What It Does |
@@ -169,6 +183,61 @@ flowchart TD
 | **Subagents** | Specialist workers | Testing, design, troubleshooting, integration |
 | **Kubernetes Pod** | Isolated container | User workspace with filesystem, DB, and services |
 | **MongoDB** | Database | Stores everything: users, jobs, chat, metadata |
+
+## Data Flow Diagram
+
+```mermaid
+flowchart TB
+    subgraph User Layer
+        BROWSER[Browser]
+    end
+    subgraph Frontend
+        REACT[React App :3000]
+    end
+    subgraph Backend
+        FASTAPI[FastAPI :8001]
+    end
+    subgraph Agent Layer
+        AGENTSVC[Agent Service]
+        E1_INST[E1 Instance]
+        LLM_PROXY[LLM Proxy]
+    end
+    subgraph Storage
+        MONGO[(MongoDB)]
+        FS[Pod Filesystem]
+        GIT[Git Repository]
+    end
+    subgraph External
+        OPENAI[OpenAI]
+        ANTHROPIC[Anthropic]
+        GOOGLE[Google AI]
+    end
+    BROWSER --> REACT
+    REACT --> FASTAPI
+    FASTAPI --> MONGO
+    BROWSER --> AGENTSVC
+    AGENTSVC --> E1_INST
+    AGENTSVC --> MONGO
+    E1_INST --> LLM_PROXY
+    E1_INST --> FS
+    E1_INST --> GIT
+    LLM_PROXY --> OPENAI
+    LLM_PROXY --> ANTHROPIC
+    LLM_PROXY --> GOOGLE
+```
+
+**Diagram Explanation:**
+
+- **Browser**: Where the developer accesses Emergent. All interaction starts here
+- **React App on port 3000**: The frontend that renders the chat interface, file browser, and preview panel. Communicates with both FastAPI (for the app being built) and Agent Service (for AI chat)
+- **FastAPI on port 8001**: The backend server of the app being developed by the agent. E1 writes code here and the user previews it
+- **Agent Service**: The orchestration backend. Receives chat messages from the browser via WebSocket, routes them to E1, and stores all history in MongoDB
+- **E1 Instance**: A running instance of the E1 orchestrator. One per active job. Makes all decisions about tool calls and subagent delegation
+- **LLM Proxy**: Mediates between E1 and external AI providers. Uses the Universal Key to authenticate, counts tokens for billing, and can fail over between OpenAI, Anthropic, and Google if one is down
+- **MongoDB**: Central database storing users, sessions, jobs, audit trails, chat history, and metadata
+- **Pod Filesystem**: The local filesystem inside the Kubernetes pod where project code lives
+- **Git Repository**: Every change is auto-committed for rollback capability
+- **OpenAI, Anthropic, Google**: External LLM providers that the proxy routes to based on which model E1 requests
 
 ## Database Layer
 
@@ -188,10 +257,10 @@ MongoDB stores ALL platform data:
 
 Every user interaction creates a Job:
 
-- **Job**: A single agent session from user request to completion
-- **Job Audit**: Every tool call, LLM call, and decision logged with timestamps
-- **Job Metadata**: Model used, system prompt version, available tools, constraints
-- **Auto-commit**: After every significant change, git commits for rollback
+- **Job**: A single agent session from user request to completion. Contains status (running, complete, failed), timestamps, and the user who initiated it
+- **Job Audit**: Every single action E1 takes is logged. If E1 reads a file, that is an audit entry. If it calls bash, that is an audit entry. If it sends a message to the LLM, that is logged with the full prompt and response. This creates a complete traceable history
+- **Job Metadata**: Records which LLM model was used, the version of the system prompt, which tools were available, and any constraints. This allows reproducing or debugging any job
+- **Auto-commit**: After every significant file change, the system creates a git commit. This enables the rollback feature where users can revert to any previous state
 
 ## ENV and Configuration Tools
 
@@ -203,41 +272,41 @@ E1 can read and write environment variables:
 | **Write ENV** | Set new variables, persisted across restarts |
 | **Bash access** | Access env via os.environ in code |
 
-Protected variables like MONGO_URL, REACT_APP_BACKEND_URL are pre-configured and must not be deleted.
+Protected variables like MONGO_URL and REACT_APP_BACKEND_URL are pre-configured and must not be deleted. The frontend reads REACT_APP_BACKEND_URL to know where to send API calls. The backend reads MONGO_URL to connect to the database.
 
 ## Complete Tool Registry
 
 | Tool | Category | What It Does |
 |------|----------|-------------|
-| create_file | File IO | Create new files with content |
-| view_file | File IO | Read file contents with line numbers |
-| search_replace | File IO | Edit existing files surgically |
-| view_bulk | File IO | Read multiple files at once |
-| glob_files | File IO | Find files by pattern |
-| insert_text | File IO | Insert text at specific line |
-| execute_bash | Execution | Run shell commands with 120s timeout |
-| screenshot_tool | Testing | Take browser screenshots via Playwright |
-| web_search | Research | Search the web for information |
-| crawl_tool | Research | Scrape webpage content |
-| image_selector | Assets | Find stock photos |
-| image_generation | Assets | Generate images with AI |
-| lint_javascript | Quality | ESLint for JS and TS files |
-| lint_python | Quality | Ruff linter for Python |
-| analyze_file | Analysis | AI powered file analysis |
-| extract_file | Analysis | Extract structured data from files |
-| ask_human | Interaction | Ask user for clarification |
+| create_file | File IO | Create new files with content at any path |
+| view_file | File IO | Read file contents with line numbers for reference |
+| search_replace | File IO | Edit existing files by finding and replacing exact text |
+| view_bulk | File IO | Read multiple files at once for efficiency |
+| glob_files | File IO | Find files matching patterns like **/*.py |
+| insert_text | File IO | Insert new text at a specific line number |
+| execute_bash | Execution | Run any shell command with 120 second timeout |
+| screenshot_tool | Testing | Take browser screenshots via Playwright for visual verification |
+| web_search | Research | Search the internet for documentation or solutions |
+| crawl_tool | Research | Fetch and extract content from specific URLs |
+| image_selector | Assets | Find stock photos from Unsplash and Pexels |
+| image_generation | Assets | Generate custom images using AI models |
+| lint_javascript | Quality | Run ESLint to check JavaScript and TypeScript for errors |
+| lint_python | Quality | Run Ruff linter to check Python code for errors |
+| analyze_file | Analysis | Use AI to analyze complex files for patterns and insights |
+| extract_file | Analysis | Extract structured data from documents, images, or audio |
+| ask_human | Interaction | Pause and ask the user for clarification or approval |
 
 ## Subagent Registry
 
-| Subagent | Specialty | When Used |
-|----------|-----------|-----------|
-| testing_agent | QA and testing | After feature implementation |
-| design_agent | UI and UX design | When UI design is needed |
-| troubleshoot_agent | Debugging | When stuck in error loops |
-| integration_playbook | Third party APIs | For external service integration |
-| expert_opinion | Architecture review | For design decisions |
-| deployment_agent | Deploy debugging | When deployment fails |
-| support_agent | Platform help | For user questions about Emergent |
+| Subagent | Specialty | When E1 Delegates To It |
+|----------|-----------|------------------------|
+| testing_agent | QA and automated testing | After implementing features, to verify they work correctly with Playwright and API tests |
+| design_agent | UI and UX design guidelines | When the user needs a polished frontend design, generates design_guidelines.json |
+| troubleshoot_agent | Root cause analysis | When E1 is stuck in an error loop after 2+ failed attempts, provides fresh diagnostic perspective |
+| integration_playbook | Third party API integration | When user needs Stripe, OpenAI, SendGrid etc. Provides verified step-by-step playbooks |
+| expert_opinion | Architecture and code review | For complex design decisions, provides expert analysis of trade-offs |
+| deployment_agent | Deployment debugging | When deployed app has issues, checks env vars, ports, and disk usage |
+| support_agent | Platform help and queries | For questions about Emergent features, billing, GitHub integration, rollback etc. |
 
 ## Request Routing
 
@@ -245,31 +314,32 @@ All requests flow through Kubernetes Ingress:
 
 | URL Pattern | Routes To | Purpose |
 |------------|-----------|---------|
-| /api/* | FastAPI on port 8001 | Backend API calls |
-| /* | React on port 3000 | Frontend pages |
-| WebSocket | Agent Service | Real time chat |
+| /api/* | FastAPI on port 8001 | Backend API calls for the app being built |
+| /* | React on port 3000 | Frontend pages of the app being built |
+| WebSocket | Agent Service | Real time chat between user and E1 |
 
 ## The Orchestration Loop
 
-E1 operates in a continuous loop:
+E1 operates in a continuous loop until the task is complete:
 
-1. **Receive** Get user message or tool result
-2. **Think** Send context to LLM for reasoning
-3. **Decide** Parse LLM response for tool calls or final answer
-4. **Act** Execute tools, call subagents, or respond
-5. **Log** Record every action in job audit
-6. **Repeat** If more work needed go to step 1
+1. **Receive** — Get user message or tool result
+2. **Think** — Send full context (system prompt + history + tool results) to the LLM for reasoning
+3. **Decide** — Parse the LLM response. If it contains tool calls, execute them. If it contains a subagent request, delegate. If it is a text response, send to user
+4. **Act** — Execute the decided action (run bash, create file, call subagent)
+5. **Log** — Record every action in the job audit trail with timestamps and full input/output
+6. **Repeat** — If there is more work to do, go back to step 1 with the new context
 
 ## Key Architectural Principles
 
-- **E1 is the orchestrator not an LLM.** It uses an LLM as its reasoning engine but E1 itself is the decision-making agent layer
-- **LLMs are stateless.** The Agent Service maintains all conversation history and feeds it back with every call
-- **Subagents are independent.** They have no memory of previous calls. E1 provides full context each time
-- **Everything is containerized.** Each user gets an isolated Kubernetes pod with its own filesystem database and services
-- **Auto-commit everything.** Every action creates a git checkpoint for rollback capability
-- **LLM Proxy mediates all AI calls.** Universal Key, cost tracking, rate limiting, failover all handled transparently
-- **MongoDB is the source of truth.** Jobs, audits, chat history, metadata, user data everything persists in MongoDB
+- **E1 is the orchestrator not an LLM.** It uses an LLM as its reasoning engine but E1 itself is the decision-making agent layer that chooses tools and manages workflow
+- **LLMs are stateless.** The Agent Service maintains all conversation history and feeds it back with every call. The LLM has no memory between calls
+- **Subagents are independent.** They have no memory of previous calls. E1 provides full context each time it delegates
+- **Everything is containerized.** Each user gets an isolated Kubernetes pod with its own filesystem database and services. No user can access another users data
+- **Auto-commit everything.** Every action creates a git checkpoint for rollback capability. Users can revert to any previous state for free
+- **LLM Proxy mediates all AI calls.** Universal Key, cost tracking, rate limiting, and failover are all handled transparently by the proxy layer
+- **MongoDB is the source of truth.** Jobs, audits, chat history, metadata, and user data all persist in MongoDB. Nothing is stored only in memory
 """
+
     },
 
     # ===== E1 ORCHESTRATOR =====
@@ -2244,144 +2314,132 @@ An honest overview of current platform constraints, known limitations, and worka
     {
         "id": _id(), "title": "Complete UI Guide", "category_id": CAT_UI_GUIDE, "author_id": SYSTEM_AUTHOR,
         "created_at": NOW, "updated_at": NOW, "order": 0,
-        "content": """# Emergent Knowledge Hub - Complete UI Guide
+        "content": """# Emergent Platform UI Guide
 
-A detailed walkthrough of every UI element, button, and feature in the Knowledge Hub.
+A complete walkthrough of every UI element in the Emergent development platform.
 
-## Login Page
+## The Chat Interface
 
-| Element | Description |
-|---------|------------|
-| **Sign in with Google** | Initiates Google OAuth flow via Emergent Auth. Redirects to Google, then back to dashboard |
-| **Admin note** | Shows which email has admin access |
-
-## Sidebar
+The main interaction point with E1. This is where you type messages and see agent responses.
 
 | Element | Description |
 |---------|------------|
-| **Knowledge Hub logo** | Book icon with brand name. Click to go home |
-| **Search bar** | Inline search with Ctrl+K shortcut. Searches documents AND categories. ESC to close |
-| **Home** | Returns to the category grid dashboard |
-| **Bookmarks** | Shows all bookmarked documents |
-| **Tools** | Opens the Tools and Resources directory |
-| **Trash** | (Admin only) Shows soft-deleted documents with restore option |
-| **Settings** | (Admin only) User invite and team management |
-| **Category headers** | Click to expand or collapse. Shows chevron icon |
-| **Document links** | Click to open document in viewer. Active doc highlighted |
-| **Light/Dark mode** | Toggles between themes. Preference saved in localStorage |
-| **Manage categories** | (Admin only) Opens dialog to create, edit, delete categories |
-| **New page** | (Admin only) Opens editor with template picker |
-| **User info** | Shows avatar, name, role badge (Admin/Viewer), logout button |
-| **Resize handle** | Drag the right edge of sidebar to resize (200-500px) |
+| **Message input** | Text area at the bottom where you type instructions to E1 |
+| **Send button** | Sends your message to the agent |
+| **Message history** | Scrollable area showing the full conversation |
+| **Agent responses** | E1 replies with text, code blocks, and tool call results |
+| **Tool call indicators** | Shows when E1 is executing tools (file ops, bash, search) |
+| **Thinking indicator** | Animated dots showing E1 is processing |
 
-## Document Viewer
+## File Browser Panel
+
+Located on the left side, shows your project filesystem.
 
 | Element | Description |
 |---------|------------|
-| **Breadcrumb** | Shows: Parent Category > Subcategory > Document title. Helps understand location |
-| **Title** | Large heading with document title |
-| **Tags** | Colored pills showing document tags |
-| **Download button** | Exports document as PDF with rendered mermaid diagrams |
-| **Clock button** | Opens version history panel showing previous edits |
-| **Share button** | (Admin) Opens share dialog to enable/disable public link |
-| **Bookmark button** | Toggles bookmark. Filled = bookmarked |
-| **Edit button** | (Admin) Opens document in split-pane editor |
-| **Delete button** | (Admin) Moves document to trash (soft delete, restorable) |
-| **Table of Contents** | Right sidebar showing H2 headings as clickable links |
-| **Mermaid diagrams** | Interactive flowcharts. Hover for Expand button. Click to fullscreen |
-| **Code blocks** | Syntax highlighted with Copy button |
-| **Comments section** | Bottom of document. Post comments, reply to threads, upvote |
+| **Directory tree** | Expandable folder structure of your project |
+| **File icons** | Different icons for .py, .js, .css, .json, .md etc. |
+| **Click to open** | Click any file to view its contents in the editor |
+| **Right-click menu** | Options to rename, delete, or create new files |
+| **Search files** | Filter files by name across the project |
 
-## Mermaid Diagram Interaction
+## Code Editor / Preview Panel
+
+The right panel shows file contents and live previews.
 
 | Element | Description |
 |---------|------------|
-| **Inline diagram** | Rendered in document with minimum 500px width |
-| **Expand button** | Appears on hover (top-right). Opens fullscreen modal |
-| **Fullscreen modal** | 90% viewport width, 85% height. Horizontal AND vertical scrolling |
-| **Close** | Click Close button or press Escape to exit fullscreen |
+| **File tabs** | Multiple files can be open as tabs |
+| **Syntax highlighting** | Code is colored by language |
+| **Line numbers** | Every line is numbered for reference |
+| **Preview mode** | For web apps, shows a live browser preview |
+| **Preview URL** | The external URL where your app is accessible |
+| **Refresh button** | Manually refresh the preview |
+| **Open in new tab** | Opens preview in a full browser tab |
 
-## Document Editor
-
-| Element | Description |
-|---------|------------|
-| **Template picker** | Shows when creating new page. 6 options: Blank, API Doc, Runbook, RCA, Meeting Notes, Test Plan |
-| **Templates button** | Toggle template picker visibility |
-| **Preview toggle** | Show/hide live markdown preview panel |
-| **Title input** | Large text input for document title |
-| **Category dropdown** | Select which category this document belongs to |
-| **Tag input** | Type to add tags. Press Enter to add. Shows autocomplete suggestions from existing tags |
-| **Markdown editor** | Left pane: raw markdown. Right pane: live rendered preview |
-| **Save button** | Disabled until title and category are set |
-| **Cancel button** | Discards changes and returns to previous view |
-
-## Search
-
-| Feature | Description |
-|---------|------------|
-| **Activation** | Click search bar or press Ctrl+K |
-| **Category results** | Shows matching categories with folder icon |
-| **Document results** | Shows matching documents with content snippets |
-| **Heading matches** | If search matches a heading (H1-H3), snippet shows Section: heading name |
-| **Fuzzy matching** | Tolerates minor typos. Case-insensitive |
-| **Close** | Press Escape or click outside |
-
-## Home Page
+## Top Navigation Bar
 
 | Element | Description |
 |---------|------------|
-| **Hero section** | Title and description of the knowledge hub |
-| **Tag cloud** | Filter bar showing all tags. Click to filter documents by tag |
-| **Category cards** | Grid of all top-level categories with document count. Click to open first doc |
+| **Project name** | Shows the current project/job name |
+| **Save to GitHub** | Push your code to a GitHub repository |
+| **Rollback** | Revert to any previous checkpoint (free, instant) |
+| **Deploy** | Deploy your app to production |
+| **Share** | Share the preview URL with others |
+| **Settings gear** | Access project and account settings |
 
-## Settings Page (Admin Only)
+## Deployment Options
 
-| Element | Description |
-|---------|------------|
-| **Invite form** | Email input + Viewer/Admin role selector + Invite button |
-| **Team members table** | Lists all users with name, email, role dropdown, remove button |
-| **Role dropdown** | Change user role between Viewer and Admin |
-| **Remove button** | Delete user from the system (cannot remove yourself) |
+| Option | Description |
+|--------|------------|
+| **Preview URL** | Auto-generated URL for testing (changes between sessions) |
+| **Deploy to production** | Permanent URL on Emergent hosting |
+| **Custom domain** | Attach your own domain to deployed apps |
+| **Environment variables** | Set secrets and config for production |
 
-## Tools Page
-
-| Element | Description |
-|---------|------------|
-| **Add Tool** | (Admin) Opens form to add a new tool with name, URL, description, category |
-| **Tool cards** | Grouped by category. Shows name as link, description below |
-| **Edit/Delete** | (Admin) Modify or remove tools |
-
-## Trash Page (Admin Only)
+## Rollback System
 
 | Element | Description |
 |---------|------------|
-| **Deleted documents** | Lists all soft-deleted docs with deletion date |
-| **Restore button** | Moves document back to its original category |
-| **Permanent delete** | Irreversibly removes document and all its data |
+| **Checkpoint list** | Every significant change creates an auto-checkpoint |
+| **Rollback button** | Click to revert to any previous checkpoint |
+| **Free and instant** | No cost, takes seconds |
+| **Git-based** | Each checkpoint is a git commit |
+| **Selective rollback** | Choose exactly which checkpoint to restore |
 
-## AI Chatbot
+## Profile and Settings
+
+| Setting | Description |
+|---------|------------|
+| **Universal Key** | Your Emergent LLM API key for all AI providers |
+| **Add Balance** | Top up your Universal Key balance |
+| **Auto Top-up** | Enable automatic balance replenishment |
+| **Usage Dashboard** | View token usage per model, per session |
+| **API Keys** | Manage third-party API keys (Stripe, SendGrid etc.) |
+| **Connected repos** | Link GitHub repositories |
+
+## Universal Key Management
 
 | Element | Description |
 |---------|------------|
-| **FAB button** | Purple circle button. Click to open/close chat panel |
-| **Chat panel** | Floating panel with message history |
-| **Input field** | Type questions. Press Enter or click send |
-| **AI responses** | Answers based on documentation content. References specific docs |
+| **Key display** | Shows your sk-emergent-xxx key (masked) |
+| **Copy button** | Copy key to clipboard |
+| **Balance** | Current credit balance in USD |
+| **Usage chart** | Visual breakdown of spending by provider |
+| **Add Balance** | Purchase more credits |
+| **Auto top-up toggle** | Automatically add credits when low |
+| **Supported providers** | OpenAI, Anthropic, Google (text), DALL-E, Nano Banana (image), Sora (video), Whisper (audio) |
 
-## Reading Progress
+## Billing Dashboard
 
 | Element | Description |
 |---------|------------|
-| **Progress bar** | Thin gradient bar at very top of page. Shows scroll progress through current document |
+| **Current balance** | Remaining Universal Key credits |
+| **Usage history** | Per-call breakdown with model, tokens, cost |
+| **Monthly summary** | Aggregated spending per month |
+| **Invoices** | Downloadable receipts |
+| **Payment methods** | Manage credit cards for top-ups |
+
+## Agent Interaction Patterns
+
+| Pattern | How to Use |
+|---------|-----------|
+| **Build something** | Describe what you want: "Build a REST API with user auth" |
+| **Fix a bug** | Describe the issue: "Login returns 500 error" |
+| **Explain code** | Ask: "Explain what server.py does" |
+| **Modify existing** | Be specific: "Add a dark mode toggle to the header" |
+| **Ask for help** | Ask: "How do I deploy this?" or "What does this error mean?" |
 
 ## Keyboard Shortcuts
 
 | Shortcut | Action |
 |----------|--------|
-| **Ctrl+K** | Focus search bar |
-| **Escape** | Close search / Close mermaid fullscreen |
-| **Arrow Up/Down** | Navigate between documents in sidebar |
-| **Enter** | Send comment or chat message |
+| **Enter** | Send message to agent |
+| **Shift+Enter** | New line in message input |
+| **Ctrl+/Cmd+K** | Quick file search |
+| **Ctrl+/Cmd+S** | Save current file |
+| **Escape** | Close modal/panel |
 """
+
     },
 ]
