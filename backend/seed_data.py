@@ -526,6 +526,17 @@ flowchart TD
     E1_2 -->|decides next| E1
 ```
 
+**Flow Explanation — Tool Execution Flow:**
+
+- **What:** This diagram shows exactly how a tool call travels from E1's decision to actual execution and back
+- **Step 1 — E1 decides:** During the orchestration loop, the LLM generates a structured JSON tool call (e.g., `{"tool": "execute_bash", "command": "pip install flask"}`). E1's decision layer parses this from the LLM response
+- **Step 2 — Validation:** The Agent Service validates the tool call against the tool registry. It checks that the tool exists, required parameters are present, and the call is well-formed. Invalid calls are rejected with an error message fed back to the LLM
+- **Step 3 — Routing:** Valid calls are routed by type. Container tools (bash, file ops, screenshots) execute inside the user's Kubernetes pod. External API tools (web search, crawl) call external services. Subagent calls spawn new agent sessions
+- **Step 4 — Execution:** The tool runs. Bash commands have a 120-second timeout for foreground execution. File operations are immediate. Screenshots launch a headless Chromium browser via Playwright. Web searches query search APIs
+- **Step 5 — Storage:** Every tool result (stdout, stderr, exit code, file contents, screenshots) is stored in the conversation database. This creates the audit trail and ensures results persist if the session is interrupted
+- **Step 6 — Feedback:** Results are fed back to E1 as part of the conversation context. The LLM sees the tool result and decides what to do next — call another tool, fix an error, or respond to the user
+- **Why this matters:** This loop is how E1 actually builds software. Each iteration — think, act, observe — gets E1 closer to completing the task. A simple "create a todo app" might involve 50+ tool calls in this loop
+
 ## Available Tools
 
 | Tool | Type | Purpose |
