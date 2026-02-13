@@ -1153,6 +1153,16 @@ flowchart LR
     DEPLOY --> MONITOR[Monitor<br/>Logs + Metrics]
 ```
 
+**Flow Explanation — Deployment Pipeline:**
+
+- **What:** This shows the stages from development to production deployment
+- **Development (Preview URL):** During development, your app runs on a preview URL (e.g., myapp.preview.emergentagent.com). This URL changes between sessions and is meant for testing only
+- **Build Phase:** The frontend is compiled (yarn build creates optimized static files from React). The backend dependencies are frozen (pip freeze captures exact package versions). This ensures production uses the same versions as development
+- **Containerize:** The application is packaged into a Docker image containing all code, dependencies, and runtime configuration. This image is immutable — the same image runs in any environment
+- **Provision:** Cloud resources are allocated — compute (CPU/memory), database (MongoDB instance), SSL certificate (HTTPS), and DNS record (your domain name pointing to the server)
+- **Rolling Deploy:** The new version is deployed without downtime using the rolling update strategy (see next diagram). Old and new versions temporarily run side by side
+- **Monitor:** After deployment, logs, metrics (response times, error rates), and health checks are monitored to detect issues early
+
 ## Rolling Deployment (Zero Downtime)
 
 ```mermaid
