@@ -632,6 +632,23 @@ function Sidebar({ categories, documents, activeDocId, onSelectDoc, onNewDoc, co
   );
 }
 
+// --- Presence Avatars ---
+function PresenceAvatars({ users, identity }) {
+  const others = users.filter(u => u.user_id !== identity?.id);
+  if (others.length === 0) return null;
+  return (
+    <div className="presence-avatars" data-testid="presence-avatars">
+      {others.map(u => (
+        <div key={u.user_id} className="presence-avatar" data-testid={`presence-${u.user_id}`} style={{ borderColor: u.color, backgroundColor: u.color + "22" }} title={`${u.name} (${u.mode})`}>
+          <span style={{ color: u.color }}>{u.name[0]?.toUpperCase()}</span>
+          {u.mode === "editing" && <span className="presence-editing-dot" />}
+        </div>
+      ))}
+      <span className="presence-label">{others.length} {others.length === 1 ? "viewer" : "viewers"}</span>
+    </div>
+  );
+}
+
 // --- Document Viewer ---
 function DocumentViewer({ doc, category, parentCategory, isBookmarked, onToggleBookmark, onEdit, onDelete, isAdmin }) {
   const { api } = useAuth();
