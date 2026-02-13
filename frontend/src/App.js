@@ -1049,7 +1049,7 @@ function PublicDocPage() {
   );
 }
 
-// --- Reading Progress Bar ---
+// --- Reading Progress Panel ---
 function ReadingProgress() {
   const [progress, setProgress] = useState(0);
   useEffect(() => {
@@ -1058,6 +1058,20 @@ function ReadingProgress() {
       if (!main) return;
       const scrollTop = main.scrollTop;
       const scrollHeight = main.scrollHeight - main.clientHeight;
+      setProgress(scrollHeight > 0 ? Math.round((scrollTop / scrollHeight) * 100) : 0);
+    };
+    const main = document.querySelector('.main-content');
+    main?.addEventListener('scroll', handler);
+    return () => main?.removeEventListener('scroll', handler);
+  }, []);
+  if (progress < 1) return null;
+  return (
+    <div className="reading-progress-panel" data-testid="reading-progress">
+      <div className="reading-progress-bar" style={{width: `${progress}%`}} />
+      <span className="reading-progress-pct">{progress}%</span>
+    </div>
+  );
+}
       setProgress(scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0);
     };
     const main = document.querySelector('.main-content');
