@@ -37,7 +37,7 @@ function useCollaboration(docId, enabled = true) {
 
   useEffect(() => {
     if (!docId || !enabled) return;
-    const url = `${WS_BASE}/api/ws/collab/${docId}?user_id=${encodeURIComponent(identity.id)}&name=${encodeURIComponent(identity.name)}&color=${encodeURIComponent(identity.color)}`;
+    const url = getWsUrl(`/api/ws/collab/${docId}?user_id=${encodeURIComponent(identity.id)}&name=${encodeURIComponent(identity.name)}&color=${encodeURIComponent(identity.color)}`);
     let ws;
     let reconnectTimer;
     const connect = () => {
