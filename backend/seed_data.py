@@ -945,6 +945,17 @@ flowchart TD
     COMP --> SCREEN[Pixels on Screen]
 ```
 
+**Flow Explanation — Browser Rendering Pipeline:**
+
+- **What:** This shows every step from receiving HTML to pixels appearing on screen
+- **Parse HTML → DOM Tree:** The browser reads raw HTML and builds a tree of nodes (Document Object Model). Each HTML element becomes a node. This happens top-down, and can be blocked by synchronous scripts
+- **Parse CSS → CSSOM Tree:** All CSS (external files, inline styles, browser defaults) is parsed into the CSS Object Model. Selectors are matched to DOM nodes. This must complete before rendering starts
+- **Render Tree:** The DOM and CSSOM are combined. Only visible elements are included (display:none elements are excluded). Each node now has both its structure and computed styles
+- **Layout:** The browser calculates the exact position and size of every element in pixels. This is also called "reflow." It must account for viewport size, font sizes, padding, margin, and flexbox/grid calculations. Expensive operation
+- **Paint:** Fill each pixel with the correct color, text, images, borders, and shadows. Elements are painted in stacking order (z-index). This produces bitmap layers
+- **Composite:** GPU combines the painted layers into the final image. Transforms and opacity changes happen here — which is why CSS transitions on `transform` and `opacity` are GPU-accelerated and cheap
+- **Why this matters for performance:** Layout changes (width, position, font-size) trigger the full pipeline. Color changes skip layout. Transform/opacity changes skip both layout and paint, using only GPU compositing — making them the fastest visual changes
+
 ## Performance Cost of Changes
 
 | Change Type | Triggers | Cost |
