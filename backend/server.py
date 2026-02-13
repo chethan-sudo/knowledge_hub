@@ -98,55 +98,6 @@ def is_admin(user: dict) -> bool:
 async def require_admin(user=Depends(get_current_user)):
     return user
 
-# --- Auth Routes ---
-@api_router.post("/auth/register")
-async def register(data: UserRegister):
-    existing = await db.users.find_one({"email": data.email})
-    if existing:
-        raise HTTPException(status_code=400, detail="Email already registered")
-    user_id = f"user_{uuid.uuid4().hex[:12]}"
-    role = "admin" if data.email == ADMIN_EMAIL else "viewer"
-    await db.users.insert_one({
-        "user_id": user_id, "email": data.email, "name": data.name,
-        "password_hash": hash_pw(data.password), "picture": "", "role": role,
-        "created_at": datetime.now(timezone.utc).isoformat()
-    })
-    session_token = str(uuid.uuid4())
-    await db.user_sessions.insert_one({
-        "user_id": user_id, "session_token": session_token,
-        "expires_at": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
-        "created_at": datetime.now(timezone.utc).isoformat()
-    })
-    return {"token": session_token, "user": {"user_id": user_id, "email": data.email, "name": data.name, "role": role}}
-
-@api_router.post("/auth/login")
-async def login(data: UserLogin):
-    user = await db.users.find_one({"email": data.email}, {"_id": 0})
-    if not user or not user.get("password_hash"):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    if not verify_pw(data.password, user["password_hash"]):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    session_token = str(uuid.uuid4())
-    await db.user_sessions.delete_many({"user_id": user["user_id"]})
-    await db.user_sessions.insert_one({
-        "user_id": user["user_id"], "session_token": session_token,
-        "expires_at": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
-        "created_at": datetime.now(timezone.utc).isoformat()
-    })
-    return {"token": session_token, "user": {"user_id": user["user_id"], "email": user["email"], "name": user["name"], "role": user.get("role", "viewer")}}
-
-@api_router.get("/auth/me")
-async def get_me(user=Depends(get_current_user)):
-    return {
-        "user_id": user["user_id"], "email": user["email"], "name": user["name"],
-        "picture": user.get("picture", ""), "role": user.get("role", "viewer")
-    }
-
-@api_router.post("/auth/logout")
-async def logout(user=Depends(get_current_user)):
-    await db.user_sessions.delete_many({"user_id": user["user_id"]})
-    return {"status": "logged out"}
-
 # --- Categories Routes ---
 @api_router.get("/categories")
 async def get_categories(user=Depends(get_current_user)):
