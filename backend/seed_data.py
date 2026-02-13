@@ -57,6 +57,8 @@ SUB_TC_PERF = _id()
 SUB_TC_AGENT = _id()
 CAT_TOOLS = _id()
 SUB_LLM_PROXY = _id()
+CAT_LIMITATIONS = _id()
+CAT_UI_GUIDE = _id()
 
 CATEGORIES = [
     {"id": CAT_PLATFORM, "name": "Platform Architecture", "icon": "Layers", "order": 0, "parent_id": None},
