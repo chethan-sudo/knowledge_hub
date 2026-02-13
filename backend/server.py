@@ -617,13 +617,39 @@ async def root():
 
 app.include_router(api_router)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# CORS: When credentials are used, origin must not be wildcard
+origins = os.environ.get('CORS_ORIGINS', '*').split(',')
+if origins == ['*']:
+    # Allow all origins dynamically when credentials are needed
+    from starlette.middleware.base import BaseHTTPMiddleware
+    from starlette.requests import Request as StarletteRequest
+    from starlette.responses import Response as StarletteResponse
+
+    class DynamicCORSMiddleware(BaseHTTPMiddleware):
+        async def dispatch(self, request: StarletteRequest, call_next):
+            origin = request.headers.get("origin", "")
+            if request.method == "OPTIONS":
+                response = StarletteResponse(status_code=200)
+            else:
+                response = await call_next(request)
+            if origin:
+                response.headers["Access-Control-Allow-Origin"] = origin
+            else:
+                response.headers["Access-Control-Allow-Origin"] = "*"
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+            response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH"
+            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Cookie"
+            return response
+
+    app.add_middleware(DynamicCORSMiddleware)
+else:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_credentials=True,
+        allow_origins=origins,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
