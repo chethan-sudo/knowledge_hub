@@ -29,6 +29,71 @@ api_router = APIRouter(prefix="/api")
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+# --- WebSocket Collaboration Manager ---
+class CollabManager:
+    def __init__(self):
+        # doc_id -> {user_id: {"ws": WebSocket, "name": str, "color": str, "mode": str, "cursor": int}}
+        self.rooms: Dict[str, Dict[str, dict]] = {}
+
+    async def connect(self, doc_id: str, user_id: str, user_name: str, color: str, ws: WebSocket):
+        await ws.accept()
+        if doc_id not in self.rooms:
+            self.rooms[doc_id] = {}
+        self.rooms[doc_id][user_id] = {"ws": ws, "name": user_name, "color": color, "mode": "viewing", "cursor": 0}
+        await self.broadcast_presence(doc_id)
+
+    def disconnect(self, doc_id: str, user_id: str):
+        if doc_id in self.rooms:
+            self.rooms[doc_id].pop(user_id, None)
+            if not self.rooms[doc_id]:
+                del self.rooms[doc_id]
+
+    def get_presence(self, doc_id: str) -> list:
+        if doc_id not in self.rooms:
+            return []
+        return [{"user_id": uid, "name": u["name"], "color": u["color"], "mode": u["mode"], "cursor": u["cursor"]}
+                for uid, u in self.rooms[doc_id].items()]
+
+    async def broadcast_presence(self, doc_id: str):
+        presence = self.get_presence(doc_id)
+        await self._broadcast(doc_id, {"type": "presence", "users": presence})
+
+    async def broadcast_content(self, doc_id: str, sender_id: str, content: str, cursor: int):
+        if doc_id in self.rooms and sender_id in self.rooms[doc_id]:
+            self.rooms[doc_id][sender_id]["cursor"] = cursor
+        msg = {"type": "content_update", "sender_id": sender_id, "content": content, "cursor": cursor}
+        await self._broadcast(doc_id, msg, exclude=sender_id)
+
+    async def broadcast_cursor(self, doc_id: str, sender_id: str, cursor: int, selection_end: int):
+        if doc_id in self.rooms and sender_id in self.rooms[doc_id]:
+            self.rooms[doc_id][sender_id]["cursor"] = cursor
+        msg = {"type": "cursor_update", "sender_id": sender_id, "cursor": cursor, "selection_end": selection_end}
+        await self._broadcast(doc_id, msg, exclude=sender_id)
+
+    async def set_mode(self, doc_id: str, user_id: str, mode: str):
+        if doc_id in self.rooms and user_id in self.rooms[doc_id]:
+            self.rooms[doc_id][user_id]["mode"] = mode
+            await self.broadcast_presence(doc_id)
+
+    async def broadcast_saved(self, doc_id: str, sender_id: str):
+        await self._broadcast(doc_id, {"type": "doc_saved", "sender_id": sender_id})
+
+    async def _broadcast(self, doc_id: str, message: dict, exclude: str = None):
+        if doc_id not in self.rooms:
+            return
+        dead = []
+        for uid, u in self.rooms[doc_id].items():
+            if uid == exclude:
+                continue
+            try:
+                await u["ws"].send_json(message)
+            except Exception:
+                dead.append(uid)
+        for uid in dead:
+            self.rooms[doc_id].pop(uid, None)
+
+collab = CollabManager()
+
 # --- Models ---
 class UserRegister(BaseModel):
     email: str
