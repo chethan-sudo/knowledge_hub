@@ -4,27 +4,32 @@
 - Frontend: React + Custom CSS (port 3000)
 - Backend: FastAPI + Motor (port 8001)  
 - Database: MongoDB
-- Auth: Emergent Google OAuth + localStorage token + cookie fallback
+- Auth: Email/password with JWT-style session tokens (localStorage)
 - AI: Claude Sonnet 4.5 via Emergent LLM Key
 
+## Auth
+- Register: POST /api/auth/register (email, name, password)
+- Login: POST /api/auth/login (email, password) → returns token
+- Token stored in localStorage, sent as Authorization: Bearer header
+- Admin: chethan@emergent.sh (password: admin123)
+- Viewer: any other registered user
+
 ## All Implemented Features (36 docs, 46 categories)
-- [x] Google OAuth with dual auth (localStorage token + cookie)
+- [x] Email/password auth with register/login
 - [x] Admin/Viewer roles, Invite system, Settings page
-- [x] Comprehensive System Architecture (DB, Jobs, Audits, Metadata, Chat History, ENV, Tools, Subagents, LLM Proxy)
+- [x] System Architecture (DB, Jobs, Audits, Metadata, ENV, Tools, Subagents, LLM Proxy)
 - [x] Limitations & Constraints category
-- [x] UI Guide category (every button documented)
-- [x] AI Agent test cases (TC-AGT-001 to TC-AGT-015)
-- [x] Mermaid diagrams with scoped CSS expand button (no size inheritance)
-- [x] Book logo for Knowledge Hub brand
-- [x] AI Chatbot with improved context (5 docs, 4000 chars each)
-- [x] Reading progress bar (4px gradient with glow)
-- [x] Document templates (5 types), Tags with suggestions + cloud filter
+- [x] UI Guide category
+- [x] AI Agent test cases (15 TCs)
+- [x] Mermaid diagrams with scoped expand button
+- [x] AI Chatbot (Claude Sonnet)
+- [x] Document templates (5 types), Tags with suggestions + cloud
 - [x] Resizable sidebar, inline search, dark/light mode
 - [x] Soft delete + Trash, version history, threaded comments
 - [x] Public sharing, PDF export, bookmarks, keyboard nav
-- [x] Dynamic CORS middleware for credential support
+- [x] Reading progress bar
 
 ## Backlog
 - Drag-and-drop document reordering
-- Mermaid chart explanations in content
-- Collaborative editing (presence indicators)
+- Mermaid chart explanations
+- Collaborative editing
