@@ -35,63 +35,32 @@ function AuthProvider({ children }) {
 
   const api = useCallback(async (method, url, data) => {
     const headers = {};
-    const t = token || localStorage.getItem("ekh-token");
-    if (t) headers.Authorization = `Bearer ${t}`;
-    return axios({ method, url: `${API}${url}`, data, headers, withCredentials: true });
+    if (token) headers.Authorization = `Bearer ${token}`;
+    return axios({ method, url: `${API}${url}`, data, headers });
   }, [token]);
 
-  const checkAuth = useCallback(async () => {
-    const t = token || localStorage.getItem("ekh-token");
-    if (!t) { setLoading(false); return; }
-    try {
-      const r = await axios.get(`${API}/auth/me`, { headers: { Authorization: `Bearer ${t}` }, withCredentials: true });
-      setUser(r.data);
-    } catch {
-      setUser(null);
-      setToken(null);
-      localStorage.removeItem("ekh-token");
-    }
-    setLoading(false);
+  useEffect(() => {
+    if (!token) { setLoading(false); return; }
+    axios.get(`${API}/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => setUser(r.data))
+      .catch(() => { setToken(null); localStorage.removeItem("ekh-token"); setUser(null); })
+      .finally(() => setLoading(false));
   }, [token]);
 
-  useEffect(() => { checkAuth(); }, [checkAuth]);
-
-  const saveToken = (t) => { setToken(t); localStorage.setItem("ekh-token", t); };
-
+  const login = async (email, password) => {
+    const r = await axios.post(`${API}/auth/login`, { email, password });
+    setToken(r.data.token); setUser(r.data.user); localStorage.setItem("ekh-token", r.data.token);
+  };
+  const register = async (email, name, password) => {
+    const r = await axios.post(`${API}/auth/register`, { email, name, password });
+    setToken(r.data.token); setUser(r.data.user); localStorage.setItem("ekh-token", r.data.token);
+  };
   const logout = async () => {
-    const t = token || localStorage.getItem("ekh-token");
-    try { await axios.post(`${API}/auth/logout`, {}, { headers: t ? { Authorization: `Bearer ${t}` } : {}, withCredentials: true }); } catch {}
+    try { await axios.post(`${API}/auth/logout`, {}, { headers: token ? { Authorization: `Bearer ${token}` } : {} }); } catch {}
     setUser(null); setToken(null); localStorage.removeItem("ekh-token");
   };
 
-  return <AuthContext.Provider value={{ user, loading, api, logout, checkAuth, setUser, saveToken }}>{children}</AuthContext.Provider>;
-}
-
-// REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
-function AuthCallback() {
-  const navigate = useNavigate();
-  const { saveToken, setUser } = useAuth();
-  const hasProcessed = useRef(false);
-
-  useEffect(() => {
-    if (hasProcessed.current) return;
-    hasProcessed.current = true;
-    const hash = window.location.hash;
-    const match = hash.match(/session_id=([^&]+)/);
-    if (!match) { navigate("/login"); return; }
-    const sessionId = match[1];
-    axios.post(`${API}/auth/session`, { session_id: sessionId }, { withCredentials: true })
-      .then(r => {
-        // Store token from response and save user
-        const sessionToken = r.data.session_token || r.data.user?.session_token;
-        if (sessionToken) saveToken(sessionToken);
-        if (r.data.user) setUser(r.data.user);
-        window.location.replace("/");
-      })
-      .catch(() => navigate("/login"));
-  }, [navigate, saveToken, setUser]);
-
-  return <div className="edh-loading"><div className="edh-spinner" /></div>;
+  return <AuthContext.Provider value={{ user, loading, api, login, register, logout, setUser }}>{children}</AuthContext.Provider>;
 }
 
 function ProtectedRoute({ children }) {
@@ -102,14 +71,24 @@ function ProtectedRoute({ children }) {
 
 // --- Login Page ---
 function LoginPage() {
-  const { user } = useAuth();
+  const [isLogin, setIsLogin] = useState(true);
+  const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const { login, register, user } = useAuth();
   const navigate = useNavigate();
+
   useEffect(() => { if (user) navigate("/"); }, [user, navigate]);
 
-  // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
-  const handleGoogleLogin = () => {
-    const redirectUrl = window.location.origin + '/';
-    window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
+  const handleSubmit = async (e) => {
+    e.preventDefault(); setError(""); setSubmitting(true);
+    try {
+      if (isLogin) await login(email, password);
+      else await register(email, name, password);
+    } catch (err) { setError(err.response?.data?.detail || "Something went wrong"); }
+    setSubmitting(false);
   };
 
   return (
@@ -122,15 +101,16 @@ function LoginPage() {
         <div className="auth-tagline">Your AI knowledge base.<br/>Organized. Searchable. Beautiful.</div>
       </div>
       <div className="auth-right">
-        <div className="auth-form" data-testid="auth-form">
-          <h2>Welcome</h2>
-          <p className="auth-sub">Sign in to access the documentation hub</p>
-          <button data-testid="google-login-btn" className="google-login-btn" onClick={handleGoogleLogin}>
-            <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-            Sign in with Google
-          </button>
-          <p className="auth-note">Admin: chethan@emergent.sh</p>
-        </div>
+        <form className="auth-form" onSubmit={handleSubmit} data-testid="auth-form">
+          <h2>{isLogin ? "Welcome back" : "Create account"}</h2>
+          <p className="auth-sub">{isLogin ? "Sign in to continue" : "Get started for free"}</p>
+          {error && <div className="auth-error" data-testid="auth-error">{error}</div>}
+          {!isLogin && <input data-testid="register-name-input" type="text" placeholder="Full name" value={name} onChange={e => setName(e.target.value)} required />}
+          <input data-testid="auth-email-input" type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required />
+          <input data-testid="auth-password-input" type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} required minLength={4} />
+          <button data-testid="auth-submit-btn" type="submit" disabled={submitting}>{submitting ? "..." : isLogin ? "Sign in" : "Create account"}</button>
+          <p className="auth-toggle">{isLogin ? "No account?" : "Already have one?"} <button type="button" data-testid="auth-toggle-btn" onClick={() => { setIsLogin(!isLogin); setError(""); }}>{isLogin ? "Sign up" : "Sign in"}</button></p>
+        </form>
       </div>
     </div>
   );
