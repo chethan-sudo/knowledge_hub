@@ -129,119 +129,148 @@ DOCUMENTS = [
         "created_at": NOW, "updated_at": NOW, "order": -1,
         "content": """# System Architecture Overview
 
-A complete map of how the Emergent platform works — from the moment a user types a message to the final response.
+A complete map of how the Emergent platform works — every component, every data flow, every service.
 
 ## End-to-End Flow
 
 ```mermaid
 flowchart TD
     U[User] -->|types message| FE[Emergent Frontend]
-    FE -->|sends via WebSocket/API| AS[Agent Service]
-    AS -->|loads history, system prompt| AS
-    AS -->|constructs full payload| E1[E1 Orchestrator]
-    E1 -->|uses as reasoning engine| LLM[LLM Provider<br/>Claude / GPT / Gemini]
-    LLM -->|returns reasoning + tool calls| E1
-    E1 -->|decides: tool or text?| Decision{Decision}
-    Decision -->|text response| AS
-    Decision -->|tool call| TE[Tool Execution Engine]
-    Decision -->|subagent call| SA[Subagent]
-    TE -->|executes in container| POD[Kubernetes Pod]
-    SA -->|spawns separate session| SA_LLM[Subagent LLM]
-    SA_LLM -->|returns results| E1
-    TE -->|returns results| E1
-    E1 -->|loop continues until done| Decision
-    AS -->|stores in DB, streams to user| FE
-    FE -->|displays response| U
+    FE -->|sends via WebSocket API| AS[Agent Service]
+    AS -->|routes to E1 stores in DB| E1[E1 Orchestrator]
+    E1 -->|reasoning request| LLP[LLM Proxy]
+    LLP -->|routes to provider| LLM[LLM Provider]
+    LLM -->|text response| LLP
+    LLP -->|tokens counted| E1
+    E1 -->|tool calls| TE[Tool Engine]
+    E1 -->|subagent calls| SA[Subagent]
+    E1 -->|decision| DEC{Decision}
+    DEC -->|more work| E1
+    DEC -->|respond| RESP[Send Response]
+    TE -->|executes| POD[K8s Pod]
+    SA -->|spawns LLM| SALLM[Subagent LLM]
+    POD -->|result| E1
+    SALLM -->|result| E1
+    RESP --> FE
+    FE -->|displays| U
+    AS -->|stores| DB[(MongoDB)]
 ```
 
 ## Component Roles
 
 | Component | What It Is | What It Does |
 |-----------|-----------|-------------|
-| **User** | The human | Sends messages, uploads files, triggers actions |
-| **Emergent Frontend** | Chat UI (React) | Renders conversation, handles input, displays results |
-| **Agent Service** | Backend infrastructure | Auth, sessions, history, tool routing, git versioning |
-| **E1 Orchestrator** | The main AI agent | Decision-maker. Picks tools, delegates to subagents, drives workflow |
-| **LLM Provider** | Claude/GPT/Gemini | Reasoning engine that E1 uses. Stateless — just computes |
-| **Tool Execution Engine** | Runs tools | Validates and executes tool calls inside the container |
-| **Subagents** | Specialized agents | Testing, design, integration experts — each with own LLM |
-| **Kubernetes Pod** | Your workspace | Container with your code, MongoDB, frontend, backend |
+| **Frontend** | React web app | Chat UI, file browser, preview, code editor |
+| **Agent Service** | Python backend | Routes messages, manages sessions, stores history |
+| **E1 Orchestrator** | AI agent NOT an LLM | Decides what tools to call, when to delegate, when to respond |
+| **LLM Proxy** | Reverse proxy | Routes LLM calls, tracks tokens, enforces budgets, failover |
+| **LLM Provider** | Claude GPT Gemini | Generates text responses and reasoning |
+| **Tool Execution Engine** | Container runtime | Runs bash, creates files, takes screenshots |
+| **Subagents** | Specialist workers | Testing, design, troubleshooting, integration |
+| **Kubernetes Pod** | Isolated container | User workspace with filesystem, DB, and services |
+| **MongoDB** | Database | Stores everything: users, jobs, chat, metadata |
 
-## Data Flow Diagram
+## Database Layer
 
-```mermaid
-flowchart LR
-    subgraph Cloud["Emergent Cloud"]
-        DB[(Session DB)]
-        STORE[(Asset Storage)]
-        PROXY[Universal Key Proxy]
-    end
-    subgraph Cluster["Kubernetes Cluster"]
-        ING[Ingress Controller]
-        subgraph Pod["User Container"]
-            BE[Backend :8001]
-            FE_SRV[Frontend :3000]
-            MONGO[(MongoDB)]
-            GIT[.git]
-        end
-    end
-    subgraph LLMs["LLM Providers"]
-        OAI[OpenAI]
-        ANT[Anthropic]
-        GOO[Google]
-    end
-    DB <-->|conversation history| AS2[Agent Service]
-    STORE <-->|uploaded files| AS2
-    AS2 <-->|tool execution| Pod
-    AS2 -->|LLM calls| PROXY
-    PROXY --> OAI
-    PROXY --> ANT
-    PROXY --> GOO
-    ING -->|/api/*| BE
-    ING -->|/*| FE_SRV
-    BE <--> MONGO
-```
+MongoDB stores ALL platform data:
+
+| Collection | Purpose | Key Fields |
+|------------|---------|-----------|
+| **users** | User accounts | user_id, email, name, role |
+| **user_sessions** | Auth sessions | session_token, user_id, expires_at |
+| **jobs** | Agent job records | job_id, user_id, status, created_at |
+| **job_audits** | Step-by-step audit trail | job_id, step_type, tool_name, input, output |
+| **job_metadata** | Job configuration | job_id, model, system_prompt, tools_available |
+| **chat_history** | Conversation messages | job_id, role, content, tool_calls |
+| **env_variables** | Per-user ENV config | user_id, key, value |
+
+## Jobs, Audits and Metadata
+
+Every user interaction creates a Job:
+
+- **Job**: A single agent session from user request to completion
+- **Job Audit**: Every tool call, LLM call, and decision logged with timestamps
+- **Job Metadata**: Model used, system prompt version, available tools, constraints
+- **Auto-commit**: After every significant change, git commits for rollback
+
+## ENV and Configuration Tools
+
+E1 can read and write environment variables:
+
+| Tool | What It Does |
+|------|-------------|
+| **Read ENV** | View current environment variables from .env files |
+| **Write ENV** | Set new variables, persisted across restarts |
+| **Bash access** | Access env via os.environ in code |
+
+Protected variables like MONGO_URL, REACT_APP_BACKEND_URL are pre-configured and must not be deleted.
+
+## Complete Tool Registry
+
+| Tool | Category | What It Does |
+|------|----------|-------------|
+| create_file | File IO | Create new files with content |
+| view_file | File IO | Read file contents with line numbers |
+| search_replace | File IO | Edit existing files surgically |
+| view_bulk | File IO | Read multiple files at once |
+| glob_files | File IO | Find files by pattern |
+| insert_text | File IO | Insert text at specific line |
+| execute_bash | Execution | Run shell commands with 120s timeout |
+| screenshot_tool | Testing | Take browser screenshots via Playwright |
+| web_search | Research | Search the web for information |
+| crawl_tool | Research | Scrape webpage content |
+| image_selector | Assets | Find stock photos |
+| image_generation | Assets | Generate images with AI |
+| lint_javascript | Quality | ESLint for JS and TS files |
+| lint_python | Quality | Ruff linter for Python |
+| analyze_file | Analysis | AI powered file analysis |
+| extract_file | Analysis | Extract structured data from files |
+| ask_human | Interaction | Ask user for clarification |
+
+## Subagent Registry
+
+| Subagent | Specialty | When Used |
+|----------|-----------|-----------|
+| testing_agent | QA and testing | After feature implementation |
+| design_agent | UI and UX design | When UI design is needed |
+| troubleshoot_agent | Debugging | When stuck in error loops |
+| integration_playbook | Third party APIs | For external service integration |
+| expert_opinion | Architecture review | For design decisions |
+| deployment_agent | Deploy debugging | When deployment fails |
+| support_agent | Platform help | For user questions about Emergent |
 
 ## Request Routing
 
-```mermaid
-flowchart TD
-    REQ[Browser Request] --> DNS[DNS Resolution]
-    DNS --> LB[Load Balancer]
-    LB --> ING[K8s Ingress]
-    ING -->|path starts with /api| BE[Backend :8001]
-    ING -->|all other paths| FE[Frontend :3000]
-    BE --> MONGO[(MongoDB)]
-    BE --> RESP1[JSON Response]
-    FE --> RESP2[HTML/JS/CSS]
-```
+All requests flow through Kubernetes Ingress:
+
+| URL Pattern | Routes To | Purpose |
+|------------|-----------|---------|
+| /api/* | FastAPI on port 8001 | Backend API calls |
+| /* | React on port 3000 | Frontend pages |
+| WebSocket | Agent Service | Real time chat |
 
 ## The Orchestration Loop
 
-This is the core loop that powers every interaction:
+E1 operates in a continuous loop:
 
-```mermaid
-flowchart TD
-    START([User sends message]) --> RECV[E1 receives input]
-    RECV --> REASON[E1 reasons using LLM]
-    REASON --> DECIDE{What to do?}
-    DECIDE -->|Need tool| TOOL[Execute Tool]
-    DECIDE -->|Need subagent| AGENT[Call Subagent]
-    DECIDE -->|Ready to respond| RESPOND[Send text response]
-    TOOL -->|result| RECV
-    AGENT -->|result| RECV
-    RESPOND --> END([User sees response])
-```
+1. **Receive** Get user message or tool result
+2. **Think** Send context to LLM for reasoning
+3. **Decide** Parse LLM response for tool calls or final answer
+4. **Act** Execute tools, call subagents, or respond
+5. **Log** Record every action in job audit
+6. **Repeat** If more work needed go to step 1
 
 ## Key Architectural Principles
 
-- **E1 is the orchestrator, not an LLM.** It uses an LLM as its reasoning engine, but E1 itself is the decision-making agent layer.
-- **LLMs are stateless.** The Agent Service maintains all conversation history and feeds it back with every call.
-- **Subagents are independent.** They have no memory of previous calls. E1 provides full context each time.
-- **Everything is containerized.** Each user gets an isolated Kubernetes pod with its own filesystem, database, and services.
-- **Auto-commit everything.** Every action creates a git checkpoint for rollback capability.
+- **E1 is the orchestrator not an LLM.** It uses an LLM as its reasoning engine but E1 itself is the decision-making agent layer
+- **LLMs are stateless.** The Agent Service maintains all conversation history and feeds it back with every call
+- **Subagents are independent.** They have no memory of previous calls. E1 provides full context each time
+- **Everything is containerized.** Each user gets an isolated Kubernetes pod with its own filesystem database and services
+- **Auto-commit everything.** Every action creates a git checkpoint for rollback capability
+- **LLM Proxy mediates all AI calls.** Universal Key, cost tracking, rate limiting, failover all handled transparently
+- **MongoDB is the source of truth.** Jobs, audits, chat history, metadata, user data everything persists in MongoDB
 """
-    },
+
 
     # ===== E1 ORCHESTRATOR =====
     {
