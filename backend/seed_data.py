@@ -156,19 +156,21 @@ flowchart TD
     AS -->|stores| DB[(MongoDB)]
 ```
 
-**Diagram Explanation:**
+**Flow Explanation — End-to-End Request Flow (step by step):**
 
-- **User**: The developer typing in the Emergent chat interface
-- **Emergent Frontend**: React web app that provides the chat UI, file browser, and preview panel
-- **Agent Service**: Python backend that receives messages, manages session state, and routes to E1. It also persists every message to MongoDB
-- **E1 Orchestrator**: The core AI agent. NOT an LLM itself — it is a software system that uses an LLM for reasoning but makes its own decisions about what tools to call
-- **LLM Proxy**: A reverse proxy that sits between E1 and all LLM providers. It routes requests, tracks token usage, enforces budget limits, and handles failover between providers
-- **LLM Provider**: The actual AI model (Claude, GPT, Gemini) that generates text responses
-- **Tool Engine**: Executes file operations, bash commands, screenshots, web searches inside the users Kubernetes pod
-- **Subagent**: Specialized workers (testing, design, troubleshooting) that E1 delegates tasks to. Each subagent gets its own LLM instance
-- **Decision**: After every LLM response, E1 decides whether to call more tools, delegate to a subagent, or send a final response to the user
-- **K8s Pod**: The isolated Kubernetes container where the users code lives
-- **MongoDB**: Stores everything — chat history, job audits, user data, session state
+1. **User types a message** in the Emergent chat interface (e.g., "Build me a todo app with authentication")
+2. **Frontend sends the message** via WebSocket to the Agent Service. The frontend is a React web app that provides the chat UI, file browser, and live preview panel
+3. **Agent Service receives and stores** the message in MongoDB (chat_history collection), creates or updates the job record, then routes the message to the E1 Orchestrator instance assigned to this job
+4. **E1 Orchestrator processes the message.** E1 is NOT an LLM — it is a software system. It takes the user's message, combines it with the full system prompt (~15,000 tokens of rules), all previous conversation history, and all pending tool results, then sends this entire context to the LLM
+5. **LLM Proxy intercepts the LLM call.** The proxy validates the Universal Key, checks the user's token budget, selects the correct provider (OpenAI, Anthropic, or Google based on the model requested), and forwards the request
+6. **LLM Provider generates a response.** The LLM (e.g., Claude Sonnet) reads the full context and generates a response. This response may contain plain text (explanation to the user), structured tool calls (e.g., create_file, execute_bash), or subagent delegation requests
+7. **LLM Proxy logs the response,** counts input and output tokens, calculates cost, deducts from the user's balance, and passes the response back to E1
+8. **E1's Decision Layer parses the response.** If the LLM output contains tool calls → E1 sends them to the Tool Engine for execution in the K8s Pod. If it contains a subagent request → E1 spawns a subagent with its own LLM instance. If it's a text response → E1 sends it to the user
+9. **Tool Engine executes in the K8s Pod.** Bash commands run in the container, files are created/modified on the pod filesystem, screenshots are taken via Playwright. Results are stored in the conversation database
+10. **Subagent (if spawned) works independently** with its own LLM, completes its task (e.g., running tests), and returns results + git diff back to E1
+11. **E1 decides: continue or done?** After processing tool results or subagent output, E1 decides whether more work is needed (loop back to step 4) or the task is complete (send final response to user)
+12. **Response displayed to user** in the frontend chat interface. The user sees E1's explanation, code changes in the file browser, and live app updates in the preview panel
+13. **MongoDB stores everything** — every message, every tool call, every LLM response, every audit entry. This enables conversation history, debugging, and billing
 
 ## Component Roles
 
