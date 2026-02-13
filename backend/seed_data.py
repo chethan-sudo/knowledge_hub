@@ -820,7 +820,15 @@ flowchart BT
     L4 --> L5["Layer 5: Runtime<br/>(writable, container-specific)"]
 ```
 
-Changing your code rebuilds only Layer 4+. Lower layers are cached and reusable across all containers.
+**Flow Explanation — Docker Image Layers:**
+
+- **What:** This shows how Docker images are built as a stack of layers, from bottom to top
+- **Layer 1 (Ubuntu base):** The OS foundation. Shared across ALL containers that use Ubuntu. Downloaded once and cached. This is why Docker images are much smaller than VMs — multiple containers share this layer
+- **Layer 2 (Python 3.11):** The runtime. Shared across all Python applications. Adding Python on top of Ubuntu creates a new layer without duplicating the Ubuntu layer
+- **Layer 3 (pip packages):** Your dependencies from requirements.txt. This layer changes whenever you add or update a package. Docker caches this layer, so if requirements.txt hasn't changed, it skips rebuilding
+- **Layer 4 (Your code):** Your application files. This changes frequently (every code edit). Because it's a separate layer, changing code only rebuilds this layer and above — not the entire image
+- **Layer 5 (Runtime):** The writable layer that exists only during container execution. Log files, temp data, runtime state go here. This layer is destroyed when the container stops
+- **Why layers matter:** Efficient rebuilds. If you only change your code (Layer 4), Docker reuses Layers 1-3 from cache. A rebuild that would take 10 minutes without layers takes 5 seconds with layers
 """
     },
 
