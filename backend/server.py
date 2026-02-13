@@ -11,7 +11,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 import uuid
 from datetime import datetime, timezone, timedelta
-import httpx
+import bcrypt
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -21,7 +21,6 @@ client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
 ADMIN_EMAIL = "chethan@emergent.sh"
-EMERGENT_AUTH_URL = "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data"
 
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
