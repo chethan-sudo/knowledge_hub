@@ -853,6 +853,15 @@ flowchart TD
     WP --> LIVE2[New frontend code live<br/>State preserved]
 ```
 
+**Flow Explanation — Hot Reload:**
+
+- **What:** This shows how code changes become live without manually restarting services
+- **E1 edits server.py:** When E1 uses create_file or search_replace to modify a Python or JavaScript file, the change is written to disk immediately
+- **File watcher detects change:** Both the backend (uvicorn with WatchFiles) and frontend (webpack with HMR) have file watchers that monitor the filesystem for changes
+- **Backend reload (uvicorn):** When a .py file changes, uvicorn detects it, stops the current Python process, re-imports all modules, and starts a new process. Takes 1-3 seconds. All in-memory state is lost (database state persists in MongoDB)
+- **Frontend reload (Webpack HMR):** When a .js/.jsx/.css file changes, webpack recompiles only the changed module, sends it to the browser via WebSocket, and the browser hot-swaps the module WITHOUT a full page reload. React component state is preserved. Takes 200ms-2 seconds
+- **Why this matters:** Hot reload means E1 doesn't need to restart services after every code change. This saves significant time during development. However, .env changes and new package installations DO require a manual restart via `sudo supervisorctl restart backend/frontend`
+
 ## When Restart IS Needed
 
 | Change Type | Hot Reload Handles? | Manual Restart? |
