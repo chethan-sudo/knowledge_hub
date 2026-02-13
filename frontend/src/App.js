@@ -180,15 +180,16 @@ function MermaidDiagram({ chart }) {
   const [svg, setSvg] = useState("");
   const [error, setError] = useState(null);
   const [expanded, setExpanded] = useState(false);
+  const [zoom, setZoom] = useState(1);
   const { dark } = useTheme();
 
   useEffect(() => {
     const render = async () => {
       try {
         const themeVars = dark
-          ? { primaryColor: "#4f46e5", primaryBorderColor: "#6366f1", primaryTextColor: "#e4e4e7", lineColor: "#71717a", secondaryColor: "#27272a", tertiaryColor: "#18181b", background: "transparent", mainBkg: "#27272a", nodeBorder: "#6366f1", clusterBkg: "#1a1a2e", titleColor: "#e4e4e7", edgeLabelBackground: "#18181b", nodeTextColor: "#e4e4e7" }
-          : { primaryColor: "#4f46e5", primaryBorderColor: "#6366f1", primaryTextColor: "#18181b", lineColor: "#71717a", background: "transparent", mainBkg: "#eef2ff", secondaryColor: "#f0f0ff", tertiaryColor: "#f8f8ff", nodeBorder: "#6366f1", edgeLabelBackground: "#ffffff", nodeTextColor: "#18181b", clusterBkg: "#f5f5ff", titleColor: "#18181b", actorBkg: "#eef2ff", actorTextColor: "#18181b", actorLineColor: "#6366f1", signalColor: "#18181b", labelBoxBkgColor: "#eef2ff", noteBkgColor: "#f0f0ff" };
-        mermaid.initialize({ startOnLoad: false, theme: dark ? "dark" : "base", themeVariables: themeVars });
+          ? { primaryColor: "#4f46e5", primaryBorderColor: "#6366f1", primaryTextColor: "#e4e4e7", lineColor: "#71717a", secondaryColor: "#27272a", tertiaryColor: "#18181b", background: "transparent", mainBkg: "#27272a", nodeBorder: "#6366f1", clusterBkg: "#1a1a2e", titleColor: "#e4e4e7", edgeLabelBackground: "#18181b", nodeTextColor: "#e4e4e7", fontSize: "14px" }
+          : { primaryColor: "#4f46e5", primaryBorderColor: "#6366f1", primaryTextColor: "#18181b", lineColor: "#71717a", background: "transparent", mainBkg: "#eef2ff", secondaryColor: "#f0f0ff", tertiaryColor: "#f8f8ff", nodeBorder: "#6366f1", edgeLabelBackground: "#ffffff", nodeTextColor: "#18181b", clusterBkg: "#f5f5ff", titleColor: "#18181b", fontSize: "14px" };
+        mermaid.initialize({ startOnLoad: false, theme: dark ? "dark" : "base", themeVariables: themeVars, flowchart: { padding: 20, nodeSpacing: 30, rankSpacing: 50, htmlLabels: true, wrappingWidth: 200 }, sequence: { actorMargin: 80, messageMargin: 40 } });
         const id = `mermaid-${Math.random().toString(36).slice(2, 9)}`;
         const { svg: renderedSvg } = await mermaid.render(id, chart.trim());
         setSvg(renderedSvg); setError(null);
@@ -209,13 +210,23 @@ function MermaidDiagram({ chart }) {
     <>
       <div ref={ref} className="mermaid-diagram" data-testid="mermaid-diagram">
         <div dangerouslySetInnerHTML={{ __html: svg }} />
-        <button className="mermaid-expand-btn" data-testid="mermaid-expand-btn" onClick={() => setExpanded(true)}><Icon name="Maximize" size={12}/>Expand</button>
+        <button className="mermaid-expand-btn" data-testid="mermaid-expand-btn" onClick={() => { setExpanded(true); setZoom(1); }}><Icon name="Maximize" size={12}/>Expand</button>
       </div>
       {expanded && (
         <div className="mermaid-modal" data-testid="mermaid-modal" onClick={() => setExpanded(false)}>
           <div className="mermaid-modal-content" onClick={e => e.stopPropagation()}>
-            <button className="mermaid-modal-close" data-testid="mermaid-modal-close" onClick={() => setExpanded(false)}><Icon name="X" size={20}/> Close</button>
-            <div className="mermaid-modal-svg" dangerouslySetInnerHTML={{ __html: svg }} />
+            <div className="mermaid-modal-toolbar">
+              <div className="mermaid-zoom-controls">
+                <button data-testid="zoom-out" onClick={() => setZoom(z => Math.max(0.3, z - 0.2))}>-</button>
+                <span>{Math.round(zoom * 100)}%</span>
+                <button data-testid="zoom-in" onClick={() => setZoom(z => Math.min(3, z + 0.2))}>+</button>
+                <button data-testid="zoom-reset" onClick={() => setZoom(1)}>Reset</button>
+              </div>
+              <button className="mermaid-modal-close" data-testid="mermaid-modal-close" onClick={() => setExpanded(false)}><Icon name="X" size={16}/> Close</button>
+            </div>
+            <div className="mermaid-modal-svg">
+              <div style={{transform: `scale(${zoom})`, transformOrigin: "top left", transition: "transform 0.15s"}} dangerouslySetInnerHTML={{ __html: svg }} />
+            </div>
           </div>
         </div>
       )}
