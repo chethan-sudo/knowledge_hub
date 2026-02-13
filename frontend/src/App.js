@@ -45,53 +45,6 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
-// --- Login Page ---
-function LoginPage() {
-  const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const { login, register, user } = useAuth();
-  const navigate = useNavigate();
-
-  useEffect(() => { if (user) navigate("/"); }, [user, navigate]);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault(); setError(""); setSubmitting(true);
-    try {
-      if (isLogin) await login(email, password);
-      else await register(email, name, password);
-    } catch (err) { setError(err.response?.data?.detail || "Something went wrong"); }
-    setSubmitting(false);
-  };
-
-  return (
-    <div className="auth-page" data-testid="auth-page">
-      <div className="auth-left">
-        <div className="auth-brand">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="M8 7h6"/><path d="M8 11h4"/></svg>
-          <span>Emergent Knowledge Hub</span>
-        </div>
-        <div className="auth-tagline">Your AI knowledge base.<br/>Organized. Searchable. Beautiful.</div>
-      </div>
-      <div className="auth-right">
-        <form className="auth-form" onSubmit={handleSubmit} data-testid="auth-form">
-          <h2>{isLogin ? "Welcome back" : "Create account"}</h2>
-          <p className="auth-sub">{isLogin ? "Sign in to continue" : "Get started for free"}</p>
-          {error && <div className="auth-error" data-testid="auth-error">{error}</div>}
-          {!isLogin && <input data-testid="register-name-input" type="text" placeholder="Full name" value={name} onChange={e => setName(e.target.value)} required />}
-          <input data-testid="auth-email-input" type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required />
-          <input data-testid="auth-password-input" type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} required minLength={4} />
-          <button data-testid="auth-submit-btn" type="submit" disabled={submitting}>{submitting ? "..." : isLogin ? "Sign in" : "Create account"}</button>
-          <p className="auth-toggle">{isLogin ? "No account?" : "Already have one?"} <button type="button" data-testid="auth-toggle-btn" onClick={() => { setIsLogin(!isLogin); setError(""); }}>{isLogin ? "Sign up" : "Sign in"}</button></p>
-        </form>
-      </div>
-    </div>
-  );
-}
-
 // --- Icon component ---
 function Icon({ name, size = 18 }) {
   const icons = {
