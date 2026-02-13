@@ -1215,10 +1215,14 @@ flowchart LR
     C3 -.->|"ROLLBACK"| RESTORE["Restored State<br/>All files at Commit 3"]
 ```
 
-**Rolled back**: Source code, configs, project structure.
-**Not rolled back**: MongoDB data, conversation history, git history.
+**Flow Explanation — Git Rollback:**
 
-E1 never does `git reset` — users use the Rollback button instead. It's safer because it preserves platform files and handles dependency reinstallation.
+- **What:** This shows how the rollback feature works using git commits as checkpoints
+- **Commit chain:** Every significant action E1 takes creates an automatic git commit. These form a chain: Commit 1 → 2 → 3 → 4 → 5. Each commit is a complete snapshot of the entire codebase at that point in time
+- **Rollback operation:** If Commit 5 introduces a bug, the user can rollback to Commit 3. The platform restores ALL files to exactly the state they were in at Commit 3
+- **What IS rolled back:** Source code files (.py, .js, .css, .html), configuration files (.env, package.json, requirements.txt), project structure (folders, new files)
+- **What is NOT rolled back:** MongoDB data (documents, users, collections remain as-is), conversation history with E1, git history itself (old commits are preserved)
+- **Why the user should never use git reset:** E1 is instructed to never run `git reset` because the platform has special files (.emergent folder, .git config) that must be preserved. The Rollback feature handles these correctly. Users should use the Rollback button in the platform UI, which is free and instant
 """
     },
 
