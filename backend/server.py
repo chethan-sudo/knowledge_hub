@@ -29,6 +29,15 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 logger = logging.getLogger(__name__)
 
 # --- Models ---
+class UserRegister(BaseModel):
+    email: str
+    name: str
+    password: str
+
+class UserLogin(BaseModel):
+    email: str
+    password: str
+
 class CategoryCreate(BaseModel):
     name: str
     icon: str = "FileText"
