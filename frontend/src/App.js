@@ -1072,14 +1072,6 @@ function ReadingProgress() {
     </div>
   );
 }
-      setProgress(scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0);
-    };
-    const main = document.querySelector('.main-content');
-    main?.addEventListener('scroll', handler);
-    return () => main?.removeEventListener('scroll', handler);
-  }, []);
-  return <div className="reading-progress" data-testid="reading-progress" style={{width: `${progress}%`}} />;
-}
 
 // --- AI Chatbot ---
 function AIChatbot({ docId }) {
