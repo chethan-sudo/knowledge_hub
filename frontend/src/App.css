@@ -57,7 +57,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 
 /* Dashboard */
 .dashboard { display: flex; min-height: 100vh; }
-.main-content { flex: 1; min-height: 100vh; overflow-y: auto; background: var(--content-bg); margin-left: var(--sidebar-w); }
+.main-content { flex: 1; height: 100vh; overflow-y: auto; background: var(--content-bg); margin-left: var(--sidebar-w); }
 
 /* Sidebar */
 .sidebar { width: var(--sidebar-w); background: var(--sidebar-bg); border-right: 1px solid var(--border-clr); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; overflow: hidden; z-index: 40; }
