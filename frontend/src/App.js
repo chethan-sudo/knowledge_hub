@@ -34,14 +34,17 @@ function AuthProvider({ children }) {
   const [token, setToken] = useState(() => localStorage.getItem("ekh-token"));
 
   const api = useCallback(async (method, url, data) => {
-    const headers = token ? { Authorization: `Bearer ${token}` } : {};
-    return axios({ method, url: `${API}${url}`, data, headers });
+    const headers = {};
+    const t = token || localStorage.getItem("ekh-token");
+    if (t) headers.Authorization = `Bearer ${t}`;
+    return axios({ method, url: `${API}${url}`, data, headers, withCredentials: true });
   }, [token]);
 
   const checkAuth = useCallback(async () => {
-    if (!token) { setLoading(false); return; }
+    const t = token || localStorage.getItem("ekh-token");
+    if (!t) { setLoading(false); return; }
     try {
-      const r = await axios.get(`${API}/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+      const r = await axios.get(`${API}/auth/me`, { headers: { Authorization: `Bearer ${t}` }, withCredentials: true });
       setUser(r.data);
     } catch {
       setUser(null);
