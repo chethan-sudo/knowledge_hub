@@ -660,6 +660,7 @@ function DocumentViewer({ doc, category, parentCategory, isBookmarked, onToggleB
   const [copied, setCopied] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const contentRef = useRef(null);
+  const { users, identity } = useCollaboration(doc?.id, !!doc);
 
   useEffect(() => { setShowVersions(false); setViewingVersion(null); setVersions([]); setShareId(doc?.share_id || null); setShowShare(false); }, [doc?.id, doc?.share_id]);
 
