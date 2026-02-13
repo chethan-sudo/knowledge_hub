@@ -897,7 +897,14 @@ flowchart LR
     REAL --> RENDER[Browser renders]
 ```
 
-100 virtual changes might result in only 3 real DOM updates.
+**Flow Explanation — React Reconciliation:**
+
+- **What:** This shows how React efficiently updates the browser's DOM by comparing virtual DOMs
+- **State Change:** Something triggers a re-render — user clicks a button, API data arrives, a timer fires. React creates a new Virtual DOM (a lightweight JavaScript object tree)
+- **Diff:** React compares the new Virtual DOM with the previous one. It uses a heuristic O(n) algorithm that checks node types and keys. Different type = destroy and rebuild. Same type = update props only
+- **Minimal update list:** The diff produces only the changes needed. If you update 1 item in a list of 100, React identifies that only 1 DOM node needs updating, not all 100
+- **Apply to Real DOM:** React batches all changes and applies them in a single DOM update. This avoids the expensive reflow-repaint cycle for each individual change
+- **Why this matters:** Direct DOM manipulation is slow. React's virtual DOM acts as a buffer, accumulating changes and applying them in the most efficient way possible. 100 state changes might result in only 3 real DOM updates
 
 ## Key Hooks
 
