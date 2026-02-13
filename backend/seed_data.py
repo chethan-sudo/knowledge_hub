@@ -2316,119 +2316,103 @@ An honest overview of current platform constraints, known limitations, and worka
         "created_at": NOW, "updated_at": NOW, "order": 0,
         "content": """# Emergent Platform UI Guide
 
-A complete walkthrough of every UI element in the Emergent development platform.
+A complete and accurate walkthrough of every UI element in the Emergent development platform. This guide reflects the actual current layout.
 
-## The Chat Interface
+## The Chat / Message Panel
 
-The main interaction point with E1. This is where you type messages and see agent responses.
+The message panel is the primary interaction area. It is the central pane where you communicate with E1 and where key actions are located.
 
-| Element | Description |
-|---------|------------|
-| **Message input** | Text area at the bottom where you type instructions to E1 |
-| **Send button** | Sends your message to the agent |
-| **Message history** | Scrollable area showing the full conversation |
-| **Agent responses** | E1 replies with text, code blocks, and tool call results |
-| **Tool call indicators** | Shows when E1 is executing tools (file ops, bash, search) |
-| **Thinking indicator** | Animated dots showing E1 is processing |
+| Element | Location | Description |
+|---------|----------|------------|
+| **Message input** | Bottom of message panel | Text area where you type instructions to E1. Press Enter to send, Shift+Enter for new line |
+| **Send button** | Right side of message input | Sends your message to the agent |
+| **Save to GitHub** | Inside the message panel (NOT top nav) | Button to push your current codebase to a linked GitHub repository. Located near the message input area, not in the top navigation bar |
+| **Message history** | Scrollable area above input | Shows the full conversation between you and E1 |
+| **Agent responses** | In message history | E1 replies with text, code blocks, file diffs, and tool call results |
+| **Tool call indicators** | Inline in agent responses | Shows when E1 is executing tools (file ops, bash, search). Displays tool name, status, and expandable output |
+| **Thinking indicator** | Below last message | Animated indicator showing E1 is processing your request |
+| **Attachments** | Near message input | Upload images or files for E1 to analyze |
 
 ## File Browser Panel
 
-Located on the left side, shows your project filesystem.
+Located on the left side of the screen. Shows your project's file system.
 
-| Element | Description |
-|---------|------------|
-| **Directory tree** | Expandable folder structure of your project |
-| **File icons** | Different icons for .py, .js, .css, .json, .md etc. |
-| **Click to open** | Click any file to view its contents in the editor |
-| **Right-click menu** | Options to rename, delete, or create new files |
-| **Search files** | Filter files by name across the project |
+| Element | Location | Description |
+|---------|----------|------------|
+| **Directory tree** | Left panel | Expandable folder structure of your entire project |
+| **File icons** | Next to each file | Different icons for .py, .js, .css, .json, .md, .html etc. |
+| **Click to open** | Any file in tree | Click any file to view its contents in the code editor panel |
+| **Search files** | Top of file browser | Filter files by name across the entire project |
 
 ## Code Editor / Preview Panel
 
-The right panel shows file contents and live previews.
+The right panel shows file contents and live app previews.
 
-| Element | Description |
-|---------|------------|
-| **File tabs** | Multiple files can be open as tabs |
-| **Syntax highlighting** | Code is colored by language |
-| **Line numbers** | Every line is numbered for reference |
-| **Preview mode** | For web apps, shows a live browser preview |
-| **Preview URL** | The external URL where your app is accessible |
-| **Refresh button** | Manually refresh the preview |
-| **Open in new tab** | Opens preview in a full browser tab |
+| Element | Location | Description |
+|---------|----------|------------|
+| **File tabs** | Top of right panel | Multiple files can be open simultaneously as tabs |
+| **Syntax highlighting** | In code editor | Code is colored by language (Python, JavaScript, CSS, etc.) |
+| **Line numbers** | Left margin of editor | Every line is numbered. E1 references these when explaining code |
+| **Preview mode** | Tab in right panel | For web apps, shows a live browser preview of your running application |
+| **Preview URL** | In preview panel header | The external URL where your app is accessible for testing. This URL changes between sessions |
+| **Refresh button** | Preview panel toolbar | Manually refresh the preview if it doesn't auto-update |
+| **Open in new tab** | Preview panel toolbar | Opens the preview in a full browser tab for better testing |
 
-## Top Navigation Bar
+## Key Actions and Where to Find Them
 
-| Element | Description |
-|---------|------------|
-| **Project name** | Shows the current project/job name |
-| **Save to GitHub** | Push your code to a GitHub repository |
-| **Rollback** | Revert to any previous checkpoint (free, instant) |
-| **Deploy** | Deploy your app to production |
-| **Share** | Share the preview URL with others |
-| **Settings gear** | Access project and account settings |
+This is the most important section. Users frequently look for these actions in the wrong place.
 
-## Deployment Options
-
-| Option | Description |
-|--------|------------|
-| **Preview URL** | Auto-generated URL for testing (changes between sessions) |
-| **Deploy to production** | Permanent URL on Emergent hosting |
-| **Custom domain** | Attach your own domain to deployed apps |
-| **Environment variables** | Set secrets and config for production |
+| Action | Where It Actually Is | How to Access |
+|--------|---------------------|---------------|
+| **Save to GitHub** | Message panel area | Look for the GitHub icon/button near the chat input. NOT in the top navigation bar |
+| **Rollback** | Available as a feature | Revert to any previous auto-checkpoint. Each significant code change creates a checkpoint. Free and instant |
+| **Deploy** | Deployment options available | Deploy your app to production with a permanent URL |
+| **Share preview** | Preview panel | Share the preview URL with others for testing |
 
 ## Rollback System
+
+Every significant code change E1 makes creates an automatic checkpoint (git commit). You can revert to any of these.
 
 | Element | Description |
 |---------|------------|
 | **Checkpoint list** | Every significant change creates an auto-checkpoint |
-| **Rollback button** | Click to revert to any previous checkpoint |
-| **Free and instant** | No cost, takes seconds |
-| **Git-based** | Each checkpoint is a git commit |
-| **Selective rollback** | Choose exactly which checkpoint to restore |
+| **Rollback** | Click to revert to any previous checkpoint |
+| **Free and instant** | No cost, takes seconds to revert |
+| **Git-based** | Each checkpoint is a git commit under the hood |
+| **Non-destructive** | You can rollback and then rollback the rollback |
 
-## Profile and Settings
+## Profile and Universal Key Settings
 
 | Setting | Description |
 |---------|------------|
-| **Universal Key** | Your Emergent LLM API key for all AI providers |
-| **Add Balance** | Top up your Universal Key balance |
-| **Auto Top-up** | Enable automatic balance replenishment |
-| **Usage Dashboard** | View token usage per model, per session |
-| **API Keys** | Manage third-party API keys (Stripe, SendGrid etc.) |
-| **Connected repos** | Link GitHub repositories |
+| **Universal Key** | Your Emergent LLM API key that works across all AI providers (OpenAI, Anthropic, Google) |
+| **Add Balance** | Top up your Universal Key balance. Navigate to Profile > Universal Key > Add Balance |
+| **Auto Top-up** | Enable automatic balance replenishment so you never run out mid-task |
+| **Usage Dashboard** | View token usage broken down by model and session |
 
-## Universal Key Management
+## Universal Key Details
 
-| Element | Description |
+The Universal Key is a single API key (format: sk-emergent-xxx) that works across multiple providers through the Emergent proxy.
+
+| Feature | Description |
 |---------|------------|
-| **Key display** | Shows your sk-emergent-xxx key (masked) |
-| **Copy button** | Copy key to clipboard |
-| **Balance** | Current credit balance in USD |
-| **Usage chart** | Visual breakdown of spending by provider |
-| **Add Balance** | Purchase more credits |
-| **Auto top-up toggle** | Automatically add credits when low |
-| **Supported providers** | OpenAI, Anthropic, Google (text), DALL-E, Nano Banana (image), Sora (video), Whisper (audio) |
-
-## Billing Dashboard
-
-| Element | Description |
-|---------|------------|
-| **Current balance** | Remaining Universal Key credits |
-| **Usage history** | Per-call breakdown with model, tokens, cost |
-| **Monthly summary** | Aggregated spending per month |
-| **Invoices** | Downloadable receipts |
-| **Payment methods** | Manage credit cards for top-ups |
+| **Supported for text** | OpenAI (GPT-5.2, GPT-4o), Anthropic (Claude Sonnet 4.5), Google (Gemini 3 Flash/Pro) |
+| **Supported for images** | OpenAI GPT Image 1, Google Nano Banana |
+| **Supported for video** | Sora 2 video generation |
+| **Supported for audio** | OpenAI Whisper (speech-to-text) |
+| **NOT supported for** | Third-party services like Stripe, SendGrid, Twilio, fal.ai. These need their own API keys |
+| **Key budget low?** | Go to Profile > Universal Key > Add Balance, or enable Auto Top-up |
 
 ## Agent Interaction Patterns
 
-| Pattern | How to Use |
-|---------|-----------|
-| **Build something** | Describe what you want: "Build a REST API with user auth" |
-| **Fix a bug** | Describe the issue: "Login returns 500 error" |
-| **Explain code** | Ask: "Explain what server.py does" |
-| **Modify existing** | Be specific: "Add a dark mode toggle to the header" |
-| **Ask for help** | Ask: "How do I deploy this?" or "What does this error mean?" |
+| Pattern | How to Use | Example |
+|---------|-----------|---------|
+| **Build something new** | Describe what you want clearly | "Build a REST API with user authentication and a React dashboard" |
+| **Fix a bug** | Describe the symptoms | "Login returns 500 error when I click submit" |
+| **Explain code** | Ask directly | "Explain what server.py does line by line" |
+| **Modify existing code** | Be specific about what to change | "Add a dark mode toggle to the header component" |
+| **Ask for help** | Ask about platform features | "How do I deploy this?" or "What does this error mean?" |
+| **Integration** | Name the service | "Integrate Stripe payment processing" - E1 will use the integration playbook |
 
 ## Keyboard Shortcuts
 
@@ -2436,9 +2420,7 @@ The right panel shows file contents and live previews.
 |----------|--------|
 | **Enter** | Send message to agent |
 | **Shift+Enter** | New line in message input |
-| **Ctrl+/Cmd+K** | Quick file search |
-| **Ctrl+/Cmd+S** | Save current file |
-| **Escape** | Close modal/panel |
+| **Ctrl/Cmd+K** | Quick file search in file browser |
 """
 
     },
