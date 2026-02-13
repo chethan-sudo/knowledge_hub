@@ -756,7 +756,14 @@ flowchart TD
     ING -->|"path: /*"| FE["Frontend :3000<br/>React Dev Server"]
 ```
 
-**Every backend route MUST start with `/api`**. Without it, the ingress routes to the frontend, which returns HTML instead of JSON.
+**Flow Explanation — Ingress Routing:**
+
+- **What:** This shows how HTTP requests from the browser reach the correct service inside the Kubernetes pod
+- **Browser Request:** Any request from the user's browser — viewing the app, calling an API, loading a CSS file
+- **Ingress Controller:** The Kubernetes ingress acts as a reverse proxy. It examines the URL path of every incoming request and routes it to the correct internal service
+- **Path /api/_ routes to Backend (port 8001):** Any URL starting with /api/ is forwarded to the FastAPI server running on port 8001 inside the pod. This is why every backend route MUST be prefixed with /api. Without it, the request hits the frontend instead, which returns HTML instead of JSON, causing confusing errors
+- **Path /_ (everything else) routes to Frontend (port 3000):** All other requests go to the React development server on port 3000. This serves HTML pages, JavaScript bundles, CSS files, and static assets
+- **Why this matters for developers:** This is the #1 source of routing bugs. If you define a backend route as `/users` instead of `/api/users`, the ingress sends it to React, which returns its index.html. The browser gets HTML when it expected JSON, causing parse errors. Always prefix backend routes with `/api`
 
 ## Multi-User Isolation
 
