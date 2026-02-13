@@ -100,7 +100,7 @@ function LoginPage() {
     <div className="auth-page" data-testid="auth-page">
       <div className="auth-left">
         <div className="auth-brand">
-          <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><polygon points="16,2 30,28 2,28" stroke="currentColor" strokeWidth="2" fill="none"/><circle cx="16" cy="18" r="4" fill="currentColor"/></svg>
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="M8 7h6"/><path d="M8 11h4"/></svg>
           <span>Emergent Knowledge Hub</span>
         </div>
         <div className="auth-tagline">Your AI knowledge base.<br/>Organized. Searchable. Beautiful.</div>
