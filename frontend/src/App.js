@@ -80,7 +80,7 @@ function AuthCallback() {
     const match = hash.match(/session_id=([^&]+)/);
     if (!match) { navigate("/login"); return; }
     const sessionId = match[1];
-    axios.post(`${API}/auth/session`, { session_id: sessionId })
+    axios.post(`${API}/auth/session`, { session_id: sessionId }, { withCredentials: true })
       .then(r => {
         // Store token from response and save user
         const sessionToken = r.data.session_token || r.data.user?.session_token;
