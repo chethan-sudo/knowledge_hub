@@ -445,3 +445,24 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 .user-name { font-size: 0.85rem; font-weight: 500; }
 .user-email { font-size: 0.7rem; color: var(--text-muted); }
 .user-role-select { height: 30px; padding: 0 8px; border: 1px solid var(--border-clr); border-radius: 4px; background: var(--content-bg); color: var(--text-primary); font-size: 0.75rem; font-family: inherit; }
+
+/* --- Collaboration Styles --- */
+.presence-avatars { display: flex; align-items: center; gap: 4px; margin-right: 8px; }
+.presence-avatar { width: 28px; height: 28px; border-radius: 50%; border: 2px solid; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 600; position: relative; transition: transform 0.15s; }
+.presence-avatar:hover { transform: scale(1.15); z-index: 2; }
+.presence-editing-dot { position: absolute; bottom: -2px; right: -2px; width: 8px; height: 8px; border-radius: 50%; background: #22c55e; border: 2px solid var(--content-bg); animation: pulse-dot 1.5s infinite; }
+@keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+.presence-label { font-size: 0.7rem; color: var(--text-muted); white-space: nowrap; margin-left: 2px; }
+
+.collab-banner { display: flex; align-items: center; justify-content: space-between; padding: 8px 16px; background: var(--accent-light); border: 1px solid var(--accent); border-radius: var(--radius); margin-bottom: 12px; gap: 12px; }
+.collab-banner-left { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--accent); font-weight: 500; }
+.collab-live-dot { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; animation: pulse-dot 1.5s infinite; }
+.collab-editors-info { color: var(--text-secondary); font-weight: 400; font-size: 0.75rem; }
+.collab-banner-right { display: flex; align-items: center; gap: 10px; }
+.collab-mini-avatars { display: flex; align-items: center; }
+.collab-mini-avatar { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 600; color: #fff; margin-left: -6px; border: 2px solid var(--content-bg); }
+.collab-mini-avatar:first-child { margin-left: 0; }
+.collab-more { font-size: 0.7rem; color: var(--text-muted); margin-left: 4px; }
+.collab-save-status { display: flex; align-items: center; gap: 4px; font-size: 0.75rem; color: var(--text-muted); animation: fadeIn 0.2s; }
+.collab-save-status.saved { color: #22c55e; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
