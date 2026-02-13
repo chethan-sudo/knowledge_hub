@@ -1440,6 +1440,21 @@ flowchart TD
     end
 ```
 
+**Flow Explanation — How RAG Works:**
+
+- **What:** This shows how Retrieval Augmented Generation grounds LLM responses in actual data
+- **Indexing Phase (done once):**
+  - **Your Documents:** Company docs, knowledge base articles, code repositories — any text data the LLM should know about but doesn't have in its training data
+  - **Split into chunks:** Documents are split into overlapping chunks (typically 500-1000 tokens each). Overlap ensures context isn't lost at chunk boundaries
+  - **Generate embeddings:** Each chunk is converted into a vector (e.g., 1536 dimensions) using an embedding model. Semantically similar text produces similar vectors
+  - **Vector Database:** Vectors are stored in a specialized database (Pinecone, Weaviate, FAISS) optimized for similarity search
+- **Query Phase (per question):**
+  - **User Question:** "What is the refund policy for enterprise plans?"
+  - **Question embedding:** The question is converted into a vector using the same embedding model
+  - **Similarity search:** The vector database finds the K chunks whose vectors are closest to the question vector (cosine similarity). These are the most relevant passages
+  - **Construct prompt:** The retrieved chunks are inserted into the LLM prompt as context: "Based on the following information: [chunks], answer: [question]"
+  - **Grounded answer:** The LLM generates an answer based on the actual retrieved documents, not its training data. This eliminates hallucination because the answer is grounded in real, retrievable text
+
 ## Embeddings
 
 Text as vectors. Similar meaning = close in vector space.
