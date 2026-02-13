@@ -1188,7 +1188,7 @@ flowchart TD
 | Option | Description |
 |--------|-------------|
 | **Emergent Native** | Managed production on Emergent infra |
-| **GitHub Export** | Save to GitHub, deploy to Vercel/Railway/AWS |
+| **GitHub Export** | Save to GitHub (from the message panel), then deploy to Vercel/Railway/AWS |
 | **Code Download** | Download zip, self-host anywhere |
 """
     },
