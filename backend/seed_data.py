@@ -117,6 +117,9 @@ CATEGORIES = [
     {"id": CAT_TOOLS, "name": "Tools & Resources", "icon": "Sparkles", "order": 11, "parent_id": None},
 
     {"id": SUB_LLM_PROXY, "name": "LLM Proxy", "icon": "Cpu", "order": 3, "parent_id": CAT_LLM},
+
+    {"id": CAT_LIMITATIONS, "name": "Limitations & Constraints", "icon": "Lock", "order": 12, "parent_id": None},
+    {"id": CAT_UI_GUIDE, "name": "UI Guide", "icon": "Monitor", "order": 13, "parent_id": None},
 ]
 
 DOCUMENTS = [
