@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext, useCallback, useRef } from "react";
+import { useState, useEffect, createContext, useContext, useCallback, useRef, useMemo } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import mermaid from "mermaid";
@@ -9,6 +9,69 @@ import "@/App.css";
 mermaid.initialize({ startOnLoad: false, theme: "dark", themeVariables: { primaryColor: "#4f46e5", primaryBorderColor: "#6366f1", primaryTextColor: "#e4e4e7", lineColor: "#71717a", secondaryColor: "#27272a", tertiaryColor: "#18181b", background: "#18181b", mainBkg: "#27272a", nodeBorder: "#6366f1", clusterBkg: "#1a1a2e", titleColor: "#e4e4e7" } });
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+const WS_BASE = process.env.REACT_APP_BACKEND_URL.replace(/^http/, "ws");
+
+// --- Collaboration Identity ---
+const COLLAB_COLORS = ["#ef4444","#f97316","#eab308","#22c55e","#06b6d4","#3b82f6","#8b5cf6","#ec4899","#14b8a6","#f43f5e"];
+function getCollabIdentity() {
+  let identity = null;
+  try { identity = JSON.parse(localStorage.getItem("ekh-collab-identity")); } catch {}
+  if (!identity || !identity.id) {
+    identity = { id: "u_" + Math.random().toString(36).slice(2, 10), name: "User " + Math.floor(Math.random() * 900 + 100), color: COLLAB_COLORS[Math.floor(Math.random() * COLLAB_COLORS.length)] };
+    localStorage.setItem("ekh-collab-identity", JSON.stringify(identity));
+  }
+  return identity;
+}
+
+// --- useCollaboration Hook ---
+function useCollaboration(docId, enabled = true) {
+  const [users, setUsers] = useState([]);
+  const [remoteContent, setRemoteContent] = useState(null);
+  const [saved, setSaved] = useState(null);
+  const wsRef = useRef(null);
+  const identity = useMemo(() => getCollabIdentity(), []);
+
+  useEffect(() => {
+    if (!docId || !enabled) return;
+    const url = `${WS_BASE}/api/ws/collab/${docId}?user_id=${encodeURIComponent(identity.id)}&name=${encodeURIComponent(identity.name)}&color=${encodeURIComponent(identity.color)}`;
+    let ws;
+    let reconnectTimer;
+    const connect = () => {
+      ws = new WebSocket(url);
+      wsRef.current = ws;
+      ws.onmessage = (e) => {
+        try {
+          const msg = JSON.parse(e.data);
+          if (msg.type === "presence") setUsers(msg.users);
+          else if (msg.type === "content_update") setRemoteContent({ content: msg.content, senderId: msg.sender_id, cursor: msg.cursor });
+          else if (msg.type === "doc_saved") setSaved({ senderId: msg.sender_id, at: Date.now() });
+        } catch {}
+      };
+      ws.onclose = () => { reconnectTimer = setTimeout(connect, 2000); };
+      ws.onerror = () => { ws.close(); };
+    };
+    connect();
+    return () => { clearTimeout(reconnectTimer); wsRef.current = null; ws?.close(); };
+  }, [docId, enabled, identity]);
+
+  const sendContent = useCallback((content, cursor) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) wsRef.current.send(JSON.stringify({ type: "content_update", content, cursor }));
+  }, []);
+
+  const sendCursor = useCallback((cursor, selectionEnd) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) wsRef.current.send(JSON.stringify({ type: "cursor_update", cursor, selection_end: selectionEnd }));
+  }, []);
+
+  const sendMode = useCallback((mode) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) wsRef.current.send(JSON.stringify({ type: "mode_change", mode }));
+  }, []);
+
+  const sendSave = useCallback((content, title) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) wsRef.current.send(JSON.stringify({ type: "save", content, title }));
+  }, []);
+
+  return { users, remoteContent, saved, identity, sendContent, sendCursor, sendMode, sendSave };
+}
 
 // --- Contexts ---
 const AuthContext = createContext(null);
