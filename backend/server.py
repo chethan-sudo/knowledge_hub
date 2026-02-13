@@ -144,7 +144,8 @@ async def create_session(request: Request):
         "created_at": datetime.now(timezone.utc).isoformat()
     })
     response = JSONResponse(content={
-        "user": {"user_id": user_id, "email": email, "name": name, "picture": picture, "role": role}
+        "user": {"user_id": user_id, "email": email, "name": name, "picture": picture, "role": role},
+        "session_token": session_token
     })
     response.set_cookie(
         key="session_token", value=session_token, path="/",
