@@ -663,26 +663,50 @@ async def ws_collab(ws: WebSocket, doc_id: str):
 # CORS: When credentials are used, origin must not be wildcard
 origins = os.environ.get('CORS_ORIGINS', '*').split(',')
 if origins == ['*']:
-    # Allow all origins dynamically when credentials are needed
-    from starlette.middleware.base import BaseHTTPMiddleware
-    from starlette.requests import Request as StarletteRequest
+    # Raw ASGI middleware to handle CORS without breaking WebSocket
+    from starlette.types import ASGIApp, Receive, Scope, Send
     from starlette.responses import Response as StarletteResponse
 
-    class DynamicCORSMiddleware(BaseHTTPMiddleware):
-        async def dispatch(self, request: StarletteRequest, call_next):
-            origin = request.headers.get("origin", "")
-            if request.method == "OPTIONS":
-                response = StarletteResponse(status_code=200)
-            else:
-                response = await call_next(request)
-            if origin:
-                response.headers["Access-Control-Allow-Origin"] = origin
-            else:
-                response.headers["Access-Control-Allow-Origin"] = "*"
-            response.headers["Access-Control-Allow-Credentials"] = "true"
-            response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH"
-            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Cookie"
-            return response
+    class DynamicCORSMiddleware:
+        def __init__(self, app: ASGIApp):
+            self.app = app
+
+        async def __call__(self, scope: Scope, receive: Receive, send: Send):
+            if scope["type"] == "websocket":
+                await self.app(scope, receive, send)
+                return
+            if scope["type"] != "http":
+                await self.app(scope, receive, send)
+                return
+            headers_list = dict(scope.get("headers", []))
+            origin = ""
+            for k, v in scope.get("headers", []):
+                if k == b"origin":
+                    origin = v.decode()
+                    break
+            method = scope.get("method", "")
+            if method == "OPTIONS":
+                resp = StarletteResponse(status_code=200)
+                resp.headers["Access-Control-Allow-Origin"] = origin or "*"
+                resp.headers["Access-Control-Allow-Credentials"] = "true"
+                resp.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH"
+                resp.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Cookie"
+                await resp(scope, receive, send)
+                return
+
+            async def send_with_cors(message):
+                if message["type"] == "http.response.start":
+                    headers = dict(message.get("headers", []))
+                    extra = [
+                        (b"access-control-allow-origin", (origin or "*").encode()),
+                        (b"access-control-allow-credentials", b"true"),
+                        (b"access-control-allow-methods", b"GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH"),
+                        (b"access-control-allow-headers", b"Content-Type, Authorization, Cookie"),
+                    ]
+                    message["headers"] = list(message.get("headers", [])) + extra
+                await send(message)
+
+            await self.app(scope, receive, send_with_cors)
 
     app.add_middleware(DynamicCORSMiddleware)
 else:
