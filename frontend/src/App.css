@@ -143,6 +143,8 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 .doc-layout { display: flex; gap: 3rem; }
 .doc-content { flex: 1; min-width: 0; }
 .doc-content-inner { /* for PDF export */ }
+.doc-cover-image { margin-bottom: 1.5rem; border-radius: var(--radius); overflow: hidden; max-height: 200px; }
+.doc-cover-image img { width: 100%; height: 200px; object-fit: cover; display: block; }
 .doc-sidebar-right { width: 200px; flex-shrink: 0; position: sticky; top: 2rem; align-self: flex-start; }
 .doc-toc { width: 100%; }
 .doc-toc-title { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 8px; }
