@@ -303,7 +303,7 @@ function MermaidDiagram({ chart }) {
         const themeVars = dark
           ? { primaryColor: "#4f46e5", primaryBorderColor: "#6366f1", primaryTextColor: "#e4e4e7", lineColor: "#71717a", secondaryColor: "#27272a", tertiaryColor: "#18181b", background: "transparent", mainBkg: "#27272a", nodeBorder: "#6366f1", clusterBkg: "#1a1a2e", titleColor: "#e4e4e7", edgeLabelBackground: "#18181b", nodeTextColor: "#e4e4e7", fontSize: "14px" }
           : { primaryColor: "#4f46e5", primaryBorderColor: "#6366f1", primaryTextColor: "#18181b", lineColor: "#71717a", background: "transparent", mainBkg: "#eef2ff", secondaryColor: "#f0f0ff", tertiaryColor: "#f8f8ff", nodeBorder: "#6366f1", edgeLabelBackground: "#ffffff", nodeTextColor: "#18181b", clusterBkg: "#f5f5ff", titleColor: "#18181b", fontSize: "14px" };
-        mermaid.initialize({ startOnLoad: false, theme: dark ? "dark" : "base", themeVariables: themeVars, flowchart: { padding: 25, nodeSpacing: 60, rankSpacing: 70, htmlLabels: true, wrappingWidth: 180, curve: "basis" }, sequence: { actorMargin: 100, messageMargin: 50 } });
+        mermaid.initialize({ startOnLoad: false, theme: dark ? "dark" : "base", themeVariables: themeVars, flowchart: { padding: 30, nodeSpacing: 80, rankSpacing: 90, htmlLabels: true, wrappingWidth: 200, curve: "basis" }, sequence: { actorMargin: 120, messageMargin: 60 } });
         const id = `mermaid-${Math.random().toString(36).slice(2, 9)}`;
         const { svg: renderedSvg } = await mermaid.render(id, chart.trim());
         setSvg(renderedSvg); setError(null);
