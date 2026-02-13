@@ -86,42 +86,16 @@ class InviteCreate(BaseModel):
 class UserRoleUpdate(BaseModel):
     role: str
 
-# --- Auth Helpers ---
-def hash_pw(password: str) -> str:
-    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+# --- Auth Helpers (no login required) ---
+DEFAULT_USER = {"user_id": "default", "email": "admin@emergent.sh", "name": "Admin", "role": "admin", "picture": ""}
 
-def verify_pw(password: str, hashed: str) -> bool:
-    return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
-
-async def get_current_user(request: Request, authorization: str = Header(None)):
-    token = None
-    if authorization and authorization.startswith("Bearer "):
-        token = authorization.split(" ")[1]
-    if not token:
-        token = request.cookies.get("session_token")
-    if not token:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    session = await db.user_sessions.find_one({"session_token": token}, {"_id": 0})
-    if not session:
-        raise HTTPException(status_code=401, detail="Invalid session")
-    expires_at = session.get("expires_at")
-    if isinstance(expires_at, str):
-        expires_at = datetime.fromisoformat(expires_at)
-    if expires_at.tzinfo is None:
-        expires_at = expires_at.replace(tzinfo=timezone.utc)
-    if expires_at < datetime.now(timezone.utc):
-        raise HTTPException(status_code=401, detail="Session expired")
-    user = await db.users.find_one({"user_id": session["user_id"]}, {"_id": 0})
-    if not user:
-        raise HTTPException(status_code=401, detail="User not found")
-    return user
+async def get_current_user(request: Request = None, authorization: str = Header(None)):
+    return DEFAULT_USER
 
 def is_admin(user: dict) -> bool:
-    return user.get("role") == "admin" or user.get("email") == ADMIN_EMAIL
+    return True
 
 async def require_admin(user=Depends(get_current_user)):
-    if not is_admin(user):
-        raise HTTPException(status_code=403, detail="Admin access required")
     return user
 
 # --- Auth Routes ---
