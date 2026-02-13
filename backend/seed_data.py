@@ -1584,6 +1584,16 @@ flowchart LR
     LP -->|fallback| FB[Fallback Provider]
 ```
 
+**Flow Explanation — LLM Proxy Architecture:**
+
+- **What:** This shows the LLM Proxy as a central gateway between all Emergent agents and external AI providers
+- **E1 Orchestrator:** The main agent making LLM calls for reasoning, code generation, and decision-making
+- **Subagents:** Testing agent, design agent, troubleshoot agent — each makes their own LLM calls independently
+- **LLM Proxy:** The single point through which ALL LLM traffic flows. It authenticates using the Universal Key, tracks token usage for billing, enforces rate limits, and handles provider selection
+- **Provider routing:** Based on the model parameter in the request. "gpt-5.2" goes to OpenAI. "claude-sonnet-4-5" goes to Anthropic. "gemini-3-flash" goes to Google. The calling code doesn't need to know which provider — it just specifies the model
+- **Fallback Provider:** If the primary provider is down or returns errors, the proxy automatically tries an alternative provider. This ensures E1 doesn't get stuck waiting for a provider that's experiencing outages
+- **Why a centralized proxy?** Without it, every component would need its own API keys, billing logic, and error handling for each provider. The proxy centralizes all of this into one place, making it easier to manage, monitor, and scale
+
 ## Why a Proxy?
 
 | Purpose | How It Works |
