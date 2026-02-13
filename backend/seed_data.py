@@ -228,18 +228,27 @@ flowchart TB
     LLM_PROXY --> GOOGLE
 ```
 
-**Diagram Explanation:**
+**Flow Explanation — Data Flow Between Layers (step by step):**
 
-- **Browser**: Where the developer accesses Emergent. All interaction starts here
-- **React App on port 3000**: The frontend that renders the chat interface, file browser, and preview panel. Communicates with both FastAPI (for the app being built) and Agent Service (for AI chat)
-- **FastAPI on port 8001**: The backend server of the app being developed by the agent. E1 writes code here and the user previews it
-- **Agent Service**: The orchestration backend. Receives chat messages from the browser via WebSocket, routes them to E1, and stores all history in MongoDB
-- **E1 Instance**: A running instance of the E1 orchestrator. One per active job. Makes all decisions about tool calls and subagent delegation
-- **LLM Proxy**: Mediates between E1 and external AI providers. Uses the Universal Key to authenticate, counts tokens for billing, and can fail over between OpenAI, Anthropic, and Google if one is down
-- **MongoDB**: Central database storing users, sessions, jobs, audit trails, chat history, and metadata
-- **Pod Filesystem**: The local filesystem inside the Kubernetes pod where project code lives
-- **Git Repository**: Every change is auto-committed for rollback capability
-- **OpenAI, Anthropic, Google**: External LLM providers that the proxy routes to based on which model E1 requests
+This diagram shows the SIX distinct layers in the Emergent platform and exactly how data flows between them:
+
+1. **User Layer → Frontend:** The developer opens their browser and navigates to the Emergent platform. The browser loads the React App running on port 3000 inside the Kubernetes pod. This app renders the chat interface, file browser, and code preview
+
+2. **Frontend → Backend (the app being built):** When the user previews their app, the React frontend at port 3000 serves the app's HTML/JS/CSS. API calls from the app go to FastAPI at port 8001. FastAPI reads/writes to MongoDB for the app's data. This is the user's application — the thing E1 is building
+
+3. **Browser → Agent Service (AI chat):** Separately from the app, the browser maintains a WebSocket connection to the Agent Service for the AI chat. When the user types a message to E1, it goes through this channel — NOT through FastAPI. The Agent Service stores every message in MongoDB for conversation history
+
+4. **Agent Service → E1 Instance:** The Agent Service routes the user's message to the E1 Instance assigned to this job. One E1 instance per active job. E1 receives the message along with full conversation history from MongoDB
+
+5. **E1 Instance → LLM Proxy → External Providers:** When E1 needs to reason (every turn of the loop), it calls the LLM Proxy. The proxy authenticates with the Universal Key, routes to the appropriate provider (OpenAI, Anthropic, or Google), and streams the response back. The proxy handles billing, rate limiting, and failover
+
+6. **E1 Instance → Pod Filesystem + Git:** When E1 executes tools (create_file, execute_bash), it operates directly on the Pod Filesystem. Every significant file change is auto-committed to the Git Repository, creating rollback checkpoints
+
+**Key insight — Two separate paths exist:**
+- **Path A (App traffic):** Browser → React :3000 → FastAPI :8001 → MongoDB. This is the user's application working normally
+- **Path B (AI chat):** Browser → Agent Service → E1 → LLM Proxy → AI Providers. This is the development conversation with E1
+
+These paths are independent. The app can serve traffic while E1 is simultaneously modifying its code
 
 ## Database Layer
 
