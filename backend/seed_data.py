@@ -1173,7 +1173,15 @@ flowchart TD
     S4 --> S5["Step 5: Terminate old pod"]
 ```
 
-Users never see downtime. Traffic gradually shifts from old to new.
+**Flow Explanation — Rolling Deployment:**
+
+- **What:** This shows how Kubernetes performs zero-downtime deployments
+- **Step 1 — Start new pod:** A new pod with the updated code is created alongside the old one. Both run simultaneously
+- **Step 2 — Health check:** Kubernetes sends readiness probes to the new pod. The pod must respond successfully (HTTP 200) before receiving traffic. If health checks fail, the deployment is rolled back automatically
+- **Step 3 — Route traffic:** Once healthy, Kubernetes adds the new pod to the load balancer. New requests start going to both old and new pods
+- **Step 4 — Drain old pod:** Kubernetes stops sending new requests to the old pod. In-flight requests are allowed to complete (typically 30-second grace period)
+- **Step 5 — Terminate old pod:** Once all in-flight requests finish, the old pod is terminated and its resources are freed
+- **Why rolling updates?** Users never experience downtime. If the new version has a bug that fails health checks, the old version keeps running and the deployment is automatically rolled back
 
 ## Deployment Options
 
