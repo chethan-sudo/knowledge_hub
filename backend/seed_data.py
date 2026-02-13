@@ -1639,6 +1639,17 @@ sequenceDiagram
     LP-->>E1: Stream response
 ```
 
+**Flow Explanation — LLM Proxy Request Sequence:**
+
+- **What:** This shows the exact sequence of events for a single LLM API call through the proxy
+- **E1 sends request:** E1 makes a standard API call (POST /chat/completions) with the Universal Key as authentication and the model specification (e.g., gpt-5.2)
+- **Proxy validates:** Checks that the Universal Key is valid, the user has sufficient balance, and rate limits haven't been exceeded. If any check fails, returns an error immediately without contacting the provider
+- **Log request start:** The proxy logs the request metadata (timestamp, model, user, session) in the usage database before forwarding. This ensures even failed requests are tracked
+- **Forward to provider:** The proxy translates the Universal Key to the actual provider API key and forwards the request to OpenAI (or whichever provider matches the model)
+- **Stream tokens:** The provider generates tokens and streams them back. The proxy passes these through in real-time (streaming mode), so E1 doesn't have to wait for the complete response
+- **Log tokens and cost:** After the response completes, the proxy counts input and output tokens, calculates cost using the model's rate card, and deducts from the user's balance
+- **Why streaming?** Streaming reduces perceived latency. E1 can start processing the response before it's fully generated. For long responses (code generation), this can save 10-30 seconds of waiting
+
 ## Cost Attribution
 
 Every LLM call is broken down into:
