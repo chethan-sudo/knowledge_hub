@@ -169,13 +169,9 @@ async def get_me(user=Depends(get_current_user)):
     }
 
 @api_router.post("/auth/logout")
-async def logout(request: Request):
-    session_token = request.cookies.get("session_token")
-    if session_token:
-        await db.user_sessions.delete_many({"session_token": session_token})
-    response = JSONResponse(content={"status": "logged out"})
-    response.delete_cookie(key="session_token", path="/", samesite="none", secure=True)
-    return response
+async def logout(user=Depends(get_current_user)):
+    await db.user_sessions.delete_many({"user_id": user["user_id"]})
+    return {"status": "logged out"}
 
 # --- Categories Routes ---
 @api_router.get("/categories")
