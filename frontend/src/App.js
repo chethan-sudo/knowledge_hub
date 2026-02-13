@@ -1221,14 +1221,13 @@ function Dashboard() {
 function AppRouter() {
   return (
     <Routes>
-      <Route path="/login" element={<LoginPage />} />
       <Route path="/share/:shareId" element={<PublicDocPage />} />
-      <Route path="/bookmarks" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-      <Route path="/tools" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-      <Route path="/trash" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-      <Route path="/settings" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-      <Route path="/doc/:docId" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-      <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/bookmarks" element={<Dashboard />} />
+      <Route path="/tools" element={<Dashboard />} />
+      <Route path="/trash" element={<Dashboard />} />
+      <Route path="/settings" element={<Dashboard />} />
+      <Route path="/doc/:docId" element={<Dashboard />} />
+      <Route path="/" element={<Dashboard />} />
     </Routes>
   );
 }
