@@ -45,7 +45,14 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 .auth-form { width: 100%; max-width: 380px; }
 .auth-form h2 { font-size: 1.5rem; font-weight: 600; margin-bottom: 4px; letter-spacing: -0.02em; }
 .auth-sub { color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1.5rem; }
+.auth-form input { display: block; width: 100%; height: 42px; padding: 0 14px; border: 1px solid var(--border-clr); border-radius: var(--radius); background: var(--content-bg); color: var(--text-primary); font-size: 0.875rem; margin-bottom: 12px; outline: none; font-family: inherit; }
+.auth-form input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+.auth-form button[type="submit"] { display: block; width: 100%; height: 42px; border: none; border-radius: var(--radius); background: var(--text-primary); color: var(--content-bg); font-size: 0.875rem; font-weight: 500; cursor: pointer; font-family: inherit; }
+.auth-form button[type="submit"]:hover { opacity: 0.9; }
+.auth-form button[type="submit"]:disabled { opacity: 0.5; }
 .auth-note { text-align: center; margin-top: 16px; font-size: 0.72rem; color: var(--text-muted); }
+.auth-toggle { text-align: center; margin-top: 16px; font-size: 0.8rem; color: var(--text-secondary); }
+.auth-toggle button { background: none; border: none; color: var(--accent); cursor: pointer; font-weight: 500; font-family: inherit; font-size: 0.8rem; }
 .auth-error { background: rgba(239,68,68,0.08); color: var(--danger); padding: 10px 14px; border-radius: var(--radius); font-size: 0.8rem; margin-bottom: 12px; border: 1px solid rgba(239,68,68,0.15); }
 .google-login-btn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; height: 46px; border: 1px solid var(--border-clr); border-radius: var(--radius); background: var(--content-bg); color: var(--text-primary); font-size: 0.9rem; font-weight: 500; cursor: pointer; font-family: inherit; transition: all 0.15s; }
 .google-login-btn:hover { border-color: var(--accent); box-shadow: var(--shadow-md); }
