@@ -1284,7 +1284,15 @@ sequenceDiagram
     Server->>Client: Encrypted HTTP Response
 ```
 
-All data encrypted in transit. Even if intercepted, it looks like random bytes.
+**Flow Explanation — TLS Handshake:**
+
+- **What:** This shows how HTTPS encryption is established between browser and server
+- **ClientHello:** The browser tells the server which encryption algorithms (ciphers) it supports and its TLS version
+- **ServerHello + Certificate:** The server picks a cipher, sends its choice along with its SSL certificate (which contains the server's public key and is signed by a trusted Certificate Authority)
+- **Certificate Verification:** The browser checks the certificate against its list of trusted CAs. If the certificate is expired, self-signed, or from an untrusted CA, the browser shows a security warning
+- **Key Exchange:** Both sides exchange key material using Diffie-Hellman or similar algorithm. This allows them to derive a shared secret without ever sending the actual secret key over the network (even someone intercepting all messages cannot derive the shared secret)
+- **Encrypted Communication:** All subsequent HTTP requests and responses are encrypted using the shared secret. Even if intercepted on the network, the data looks like random bytes
+- **Why this matters:** Without TLS, anyone on the same network (coffee shop WiFi, corporate network) can read your API keys, passwords, and data in transit
 
 ## CORS
 
