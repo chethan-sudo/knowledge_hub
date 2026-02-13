@@ -372,6 +372,16 @@ flowchart TD
     SP -->|governs| DL
 ```
 
+**Flow Explanation — What is inside E1:**
+
+- **What:** This diagram shows the internal architecture of E1 — it is NOT a single LLM but a multi-component software system
+- **System Prompt (SP):** A massive set of rules and instructions (~15,000+ tokens) that governs E1's behavior. It defines coding guidelines, testing rules, tool usage patterns, and platform constraints. It tells E1 WHEN to ask the user, WHEN to use tools, and HOW to structure responses
+- **Tool Registry (TR):** A catalog of all available tools (create_file, execute_bash, screenshot_tool, etc.). When E1 decides to act, it picks from this registry. Each tool has a defined schema (name, parameters, description) that the LLM uses to generate structured calls
+- **Subagent Registry (SR):** A list of specialized agents (testing, design, troubleshoot, integration). E1 delegates to these when a task requires specialized expertise. Each subagent has its own LLM instance and tools
+- **Decision Layer (DL):** The core logic loop. After every LLM response, the decision layer parses the output. If the LLM outputs a tool call, the decision layer routes it to the Tool Registry. If it outputs a subagent delegation, it routes to the Subagent Registry. If it outputs text, it sends it to the user
+- **LLM Engine:** The actual language model (Claude Sonnet, GPT-5.2, etc.) used ONLY for reasoning. It receives the full context (system prompt + conversation history + tool results) and generates a response. It has no state between calls — the Decision Layer manages all state
+- **Why this architecture?** Because LLMs alone cannot act. They can only generate text. E1 wraps the LLM with action capabilities, state management, and decision logic. This is what makes E1 an agent, not just a chatbot
+
 | | LLM (Claude/GPT) | E1 (The Agent) |
 |---|---|---|
 | **Nature** | A model that generates text | A software system that acts |
