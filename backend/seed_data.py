@@ -2163,4 +2163,225 @@ Comprehensive test suite covering E1 orchestration, tool execution, subagent man
 - Memory file used for persistence if needed
 """
     },
+
+    # ===== LIMITATIONS & CONSTRAINTS =====
+    {
+        "id": _id(), "title": "Platform Limitations", "category_id": CAT_LIMITATIONS, "author_id": SYSTEM_AUTHOR,
+        "created_at": NOW, "updated_at": NOW, "order": 0,
+        "content": """# Emergent Platform Limitations
+
+An honest overview of current platform constraints, known limitations, and workarounds.
+
+## Context Window Limits
+
+| Constraint | Detail |
+|-----------|--------|
+| **LLM context window** | Each LLM has a maximum token limit (e.g., 200K for Claude). Very long conversations may lose early context |
+| **Context compaction** | When approaching limits, E1 compacts context automatically. Some details may be lost |
+| **Workaround** | Use memory files (PRD.md) to persist critical decisions across context refreshes |
+
+## Execution Constraints
+
+| Constraint | Detail |
+|-----------|--------|
+| **Bash timeout** | Commands time out after 120 seconds. Long-running processes must run in background |
+| **File size** | Very large files (10K+ lines) may be truncated when viewed |
+| **Package installation** | Some system packages may not be available in the container |
+| **Port restrictions** | Only ports 3000 (frontend) and 8001 (backend) are exposed externally |
+
+## LLM Limitations
+
+| Constraint | Detail |
+|-----------|--------|
+| **Knowledge cutoff** | LLMs have training data cutoffs. May not know about very recent libraries or APIs |
+| **Hallucination risk** | LLMs can generate plausible but incorrect code. Always verify critical logic |
+| **Non-deterministic** | Same prompt may produce different results each time |
+| **No internet browsing** | LLMs cannot browse the web directly. E1 uses web_search tool instead |
+| **Token costs** | Every LLM call costs tokens. Complex tasks consume more budget |
+
+## Agent Limitations
+
+| Constraint | Detail |
+|-----------|--------|
+| **No persistent memory** | E1 does not remember across separate sessions. Each job starts fresh |
+| **Single user per pod** | Each pod serves one user at a time. No real-time collaboration |
+| **Subagent isolation** | Subagents have no context from previous calls. Full context must be provided each time |
+| **No GUI interaction** | E1 cannot click buttons or interact with GUI apps directly (only via Playwright screenshots) |
+| **Sequential tool calls** | Some tools cannot run in parallel when they have dependencies |
+
+## Infrastructure Limitations
+
+| Constraint | Detail |
+|-----------|--------|
+| **Pod lifecycle** | Pods may be recycled after inactivity. Unsaved work in temp directories may be lost |
+| **Database size** | MongoDB storage has limits per user |
+| **Git history** | Auto-commits create many small commits. Git log can be verbose |
+| **Preview URL** | Preview URLs are temporary and change between sessions |
+| **No custom domains** | Cannot attach custom domains to preview deployments |
+
+## Integration Limitations
+
+| Constraint | Detail |
+|-----------|--------|
+| **Emergent LLM Key** | Only works for text generation (OpenAI, Anthropic, Gemini), image gen (DALL-E, Nano Banana), video (Sora), and Whisper. Does NOT work for Stripe, fal.ai, email services etc. |
+| **OAuth** | Only Emergent-managed Google Auth is supported out of the box |
+| **Third-party APIs** | User must provide their own API keys for non-LLM services |
+| **Webhook limits** | Inbound webhooks require the preview URL which changes |
+
+## What E1 Cannot Do
+
+- Cannot access private repositories or external databases directly
+- Cannot send emails or SMS without configured services
+- Cannot run GPU-intensive workloads (ML training, video rendering)
+- Cannot modify its own system prompt or tool definitions
+- Cannot access other users pods or data
+- Cannot bypass rate limits or budget constraints
+- Cannot persist data outside of MongoDB and the pod filesystem
+"""
+    },
+
+    # ===== UI GUIDE =====
+    {
+        "id": _id(), "title": "Complete UI Guide", "category_id": CAT_UI_GUIDE, "author_id": SYSTEM_AUTHOR,
+        "created_at": NOW, "updated_at": NOW, "order": 0,
+        "content": """# Emergent Knowledge Hub - Complete UI Guide
+
+A detailed walkthrough of every UI element, button, and feature in the Knowledge Hub.
+
+## Login Page
+
+| Element | Description |
+|---------|------------|
+| **Sign in with Google** | Initiates Google OAuth flow via Emergent Auth. Redirects to Google, then back to dashboard |
+| **Admin note** | Shows which email has admin access |
+
+## Sidebar
+
+| Element | Description |
+|---------|------------|
+| **Knowledge Hub logo** | Book icon with brand name. Click to go home |
+| **Search bar** | Inline search with Ctrl+K shortcut. Searches documents AND categories. ESC to close |
+| **Home** | Returns to the category grid dashboard |
+| **Bookmarks** | Shows all bookmarked documents |
+| **Tools** | Opens the Tools and Resources directory |
+| **Trash** | (Admin only) Shows soft-deleted documents with restore option |
+| **Settings** | (Admin only) User invite and team management |
+| **Category headers** | Click to expand or collapse. Shows chevron icon |
+| **Document links** | Click to open document in viewer. Active doc highlighted |
+| **Light/Dark mode** | Toggles between themes. Preference saved in localStorage |
+| **Manage categories** | (Admin only) Opens dialog to create, edit, delete categories |
+| **New page** | (Admin only) Opens editor with template picker |
+| **User info** | Shows avatar, name, role badge (Admin/Viewer), logout button |
+| **Resize handle** | Drag the right edge of sidebar to resize (200-500px) |
+
+## Document Viewer
+
+| Element | Description |
+|---------|------------|
+| **Breadcrumb** | Shows: Parent Category > Subcategory > Document title. Helps understand location |
+| **Title** | Large heading with document title |
+| **Tags** | Colored pills showing document tags |
+| **Download button** | Exports document as PDF with rendered mermaid diagrams |
+| **Clock button** | Opens version history panel showing previous edits |
+| **Share button** | (Admin) Opens share dialog to enable/disable public link |
+| **Bookmark button** | Toggles bookmark. Filled = bookmarked |
+| **Edit button** | (Admin) Opens document in split-pane editor |
+| **Delete button** | (Admin) Moves document to trash (soft delete, restorable) |
+| **Table of Contents** | Right sidebar showing H2 headings as clickable links |
+| **Mermaid diagrams** | Interactive flowcharts. Hover for Expand button. Click to fullscreen |
+| **Code blocks** | Syntax highlighted with Copy button |
+| **Comments section** | Bottom of document. Post comments, reply to threads, upvote |
+
+## Mermaid Diagram Interaction
+
+| Element | Description |
+|---------|------------|
+| **Inline diagram** | Rendered in document with minimum 500px width |
+| **Expand button** | Appears on hover (top-right). Opens fullscreen modal |
+| **Fullscreen modal** | 90% viewport width, 85% height. Horizontal AND vertical scrolling |
+| **Close** | Click Close button or press Escape to exit fullscreen |
+
+## Document Editor
+
+| Element | Description |
+|---------|------------|
+| **Template picker** | Shows when creating new page. 6 options: Blank, API Doc, Runbook, RCA, Meeting Notes, Test Plan |
+| **Templates button** | Toggle template picker visibility |
+| **Preview toggle** | Show/hide live markdown preview panel |
+| **Title input** | Large text input for document title |
+| **Category dropdown** | Select which category this document belongs to |
+| **Tag input** | Type to add tags. Press Enter to add. Shows autocomplete suggestions from existing tags |
+| **Markdown editor** | Left pane: raw markdown. Right pane: live rendered preview |
+| **Save button** | Disabled until title and category are set |
+| **Cancel button** | Discards changes and returns to previous view |
+
+## Search
+
+| Feature | Description |
+|---------|------------|
+| **Activation** | Click search bar or press Ctrl+K |
+| **Category results** | Shows matching categories with folder icon |
+| **Document results** | Shows matching documents with content snippets |
+| **Heading matches** | If search matches a heading (H1-H3), snippet shows Section: heading name |
+| **Fuzzy matching** | Tolerates minor typos. Case-insensitive |
+| **Close** | Press Escape or click outside |
+
+## Home Page
+
+| Element | Description |
+|---------|------------|
+| **Hero section** | Title and description of the knowledge hub |
+| **Tag cloud** | Filter bar showing all tags. Click to filter documents by tag |
+| **Category cards** | Grid of all top-level categories with document count. Click to open first doc |
+
+## Settings Page (Admin Only)
+
+| Element | Description |
+|---------|------------|
+| **Invite form** | Email input + Viewer/Admin role selector + Invite button |
+| **Team members table** | Lists all users with name, email, role dropdown, remove button |
+| **Role dropdown** | Change user role between Viewer and Admin |
+| **Remove button** | Delete user from the system (cannot remove yourself) |
+
+## Tools Page
+
+| Element | Description |
+|---------|------------|
+| **Add Tool** | (Admin) Opens form to add a new tool with name, URL, description, category |
+| **Tool cards** | Grouped by category. Shows name as link, description below |
+| **Edit/Delete** | (Admin) Modify or remove tools |
+
+## Trash Page (Admin Only)
+
+| Element | Description |
+|---------|------------|
+| **Deleted documents** | Lists all soft-deleted docs with deletion date |
+| **Restore button** | Moves document back to its original category |
+| **Permanent delete** | Irreversibly removes document and all its data |
+
+## AI Chatbot
+
+| Element | Description |
+|---------|------------|
+| **FAB button** | Purple circle button. Click to open/close chat panel |
+| **Chat panel** | Floating panel with message history |
+| **Input field** | Type questions. Press Enter or click send |
+| **AI responses** | Answers based on documentation content. References specific docs |
+
+## Reading Progress
+
+| Element | Description |
+|---------|------------|
+| **Progress bar** | Thin gradient bar at very top of page. Shows scroll progress through current document |
+
+## Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| **Ctrl+K** | Focus search bar |
+| **Escape** | Close search / Close mermaid fullscreen |
+| **Arrow Up/Down** | Navigate between documents in sidebar |
+| **Enter** | Send comment or chat message |
+"""
+    },
 ]
