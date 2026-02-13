@@ -466,7 +466,6 @@ async def chat_with_ai(data: ChatRequest, user=Depends(get_current_user)):
         if doc:
             context_parts.append(f"CURRENT DOCUMENT: {doc['title']}\n{doc['content'][:6000]}")
     # Search for relevant docs using individual keywords from the message
-    msg_lower = data.message.lower()
     keywords = [w for w in data.message.split() if len(w) > 2]
     matched_ids = set()
     for kw in keywords[:8]:
