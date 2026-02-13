@@ -488,7 +488,15 @@ sequenceDiagram
     E1->>E1: Read report, fix bugs if needed
 ```
 
-**Critical rule**: If E1 calls the same subagent twice, it must provide full context again — including what the previous call already did. The subagent has zero memory.
+**Flow Explanation — The Handoff Protocol:**
+
+- **What:** This sequence diagram shows the exact communication flow when E1 delegates to a subagent
+- **Step 1 — E1 packages context:** E1 creates a detailed task description containing: the original problem statement, what has been implemented so far, file paths to reference, credentials needed, and what specifically to test or analyze. This is critical because subagents have ZERO memory of previous calls
+- **Step 2 — Agent Service creates a session:** The Agent Service spawns a new, independent session for the subagent. This session has its own LLM instance, its own system prompt, and its own tool access. The subagent cannot see E1's conversation history
+- **Step 3 — Subagent works independently:** The subagent uses its own LLM and tools to complete the task. For example, the testing agent writes test scripts, runs them via Playwright/pytest, captures screenshots, and fixes simple issues it finds
+- **Step 4 — Results returned:** The subagent returns structured results (e.g., test report JSON) plus a git diff of any code changes it made. E1 receives both
+- **Step 5 — E1 processes results:** E1 reads the test report, checks what the subagent changed (via git diff), and decides next steps. If tests failed, E1 fixes the bugs. If the subagent changed code, E1 reviews those changes
+- **Why stateless?** Each subagent call is independent because subagents are specialized. They do one job well and return results. They don't need context from previous calls — E1 provides everything they need each time. This also means if E1 calls the same subagent twice, it must re-provide all context including what the first call already covered
 """
     },
 
