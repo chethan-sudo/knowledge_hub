@@ -1290,9 +1290,6 @@ function Dashboard() {
 }
 
 function AppRouter() {
-  const location = useLocation();
-  // Check URL fragment for session_id - must be synchronous (not in useEffect)
-  if (location.hash?.includes('session_id=')) { return <AuthCallback />; }
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
