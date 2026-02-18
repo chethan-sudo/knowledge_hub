@@ -1352,8 +1352,8 @@ Messages exchanged, tools executed, code built, tests run. Auto-committed to git
 
 ### Idle
 - **Minutes**: Everything running
-- **Hours**: Container may hibernate (wakes in 30-60s)
-- **Days**: Container stopped (recreated in 1-3 min on return)
+- **Hours**: Container may hibernate (wakes in ~30-60s)
+- **Days**: Container stopped (recreated in ~1-3 min on return)
 
 ### Expiry
 Container terminated, storage released. Conversation history preserved in DB. Code preserved if saved to GitHub.
