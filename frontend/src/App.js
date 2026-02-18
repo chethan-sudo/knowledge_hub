@@ -1602,6 +1602,7 @@ function Dashboard() {
 
   const selectDoc = (id) => navigate(`/doc/${id}`);
   const toggleBookmark = async (dId) => { try { const r = await api("post", `/bookmarks/${dId}`); setBookmarkedIds(prev => r.data.bookmarked ? [...prev, dId] : prev.filter(x => x !== dId)); } catch {} };
+  const refreshDocuments = async () => { try { const r = await api("get", "/documents"); setDocuments(r.data); } catch {} };
 
   const handleSaveDoc = async (data) => {
     try {
