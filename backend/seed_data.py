@@ -1689,7 +1689,7 @@ The proxy uses a priority system:
 
 - Exact-match cache: identical prompt + model + temperature = cached response
 - Cache TTL: configurable per-use case (code gen vs. creative writing)
-- Cache hit rate typically 5-15% for development workloads
+- Cache hit rate is typically observed around 5-15% for development workloads, though this varies significantly by use case
 - Reduces cost and latency for repetitive operations
 
 ## Rate Limiting
