@@ -1648,7 +1648,7 @@ function Dashboard() {
         {creating || editing ? <DocumentEditor doc={editing ? activeDoc : null} categories={categories} onSave={handleSaveDoc} onCancel={() => { setCreating(false); setEditing(false); if (activeDoc) navigate(`/doc/${activeDoc.id}`); else navigate("/"); }} />
         : isBookmarksRoute ? <BookmarksPage bookmarkedDocs={bookmarkedDocs} categories={categories} onSelectDoc={selectDoc} onToggleBookmark={toggleBookmark} />
         : isToolsRoute ? <ToolsPage isAdmin={isAdmin} />
-        : isTrashRoute && isAdmin ? <TrashPage />
+        : isTrashRoute && isAdmin ? <TrashPage onDocumentsChanged={refreshDocuments} />
         : isSettingsRoute && isAdmin ? <SettingsPage isAdmin={isAdmin} />
         : isAnalyticsRoute && isAdmin ? <AnalyticsPage />
         : showHome ? <HomePage categories={categories} documents={documents} onSelectDoc={selectDoc} />
