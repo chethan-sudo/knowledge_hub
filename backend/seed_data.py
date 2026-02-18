@@ -1393,7 +1393,7 @@ flowchart TD
 - **Cloud Storage:** Valid files are uploaded to persistent cloud storage, generating a URL that persists beyond the session
 - **Metadata:** File info (name, type, size, URL) is saved in the database and linked to the current job
 - **Processing by type:** Images are sent to multimodal LLMs (Claude, GPT-4o) that can "see" and describe them. Documents are processed by extract_file_tool which extracts text, tables, and structured data. Archives are unzipped via bash, and E1 explores the contents
-- **Why screenshots are low quality:** Screenshots taken by the screenshot_tool use quality=20 (80% compression). This saves significant tokens in the LLM context window. A full-quality screenshot could consume 10,000+ tokens; a compressed one uses ~2,000
+- **Why screenshots are low quality:** Screenshots taken by the screenshot_tool use quality=20 (a low quality setting) to minimize file size. This dramatically reduces token usage when the image is sent to the LLM for analysis. A full-quality screenshot could consume 10,000+ tokens in the context window; a low-quality one uses ~2,000 tokens — an 80%+ reduction
 """
     },
 
