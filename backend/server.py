@@ -761,7 +761,7 @@ if origins == ['*']:
             if scope["type"] != "http":
                 await self.app(scope, receive, send)
                 return
-            headers_list = dict(scope.get("headers", []))
+            headers_list = dict(scope.get("headers", []))  # noqa: F841
             origin = ""
             for k, v in scope.get("headers", []):
                 if k == b"origin":
