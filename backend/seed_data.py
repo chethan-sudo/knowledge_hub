@@ -1766,7 +1766,7 @@ A curated list of tools, libraries, and resources used across the Emergent platf
 | **React** | JavaScript | Frontend UI library for building component-based interfaces |
 | **Axios** | JavaScript | HTTP client for making API calls from the frontend |
 | **Tailwind CSS** | CSS | Utility-first CSS framework for rapid styling |
-| **Shadcn/UI** | React | Pre-built UI components at /app/frontend/src/components/ui/ |
+| **Shadcn/UI** | JavaScript/TypeScript | Pre-built UI components at /app/frontend/src/components/ui/ |
 | **Mermaid** | JavaScript | Diagram and flowchart rendering from text |
 | **Playwright** | Python | Browser automation for testing and screenshots |
 | **Ruff** | Python | Fast Python linter (replaces pylint, flake8) |
