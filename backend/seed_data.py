@@ -1419,7 +1419,7 @@ The system prompt (~15,000 tokens) is identical every time and dominates the vie
 | Your latest message | **Different** each time |
 | Tool calls & results | **Different** each time |
 
-The first 10,000 tokens look identical. Scroll past the system prompt to find the dynamic per-message content.
+The first ~15,000 tokens look identical. Scroll past the system prompt to find the dynamic per-message content.
 """
     },
 
