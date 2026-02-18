@@ -134,15 +134,15 @@ class TestUserRoleChange:
         if len(users) == 0:
             pytest.skip("No users to test role change")
         
-        # Get a test user (not the admin)
+        # Get a test user that has user_id field
         test_user = None
         for user in users:
-            if user.get("email") != "admin@emergent.sh" and "TEST" not in user.get("email", ""):
+            if user.get("user_id") and user.get("email") != "admin@emergent.sh":
                 test_user = user
                 break
         
         if not test_user:
-            pytest.skip("No suitable user for role test")
+            pytest.skip("No suitable user for role test (no user_id)")
         
         user_id = test_user["user_id"]
         current_role = test_user.get("role", "viewer")
