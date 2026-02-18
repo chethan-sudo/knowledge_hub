@@ -1133,6 +1133,171 @@ function ToolsPage({ isAdmin }) {
   );
 }
 
+// --- Analytics Dashboard ---
+function AnalyticsPage() {
+  const { api } = useAuth();
+  const [overview, setOverview] = useState(null);
+  const [popular, setPopular] = useState([]);
+  const [searches, setSearches] = useState([]);
+  const [chatbot, setChatbot] = useState(null);
+  const [activity, setActivity] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [ov, pop, srch, chat, act] = await Promise.all([
+          api("get", "/analytics/overview"),
+          api("get", "/analytics/popular-docs"),
+          api("get", "/analytics/searches"),
+          api("get", "/analytics/chatbot"),
+          api("get", "/analytics/activity"),
+        ]);
+        setOverview(ov.data); setPopular(pop.data); setSearches(srch.data);
+        setChatbot(chat.data); setActivity(act.data);
+      } catch (e) { console.error("Analytics load error:", e); }
+      setLoading(false);
+    };
+    load();
+  }, [api]);
+
+  if (loading) return <div className="edh-loading"><div className="edh-spinner"/></div>;
+
+  const maxViews = popular.length > 0 ? popular[0].views : 1;
+
+  return (
+    <div className="analytics-page" data-testid="analytics-page">
+      <div className="analytics-header">
+        <h1><Icon name="BarChart" size={28}/> Analytics Dashboard</h1>
+        <p className="analytics-subtitle">Insights on document views, search trends, and chatbot usage</p>
+      </div>
+
+      {/* Overview Cards */}
+      <div className="analytics-cards" data-testid="analytics-overview">
+        <div className="analytics-card">
+          <div className="analytics-card-icon" style={{background: "rgba(99,102,241,0.12)", color: "#6366f1"}}><Icon name="FileText" size={20}/></div>
+          <div className="analytics-card-data"><span className="analytics-card-value">{overview?.total_docs || 0}</span><span className="analytics-card-label">Documents</span></div>
+        </div>
+        <div className="analytics-card">
+          <div className="analytics-card-icon" style={{background: "rgba(34,197,94,0.12)", color: "#22c55e"}}><Icon name="Eye" size={20}/></div>
+          <div className="analytics-card-data"><span className="analytics-card-value">{overview?.total_views || 0}</span><span className="analytics-card-label">Total Views</span></div>
+        </div>
+        <div className="analytics-card">
+          <div className="analytics-card-icon" style={{background: "rgba(249,115,22,0.12)", color: "#f97316"}}><Icon name="Search" size={20}/></div>
+          <div className="analytics-card-data"><span className="analytics-card-value">{overview?.total_searches || 0}</span><span className="analytics-card-label">Searches</span></div>
+        </div>
+        <div className="analytics-card">
+          <div className="analytics-card-icon" style={{background: "rgba(236,72,153,0.12)", color: "#ec4899"}}><Icon name="MessageSquare" size={20}/></div>
+          <div className="analytics-card-data"><span className="analytics-card-value">{overview?.total_chats || 0}</span><span className="analytics-card-label">AI Chats</span></div>
+        </div>
+        <div className="analytics-card">
+          <div className="analytics-card-icon" style={{background: "rgba(14,165,233,0.12)", color: "#0ea5e9"}}><Icon name="TrendingUp" size={20}/></div>
+          <div className="analytics-card-data"><span className="analytics-card-value">{overview?.views_7d || 0}</span><span className="analytics-card-label">Views (7d)</span></div>
+        </div>
+        <div className="analytics-card">
+          <div className="analytics-card-icon" style={{background: "rgba(168,85,247,0.12)", color: "#a855f7"}}><Icon name="MessageSquare" size={20}/></div>
+          <div className="analytics-card-data"><span className="analytics-card-value">{overview?.chats_7d || 0}</span><span className="analytics-card-label">Chats (7d)</span></div>
+        </div>
+      </div>
+
+      <div className="analytics-grid">
+        {/* Popular Documents */}
+        <div className="analytics-section" data-testid="popular-docs">
+          <h2 className="analytics-section-title"><Icon name="TrendingUp" size={18}/> Most Viewed Documents</h2>
+          {popular.length === 0 ? <p className="analytics-empty">No view data yet. Views are tracked as users read documents.</p> : (
+            <div className="analytics-bar-chart">
+              {popular.map((d, i) => (
+                <div key={d.doc_id} className="analytics-bar-row" data-testid={`popular-doc-${i}`}>
+                  <span className="analytics-bar-rank">#{i + 1}</span>
+                  <span className="analytics-bar-title">{d.title}</span>
+                  <div className="analytics-bar-track">
+                    <div className="analytics-bar-fill" style={{width: `${(d.views / maxViews) * 100}%`}} />
+                  </div>
+                  <span className="analytics-bar-count">{d.views}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Search Queries */}
+        <div className="analytics-section" data-testid="search-analytics">
+          <h2 className="analytics-section-title"><Icon name="Search" size={18}/> Top Search Queries</h2>
+          {searches.length === 0 ? <p className="analytics-empty">No searches yet.</p> : (
+            <div className="analytics-table">
+              <div className="analytics-table-header"><span>Query</span><span>Count</span><span>Last Searched</span></div>
+              {searches.map((s, i) => (
+                <div key={i} className="analytics-table-row" data-testid={`search-query-${i}`}>
+                  <span className="analytics-query">{s.query}</span>
+                  <span className="analytics-count">{s.count}</span>
+                  <span className="analytics-date">{s.last_searched ? new Date(s.last_searched).toLocaleDateString() : ""}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Chatbot Usage */}
+        <div className="analytics-section" data-testid="chatbot-analytics">
+          <h2 className="analytics-section-title"><Icon name="MessageSquare" size={18}/> AI Chatbot Usage</h2>
+          {chatbot && chatbot.daily?.length > 0 ? (
+            <>
+              <div className="analytics-mini-chart">
+                {chatbot.daily.map((d, i) => (
+                  <div key={i} className="analytics-mini-bar-col" data-testid={`chat-day-${i}`}>
+                    <div className="analytics-mini-bar" style={{height: `${Math.max(4, (d.count / Math.max(...chatbot.daily.map(x => x.count))) * 80)}px`}} />
+                    <span className="analytics-mini-label">{d.date.slice(5)}</span>
+                  </div>
+                ))}
+              </div>
+              {chatbot.recent?.length > 0 && (
+                <div className="analytics-recent-questions">
+                  <h3>Recent Questions</h3>
+                  {chatbot.recent.slice(0, 5).map((q, i) => (
+                    <div key={i} className="analytics-question-item" data-testid={`recent-question-${i}`}>
+                      <Icon name="MessageSquare" size={13}/>
+                      <span>{q.question}</span>
+                      <span className="analytics-date">{q.asked_at ? new Date(q.asked_at).toLocaleDateString() : ""}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          ) : <p className="analytics-empty">No chatbot conversations yet.</p>}
+        </div>
+
+        {/* Recent Activity */}
+        <div className="analytics-section" data-testid="recent-activity">
+          <h2 className="analytics-section-title"><Icon name="Clock" size={18}/> Recent Activity</h2>
+          {activity?.recent_docs?.length > 0 ? (
+            <div className="analytics-activity-list">
+              {activity.recent_docs.map((d, i) => (
+                <div key={i} className="analytics-activity-item" data-testid={`activity-${i}`}>
+                  <Icon name="FileText" size={14}/>
+                  <span className="analytics-activity-title">{d.title}</span>
+                  <span className="analytics-date">{d.updated_at ? new Date(d.updated_at).toLocaleDateString() : ""}</span>
+                </div>
+              ))}
+            </div>
+          ) : <p className="analytics-empty">No recent activity.</p>}
+          {activity?.recent_comments?.length > 0 && (
+            <div className="analytics-activity-list" style={{marginTop: 12}}>
+              <h3 style={{fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: 8}}>Recent Comments</h3>
+              {activity.recent_comments.slice(0, 5).map((c, i) => (
+                <div key={i} className="analytics-activity-item">
+                  <Icon name="MessageSquare" size={14}/>
+                  <span className="analytics-activity-title">{c.user_name}: {c.content?.slice(0, 60)}</span>
+                  <span className="analytics-date">{c.created_at ? new Date(c.created_at).toLocaleDateString() : ""}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // --- Settings / Invite Page ---
 function SettingsPage({ isAdmin }) {
   const { api } = useAuth();
