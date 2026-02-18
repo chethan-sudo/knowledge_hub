@@ -647,17 +647,17 @@ async def analytics_overview(user=Depends(require_admin)):
 @api_router.get("/analytics/popular-docs")
 async def analytics_popular_docs(user=Depends(require_admin)):
     pipeline = [
-        {"$group": {"_id": "$document_id", "views": {"$sum": 1}}},
+        {"$group": {"_id": "$document_id", "views": {"$sum": 1}, "stored_title": {"$first": "$title"}}},
         {"$sort": {"views": -1}},
         {"$limit": 15}
     ]
     results = await db.doc_views.aggregate(pipeline).to_list(15)
-    # Enrich with doc titles
+    # Enrich with current doc titles, fallback to stored title
     doc_ids = [r["_id"] for r in results]
     docs = await db.documents.find({"id": {"$in": doc_ids}}, {"_id": 0, "id": 1, "title": 1, "category_id": 1}).to_list(100)
     doc_map = {d["id"]: d for d in docs}
     return [{"doc_id": r["_id"], "views": r["views"],
-             "title": doc_map.get(r["_id"], {}).get("title", "Unknown"),
+             "title": doc_map.get(r["_id"], {}).get("title", r.get("stored_title") or "[Deleted document]"),
              "category_id": doc_map.get(r["_id"], {}).get("category_id", "")}
             for r in results]
 
