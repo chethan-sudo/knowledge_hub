@@ -670,6 +670,11 @@ function DocumentViewer({ doc, category, parentCategory, isBookmarked, onToggleB
   const contentRef = useRef(null);
   const { users, identity } = useCollaboration(doc?.id, !!doc);
 
+  // Track document view
+  useEffect(() => {
+    if (doc?.id) api("post", `/documents/${doc.id}/view`).catch(() => {});
+  }, [doc?.id, api]);
+
   useEffect(() => { setShowVersions(false); setViewingVersion(null); setVersions([]); setShareId(doc?.share_id || null); setShowShare(false); }, [doc?.id, doc?.share_id]);
 
   const loadVersions = async () => {
