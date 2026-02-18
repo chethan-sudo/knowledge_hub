@@ -658,7 +658,7 @@ function PresenceAvatars({ users, identity }) {
 }
 
 // --- Document Viewer ---
-function DocumentViewer({ doc, category, parentCategory, isBookmarked, onToggleBookmark, onEdit, onDelete, isAdmin }) {
+function DocumentViewer({ doc, category, parentCategory, isBookmarked, onToggleBookmark, onEdit, onDelete, isAdmin, onNavigateHome }) {
   const { api } = useAuth();
   const [versions, setVersions] = useState([]);
   const [showVersions, setShowVersions] = useState(false);
