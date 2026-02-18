@@ -1409,7 +1409,7 @@ For every message: full LLM payload, tool calls with params/results/duration, to
 
 ## Why Debug Looks "The Same"
 
-The system prompt (~10,000 tokens) is identical every time and dominates the view. Dynamic content (your messages, tool results) is there but buried.
+The system prompt (~15,000 tokens) is identical every time and dominates the view. Dynamic content (your messages, tool results) is there but buried.
 
 | Part | Changes Between Messages? |
 |------|--------------------------|
