@@ -266,7 +266,12 @@ function renderParsedItem(item, key) {
 
 function renderInlineHtml(text) {
   if (!text) return "";
-  return text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>').replace(/`([^`]+)`/g, '<code class="doc-inline-code">$1</code>').replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="doc-link" target="_blank" rel="noreferrer">$1</a>');
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>')
+    .replace(/`([^`]+)`/g, '<code class="doc-inline-code">$1</code>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="doc-link" target="_blank" rel="noreferrer">$1</a>')
+    .replace(/(^|[^"'>])(https?:\/\/[^\s<,|]+)/g, '$1<a href="$2" class="doc-link" target="_blank" rel="noreferrer">$2</a>');
 }
 
 function renderInline(text) {
