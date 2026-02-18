@@ -601,7 +601,7 @@ An LLM is a neural network that predicts the next token given all previous token
 flowchart LR
     A[Input Text] --> B[Tokenizer]
     B --> C[Embedding Layer]
-    C --> D[Transformer Blocks x96]
+    C --> D[Transformer Blocks<br/>32-128 layers]
     D --> E[Output Layer]
     E --> F[Next Token Probabilities]
     F --> G[Sampling]
