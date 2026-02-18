@@ -1,0 +1,134 @@
+{
+  "summary": "Iteration 9 - Comprehensive QA Bug Fix Testing Complete. 10/10 backend tests passed (100%). All 14 UI bugs verified via Playwright. Fixed B-06 backend issue (Unknown -> [Deleted document]). All bug fixes working correctly.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration9_bugs.py",
+    "/app/test_reports/pytest/iteration9_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "B-02: Tool delete confirmation implemented at line 1103 - window.confirm('Delete this tool?')",
+    "B-05: TrashPage calls onDocumentsChanged callback after restore at line 1065",
+    "B-06: Fixed backend at line 659-670 to show '[Deleted document]' instead of 'Unknown' for orphaned views",
+    "B-09: TEST_SEARCH_ queries cleaned from analytics",
+    "B-10: PDF export shows alert feedback at line 713-714",
+    "B-12: Inline italic regex implemented at lines 271, 286, 298",
+    "B-13: Breadcrumb links are clickable buttons at lines 743-744",
+    "B-22: URLs auto-linked in table cells at line 274",
+    "B-24: Role change shows alert at line 1338",
+    "B-25: E1 comparison table has 'Capability' header (verified in seed_data.py line 396)",
+    "B-29: Shadcn shows JavaScript/TypeScript (verified in seed_data.py line 1769)",
+    "Table overflow: .doc-table-wrap { overflow-x: auto; } at App.css line 174",
+    "Chat button z-index: .chatbot-fab { z-index: 90; } at App.css line 383",
+    "Progress bar only on doc pages: ReadingProgress only renders when activeDoc exists"
+  ],
+  "updated_files": [
+    "/app/backend/server.py",
+    "/app/backend/tests/test_iteration9_bugs.py"
+  ],
+  "success_rate": {
+    "backend": "100%",
+    "frontend": "100%"
+  },
+  "test_credentials": {
+    "no_auth": "No authentication required. All users are default admin."
+  },
+  "seed_data_creation": "None - used existing seed data (37 documents)",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "All 14 QA bugs from iteration 9 have been verified and tested. B-06 required a backend fix to properly handle 'Unknown' stored titles. The tool delete, sidebar refresh, breadcrumb navigation, PDF export feedback, italic markdown, role change confirmation, URLs in tables, and E1 comparison table fixes are all working correctly. Database has 37 documents, 46 categories.",
+  "verified_bugs": {
+    "B-02": {
+      "status": "PASS",
+      "description": "Tool delete shows confirmation dialog",
+      "evidence": "window.confirm('Delete this tool?') at line 1103"
+    },
+    "B-05": {
+      "status": "PASS",
+      "description": "Sidebar refreshes after restore from trash",
+      "evidence": "Docs: 37 -> 36 (delete) -> 37 (restore)"
+    },
+    "B-06": {
+      "status": "PASS",
+      "description": "Analytics shows '[Deleted document]' for orphaned views",
+      "evidence": "Fixed backend logic at lines 659-670"
+    },
+    "B-09": {
+      "status": "PASS",
+      "description": "No TEST_SEARCH_ queries in analytics",
+      "evidence": "Backend test verified no test queries in search logs"
+    },
+    "B-10": {
+      "status": "PASS",
+      "description": "PDF export shows success/failure alert",
+      "evidence": "alert('PDF exported successfully!') at line 713"
+    },
+    "B-12": {
+      "status": "PASS",
+      "description": "Inline italic markdown *text* renders as <em>",
+      "evidence": "Regex at lines 271, 286, 298"
+    },
+    "B-13": {
+      "status": "PASS",
+      "description": "Breadcrumb links are clickable buttons",
+      "evidence": "<button className='doc-breadcrumb-link'> at lines 743-744"
+    },
+    "B-22": {
+      "status": "PASS",
+      "description": "URLs in markdown tables render as clickable hyperlinks",
+      "evidence": "Found 6 links in Essential Tools doc table cells"
+    },
+    "B-24": {
+      "status": "PASS",
+      "description": "Role change shows alert confirmation",
+      "evidence": "alert('Role updated to admin') observed"
+    },
+    "B-25": {
+      "status": "PASS",
+      "description": "E1 comparison table first column is 'Capability'",
+      "evidence": "Headers: Capability, LLM (Claude/GPT), E1 (The Agent)"
+    },
+    "B-29": {
+      "status": "PASS",
+      "description": "Shadcn/UI shows JavaScript/TypeScript",
+      "evidence": "Visible in Essential Tools document"
+    },
+    "progress_bar": {
+      "status": "PASS",
+      "description": "Progress bar only on document pages",
+      "evidence": "Not visible on home page, visible on doc page after scroll"
+    },
+    "table_overflow": {
+      "status": "PASS",
+      "description": "Table containers have overflow-x: auto",
+      "evidence": "CSS at line 174: .doc-table-wrap { overflow-x: auto; }"
+    },
+    "chat_z_index": {
+      "status": "PASS",
+      "description": "Chat button z-index is correct",
+      "evidence": "CSS at line 383: .chatbot-fab { z-index: 90; }"
+    }
+  },
+  "regression_tests": {
+    "homepage": "PASS - 37 documents, 14 category cards",
+    "document_viewer": "PASS - Breadcrumb, TOC, Mermaid diagrams working",
+    "sidebar_navigation": "PASS - Categories expandable, documents clickable",
+    "trash_page": "PASS - Delete and restore working with sidebar refresh",
+    "tools_page": "PASS - Add, edit, delete with confirmation",
+    "settings_page": "PASS - Role change with alert feedback",
+    "analytics_dashboard": "PASS - Shows [Deleted document] for orphaned views"
+  },
+  "backend_fix_applied": {
+    "file": "/app/backend/server.py",
+    "lines": "659-670",
+    "description": "Fixed analytics/popular-docs to show '[Deleted document]' when stored_title is 'Unknown' or missing"
+  }
+}
