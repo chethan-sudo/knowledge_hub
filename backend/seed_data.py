@@ -2270,7 +2270,7 @@ Comprehensive test suite covering E1 orchestration, tool execution, subagent man
 **Steps:**
 1. Complete a feature implementation
 2. Trigger testing via "test this feature"
-3. Verify E1 delegates to testing_agent_v3_fork
+3. Verify E1 delegates to testing_agent
 4. Verify subagent receives full context (problem statement, files, credentials)
 5. Verify subagent returns structured test report
 
