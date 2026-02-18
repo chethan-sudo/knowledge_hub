@@ -421,6 +421,8 @@ async def toggle_bookmark(doc_id: str, user=Depends(get_current_user)):
 async def search_documents(q: str = "", user=Depends(get_current_user)):
     if not q or len(q) < 1:
         return []
+    # Log search query for analytics
+    await db.search_logs.insert_one({"query": q, "searched_at": datetime.now(timezone.utc).isoformat()})
     escaped = re.escape(q)
     fuzzy_pattern = ".*".join(list(escaped))
     query = {"deleted": {"$ne": True}, "$or": [
