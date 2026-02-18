@@ -731,8 +731,8 @@ function DocumentViewer({ doc, category, parentCategory, isBookmarked, onToggleB
   return (
     <div className="doc-viewer" data-testid="doc-viewer">
       <div className="doc-breadcrumb" data-testid="doc-breadcrumb">
-        {parentCategory && <><span>{parentCategory.name}</span><Icon name="ChevronRight" size={14}/></>}
-        {category && <><span>{category.name}</span><Icon name="ChevronRight" size={14}/></>}
+        {parentCategory && <><button className="doc-breadcrumb-link" onClick={() => { const firstDoc = documents?.find(d => categories?.filter(c => c.parent_id === parentCategory.id).some(sub => sub.id === d.category_id) || d.category_id === parentCategory.id); if (firstDoc) navigate(`/doc/${firstDoc.id}`); else navigate("/"); }}>{parentCategory.name}</button><Icon name="ChevronRight" size={14}/></>}
+        {category && <><button className="doc-breadcrumb-link" onClick={() => { const firstDoc = documents?.find(d => d.category_id === category.id); if (firstDoc) navigate(`/doc/${firstDoc.id}`); else navigate("/"); }}>{category.name}</button><Icon name="ChevronRight" size={14}/></>}
         <span className="doc-breadcrumb-active">{doc.title}</span>
       </div>
       <div className="doc-header">
