@@ -1667,6 +1667,7 @@ function AppRouter() {
       <Route path="/tools" element={<Dashboard />} />
       <Route path="/trash" element={<Dashboard />} />
       <Route path="/settings" element={<Dashboard />} />
+      <Route path="/analytics" element={<Dashboard />} />
       <Route path="/doc/:docId" element={<Dashboard />} />
       <Route path="/" element={<Dashboard />} />
     </Routes>
