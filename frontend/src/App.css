@@ -485,7 +485,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 
 .analytics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 @media (max-width: 900px) { .analytics-grid { grid-template-columns: 1fr; } }
-.analytics-section { background: var(--card-bg); border: 1px solid var(--border-clr); border-radius: var(--radius); padding: 20px; }
+.analytics-section { background: var(--card-bg); border: 1px solid var(--border-clr); border-radius: var(--radius); padding: 20px; position: relative; z-index: 1; }
 .analytics-section-title { display: flex; align-items: center; gap: 8px; font-size: 0.95rem; font-weight: 600; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border-clr); }
 .analytics-empty { color: var(--text-muted); font-size: 0.8rem; font-style: italic; }
 
