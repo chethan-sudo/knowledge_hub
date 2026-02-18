@@ -171,7 +171,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 .doc-link:hover { text-decoration: underline; }
 .doc-ul, .doc-ol { margin-bottom: 1rem; padding-left: 1.5rem; }
 .doc-ul li, .doc-ol li { font-size: 0.925rem; line-height: 1.75; color: var(--text-primary); margin-bottom: 4px; opacity: 0.92; }
-.doc-table-wrap { overflow-x: auto; margin-bottom: 1.5rem; border-radius: var(--radius); border: 1px solid var(--border-clr); }
+.doc-table-wrap { overflow-x: auto; margin-bottom: 1.5rem; border-radius: var(--radius); border: 1px solid var(--border-clr); max-width: 100%; }
 .doc-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
 .doc-table th { padding: 10px 14px; text-align: left; font-weight: 600; background: var(--code-bg); border-bottom: 1px solid var(--border-clr); white-space: nowrap; }
 .doc-table td { padding: 10px 14px; border-bottom: 1px solid var(--border-clr); }
