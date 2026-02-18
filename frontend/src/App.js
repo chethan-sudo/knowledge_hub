@@ -546,7 +546,7 @@ function CommentsSection({ docId }) {
 }
 
 // --- Sidebar ---
-function Sidebar({ categories, documents, activeDocId, onSelectDoc, onNewDoc, collapsed, setCollapsed, bookmarkedIds, onManageCategories, isAdmin, sidebarWidth, onResizeSidebar }) {
+function Sidebar({ categories, documents, activeDocId, onSelectDoc, onNewDoc, collapsed, setCollapsed, bookmarkCount, onManageCategories, isAdmin, sidebarWidth, onResizeSidebar }) {
   const [expanded, setExpanded] = useState({});
   const { dark, toggle } = useTheme();
   const { logout, user } = useAuth();
