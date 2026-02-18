@@ -1048,12 +1048,12 @@ function BookmarksPage({ bookmarkedDocs, categories, onSelectDoc, onToggleBookma
 }
 
 // --- Trash Page (Admin only) ---
-function TrashPage() {
+function TrashPage({ onDocumentsChanged }) {
   const { api } = useAuth();
   const [docs, setDocs] = useState([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => { api("get", "/trash").then(r => setDocs(r.data)).catch(() => {}).finally(() => setLoading(false)); }, [api]);
-  const restore = async (id) => { try { await api("post", `/trash/${id}/restore`); setDocs(prev => prev.filter(d => d.id !== id)); } catch {} };
+  const restore = async (id) => { try { await api("post", `/trash/${id}/restore`); setDocs(prev => prev.filter(d => d.id !== id)); if (onDocumentsChanged) onDocumentsChanged(); } catch {} };
   const permDelete = async (id) => { if (!window.confirm("Permanently delete? This cannot be undone.")) return; try { await api("delete", `/trash/${id}`); setDocs(prev => prev.filter(d => d.id !== id)); } catch {} };
   if (loading) return <div className="edh-loading"><div className="edh-spinner"/></div>;
   return (
