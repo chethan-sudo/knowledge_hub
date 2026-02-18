@@ -2643,7 +2643,7 @@ This is the most important section. Users frequently look for these actions in t
 | Action | Where It Actually Is | How to Access |
 |--------|---------------------|---------------|
 | **Save to GitHub** | Message panel area | Look for the GitHub icon/button near the chat input. NOT in the top navigation bar |
-| **Rollback** | Available as a feature | Revert to any previous auto-checkpoint. Each significant code change creates a checkpoint. Free and instant |
+| **Rollback** | Message panel / chat area | Look for the Rollback option near the chat input area, alongside Save to GitHub. Reverts to any previous auto-checkpoint. Free and instant |
 | **Deploy** | Deployment options available | Deploy your app to production with a permanent URL |
 | **Share preview** | Preview panel | Share the preview URL with others for testing |
 
