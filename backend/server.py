@@ -656,10 +656,21 @@ async def analytics_popular_docs(user=Depends(require_admin)):
     doc_ids = [r["_id"] for r in results]
     docs = await db.documents.find({"id": {"$in": doc_ids}}, {"_id": 0, "id": 1, "title": 1, "category_id": 1}).to_list(100)
     doc_map = {d["id"]: d for d in docs}
-    return [{"doc_id": r["_id"], "views": r["views"],
-             "title": doc_map.get(r["_id"], {}).get("title", r.get("stored_title") or "[Deleted document]"),
-             "category_id": doc_map.get(r["_id"], {}).get("category_id", "")}
-            for r in results]
+    output = []
+    for r in results:
+        doc_id = r["_id"]
+        if doc_id in doc_map:
+            # Document exists - use current title
+            output.append({"doc_id": doc_id, "views": r["views"],
+                          "title": doc_map[doc_id].get("title", "Unknown"),
+                          "category_id": doc_map[doc_id].get("category_id", "")})
+        else:
+            # Document deleted/doesn't exist - show "[Deleted document]"
+            stored = r.get("stored_title")
+            title = "[Deleted document]" if not stored or stored == "Unknown" else stored
+            output.append({"doc_id": doc_id, "views": r["views"],
+                          "title": title, "category_id": ""})
+    return output
 
 @api_router.get("/analytics/searches")
 async def analytics_searches(user=Depends(require_admin)):
