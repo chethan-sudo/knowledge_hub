@@ -1340,7 +1340,7 @@ flowchart LR
 - **What:** This shows the complete lifecycle of a development session on the Emergent platform
 - **1. Creation:** When a user starts a new project, Kubernetes provisions a dedicated pod. The pod contains backend (FastAPI), frontend (React dev server), and MongoDB. A project template is cloned, services are started, and a preview URL is assigned. This takes 15-30 seconds
 - **2. Active:** The user and E1 are actively building. Messages are exchanged, tools are executed, code is written and tested. Every significant change is auto-committed to git for rollback. The preview URL is live and accessible
-- **3. Idle:** When the user stops interacting. For minutes: everything keeps running. For hours: the container may hibernate (suspended state, wakes in 30-60 seconds). For days: the container may be stopped entirely (recreated in 1-3 minutes when the user returns). Code and data persist through git and MongoDB
+- **3. Idle:** When the user stops interacting. For minutes: everything keeps running. For hours: the container may hibernate (suspended state, wakes in approximately 30-60 seconds). For days: the container may be stopped entirely (recreated in approximately 1-3 minutes when the user returns). These times are approximate and vary by system load. Code and data persist through git and MongoDB
 - **4. Resumption:** User returns after idle period. The pod is recreated if stopped, services restart, the last git state is restored. It feels seamless — the user picks up where they left off
 - **5. Expiry:** After extended inactivity, the container is fully terminated and resources are freed. Conversation history is preserved in MongoDB. Code is preserved if saved to GitHub. The pod can be recreated from git state if the user returns
 
