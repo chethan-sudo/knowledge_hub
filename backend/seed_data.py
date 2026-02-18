@@ -1713,6 +1713,69 @@ The proxy enforces multiple rate limit tiers:
 """
     },
 
+    # ===== TOOLS & RESOURCES =====
+    {
+        "id": _id(), "title": "Essential Tools & Resources", "category_id": CAT_TOOLS, "author_id": SYSTEM_AUTHOR,
+        "created_at": NOW, "updated_at": NOW, "order": 0,
+        "content": """# Essential Tools & Resources
+
+A curated list of tools, libraries, and resources used across the Emergent platform.
+
+## Core Libraries (Pre-installed)
+
+| Library | Language | Purpose |
+|---------|----------|---------|
+| **FastAPI** | Python | Backend API framework with async support and auto-generated docs |
+| **Motor** | Python | Async MongoDB driver for Python |
+| **Pydantic** | Python | Data validation and serialization for API models |
+| **React** | JavaScript | Frontend UI library for building component-based interfaces |
+| **Axios** | JavaScript | HTTP client for making API calls from the frontend |
+| **Tailwind CSS** | CSS | Utility-first CSS framework for rapid styling |
+| **Shadcn/UI** | React | Pre-built UI components at /app/frontend/src/components/ui/ |
+| **Mermaid** | JavaScript | Diagram and flowchart rendering from text |
+| **Playwright** | Python | Browser automation for testing and screenshots |
+| **Ruff** | Python | Fast Python linter (replaces pylint, flake8) |
+| **ESLint** | JavaScript | JavaScript/TypeScript linter for code quality |
+
+## Package Management
+
+| Task | Command | Notes |
+|------|---------|-------|
+| Install Python package | `pip install package_name` | Then run `pip freeze > /app/backend/requirements.txt` |
+| Install JS package | `cd /app/frontend && yarn add package_name` | Never use npm (causes breaking changes) |
+| Check installed Python | `pip list` | |
+| Check installed JS | `cd /app/frontend && yarn list --depth=0` | |
+
+## Emergent-Specific Libraries
+
+| Library | Install | Purpose |
+|---------|---------|---------|
+| **emergentintegrations** | `pip install emergentintegrations --extra-index-url https://d33sy5i8bnduwe.cloudfront.net/simple/` | LLM integration library for Universal Key. Supports OpenAI, Anthropic, Google text/image/video/audio |
+
+## Useful Commands
+
+| Command | Purpose |
+|---------|---------|
+| `sudo supervisorctl status` | Check if backend/frontend/MongoDB are running |
+| `sudo supervisorctl restart backend` | Restart backend after .env or package changes |
+| `sudo supervisorctl restart frontend` | Restart frontend after .env or package changes |
+| `tail -n 100 /var/log/supervisor/backend.err.log` | View backend error logs |
+| `tail -n 100 /var/log/supervisor/frontend.err.log` | View frontend error logs |
+| `git log --oneline -10` | View last 10 code checkpoints |
+| `mongosh` | Access MongoDB shell directly |
+
+## External Documentation
+
+| Resource | URL | When to Use |
+|----------|-----|-------------|
+| **FastAPI Docs** | https://fastapi.tiangolo.com | Backend development reference |
+| **React Docs** | https://react.dev | Frontend development reference |
+| **MongoDB Manual** | https://www.mongodb.com/docs/manual/ | Database queries and operations |
+| **Tailwind CSS** | https://tailwindcss.com/docs | CSS utility class reference |
+| **Mermaid Docs** | https://mermaid.js.org/intro/ | Diagram syntax reference |
+"""
+    },
+
     # ===== TEST CASES =====
     {
         "id": _id(), "title": "Authentication Test Cases", "category_id": SUB_TC_AUTH, "author_id": SYSTEM_AUTHOR,
