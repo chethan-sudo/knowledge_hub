@@ -1548,6 +1548,8 @@ The system prompt is a living document. It gets versioned, A/B tested, and gradu
         "created_at": NOW, "updated_at": NOW, "order": 0,
         "content": """# Where AI Agents Are Heading
 
+*Note: The following timeline represents projections based on current trends, not guarantees. The pace of AI development may accelerate or shift.*
+
 ## Timeline
 
 ```mermaid
