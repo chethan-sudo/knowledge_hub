@@ -1,42 +1,28 @@
 # Emergent Knowledge Hub - PRD
 
-## Stats: 36 documents, 46 categories, 14 unique cover images, 32 mermaid diagrams with step-by-step flow explanations
+## Stats: 37 documents, 46 categories, 14 unique cover images, 33 mermaid diagrams with flow explanations
 
 ## All Implemented Features
-- [x] 14 unique cover images (2D illustrations, distinct per category)
-- [x] Collapsible H2 sections with +/- toggle
-- [x] Finshots-style circular reading progress (bottom-right, SVG circle with %)
-- [x] Fixed sidebar (position: fixed, independent scroll)
-- [x] Mermaid zoom controls (+/- reset in expanded view)
-- [x] Mermaid text overlap fixed (nodeSpacing:80, rankSpacing:90)
-- [x] 32 step-by-step flow explanations for ALL mermaid diagrams
-- [x] Complete QA Verification Guide
-- [x] All previous features (chatbot, templates, tags, search, etc.)
+- [x] Notion-style UI with collapsible resizable sidebar, dark/light modes
+- [x] 14 unique cover images per category
+- [x] Collapsible H2 sections, Mermaid zoom controls, reading progress bar (doc pages only)
+- [x] AI Chatbot (Claude Sonnet), full-text search, templates, tags, comments, versioning
+- [x] Soft delete/restore, public sharing, bookmarks
+- [x] 33 mermaid diagrams with step-by-step flow explanations (What/When/How/Why)
 - [x] P0: Real-time Collaborative Editing (WebSocket, presence, auto-save)
-- [x] Content Accuracy Fixes (UI Guide, flow explanations, progress bar)
-- [x] **P1: Analytics Dashboard** (Feb 2026)
-  - Overview cards: total docs, views, searches, AI chats, 7-day metrics
-  - Most Viewed Documents bar chart (top 15)
-  - Top Search Queries table with counts
-  - AI Chatbot Usage daily chart + recent questions
-  - Recent Activity feed (docs + comments)
-  - Document view tracking (auto on view)
-  - Search query logging (auto on search)
-  - Admin-only access via sidebar
-
-## Architecture
-- Backend: FastAPI (server.py) with WebSocket + Analytics
-- Frontend: React (App.js) with useCollaboration hook + AnalyticsPage
-- Database: MongoDB (collections: documents, categories, doc_views, search_logs, chat_messages, comments)
-- LLM: Claude Sonnet via emergentintegrations
-
-## Key API Endpoints
-- Analytics: GET /api/analytics/overview, /popular-docs, /searches, /chatbot, /activity
-- View tracking: POST /api/documents/{doc_id}/view
-- Collab: WebSocket /api/ws/collab/{doc_id}
-- CRUD: /api/documents, /api/categories, /api/search, /api/chat
+- [x] P1: Analytics Dashboard (views, searches, chatbot usage, activity)
+- [x] Comprehensive content review fixes (16+ accuracy improvements)
+  - Token count consistency (~15,000)
+  - Transformer layers (32-128, not x96)
+  - AutoGen updated to production-ready
+  - Tools & Resources page added (was empty)
+  - MongoDB page enhanced with diagram
+  - UI Guide: Rollback location, ask_human clarification
+  - Session lifecycle approximate times
+  - Future timeline disclaimer
+  - Docker startup, supervisor context notes
 
 ## Backlog
-- P2: Slack/Discord Notifications on comments/updates
+- P2: Slack/Discord Notifications
 - Refactoring: Split monolithic App.js (~1700 lines) and server.py (~800 lines)
-- Offline Access/PWA, Drag-and-drop document reordering
+- Offline Access/PWA
