@@ -400,7 +400,7 @@ flowchart TD
 | **Can read files?** | No | Yes, via tools |
 | **Can call APIs?** | No | Yes, via subagents |
 | **Has memory?** | No (stateless) | Yes (via Agent Service) |
-| **Makes decisions?** | Generates suggestions | Actually picks and executes actions |
+| **Makes decisions?** | Proposes actions via structured output | Executes: picks tools, runs them, evaluates results |
 | **Has rules?** | Only what's in its prompt | Full system prompt + tool definitions |
 
 ## How E1 Makes Decisions
