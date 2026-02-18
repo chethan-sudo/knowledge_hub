@@ -883,6 +883,8 @@ flowchart TD
 | New package installs | No | **Yes** |
 | Config file changes | No | **Yes** |
 
+Run these commands in the terminal (via execute_bash tool or direct terminal access):
+
 ```bash
 sudo supervisorctl status           # Check all services
 sudo supervisorctl restart backend  # Restart backend only
