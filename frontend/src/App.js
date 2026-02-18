@@ -1330,6 +1330,7 @@ function SettingsPage({ isAdmin }) {
     try {
       await api("put", `/users/${userId}/role`, { role: newRole });
       setUsers(prev => prev.map(u => u.user_id === userId ? { ...u, role: newRole } : u));
+      alert(`Role updated to ${newRole}`);
     } catch {}
   };
 
