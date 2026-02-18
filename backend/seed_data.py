@@ -1071,6 +1071,23 @@ async def get_todos(user=Depends(get_current_user)):
 
 Data stored as BSON (Binary JSON). No fixed schema. Documents in Collections, Collections in Databases.
 
+```mermaid
+flowchart TD
+    DB[(MongoDB)] --> C1[Collection: users]
+    DB --> C2[Collection: documents]
+    DB --> C3[Collection: jobs]
+    C2 --> D1["Document {id, title, content, tags}"]
+    C2 --> D2["Document {id, title, content, tags}"]
+```
+
+**Flow Explanation — MongoDB Data Organization:**
+
+- **What:** This shows how MongoDB organizes data in a hierarchy: Database → Collections → Documents
+- **Database:** A single MongoDB instance (connected via MONGO_URL) contains all data for the application
+- **Collections:** Like tables in SQL. Each collection holds documents of a similar type (users, documents, jobs). Unlike SQL, documents in the same collection can have different fields
+- **Documents:** Individual JSON-like objects. Each document has its own fields and can be nested (objects within objects, arrays within objects). No fixed schema means you can add new fields without migration scripts
+- **Why MongoDB for Emergent:** Flexible schema is ideal for a platform where users build diverse applications. E1 can add fields to documents without ALTER TABLE migrations. The BSON format natively supports rich types (dates, binary, arrays)
+
 ## The ObjectId Problem
 
 `ObjectId` is BSON, not JSON. `json.dumps({_id: ObjectId(...)})` will **crash** with `TypeError`.
@@ -1078,6 +1095,20 @@ Data stored as BSON (Binary JSON). No fixed schema. Documents in Collections, Co
 **Fix 1**: Exclude `_id` — `db.find({}, {"_id": 0})`
 **Fix 2**: Convert — `str(doc["_id"])`
 **Fix 3**: Pydantic models with custom serializers
+
+This is the single most common bug when building FastAPI + MongoDB applications. Every time you return MongoDB data in an API response, you must handle `_id`.
+
+## Common Operations
+
+| Operation | Motor (async) Code |
+|-----------|-------------------|
+| **Find all** | `await db.collection.find({}, {"_id": 0}).to_list(100)` |
+| **Find one** | `await db.collection.find_one({"id": "abc"}, {"_id": 0})` |
+| **Insert** | `await db.collection.insert_one({"id": "abc", "name": "test"})` |
+| **Update** | `await db.collection.update_one({"id": "abc"}, {"$set": {"name": "new"}})` |
+| **Delete** | `await db.collection.delete_one({"id": "abc"})` |
+| **Count** | `await db.collection.count_documents({"status": "active"})` |
+| **Aggregate** | `await db.collection.aggregate([{"$group": {...}}]).to_list(100)` |
 
 ## Indexing
 
@@ -1088,6 +1119,10 @@ Data stored as BSON (Binary JSON). No fixed schema. Documents in Collections, Co
 | Seconds on large collections | Milliseconds |
 
 Always index fields you query frequently. Use compound indexes for multi-field queries. Use text indexes for search.
+
+## DateTime Handling
+
+Always use `datetime.now(timezone.utc)` — never `datetime.utcnow()` (deprecated). Convert to ISO string before storing if needed: `datetime.now(timezone.utc).isoformat()`.
 """
     },
 
