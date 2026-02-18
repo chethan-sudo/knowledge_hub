@@ -734,7 +734,11 @@ function DocumentViewer({ doc, category, parentCategory, isBookmarked, onToggleB
   );
 
   const displayContent = viewingVersion ? viewingVersion.content : doc.content;
-  const headings = displayContent?.match(/^## .+/gm)?.map(h => ({ text: h.slice(3), id: h.slice(3).toLowerCase().replace(/[^a-z0-9]+/g, "-") })) || [];
+  const headings = (() => {
+    const raw = displayContent?.match(/^## .+/gm)?.map(h => ({ text: h.slice(3), id: h.slice(3).toLowerCase().replace(/[^a-z0-9]+/g, "-") })) || [];
+    const seen = new Set();
+    return raw.filter(h => { if (seen.has(h.id)) return false; seen.add(h.id); return true; });
+  })();
   const tags = doc.tags || [];
 
   return (
