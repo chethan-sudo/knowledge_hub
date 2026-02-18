@@ -187,7 +187,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 .doc-codeblock code { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; line-height: 1.65; color: var(--text-primary); white-space: pre; }
 
 /* Mermaid */
-.mermaid-diagram { position: relative; margin-bottom: 1.5rem; padding: 24px; background: var(--code-bg); border: 1px solid var(--code-border); border-radius: var(--radius); overflow-x: auto; display: flex; justify-content: center; min-height: 200px; }
+.mermaid-diagram { position: relative; margin-bottom: 1.5rem; padding: 24px; background: var(--code-bg); border: 1px solid var(--code-border); border-radius: var(--radius); overflow-x: auto; display: flex; justify-content: center; min-height: 200px; max-width: 100%; }
 .mermaid-diagram > div > svg { max-width: 100%; height: auto; min-width: 500px; }
 .mermaid-expand-btn { position: absolute; top: 8px; right: 8px; background: var(--content-bg); border: 1px solid var(--border-clr); color: var(--text-muted); cursor: pointer; padding: 4px 10px; border-radius: 4px; opacity: 0; transition: opacity 0.15s; font-size: 0.68rem; font-family: inherit; font-weight: 500; z-index: 5; display: flex; align-items: center; gap: 4px; }
 .mermaid-expand-btn svg { width: 12px !important; height: 12px !important; min-width: 12px !important; }
