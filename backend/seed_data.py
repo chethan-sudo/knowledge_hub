@@ -1488,7 +1488,7 @@ This is how semantic search works — find by meaning, not keywords.
 |-----------|-------|-------|
 | **LangChain** | General LLM apps | E1 is more specialized |
 | **CrewAI** | Multi-agent crews | Similar to E1's subagent architecture |
-| **AutoGen** | Multi-agent conversations | More research-oriented |
+| **AutoGen** | Multi-agent conversations | Production-ready multi-agent framework |
 | **OpenAI Assistants** | Managed agent service | Less customizable |
 | **Anthropic MCP** | Standard tool protocol | Complementary to E1 |
 
