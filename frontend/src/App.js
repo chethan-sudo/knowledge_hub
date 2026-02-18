@@ -702,7 +702,8 @@ function DocumentViewer({ doc, category, parentCategory, isBookmarked, onToggleB
         position += pdfH;
       }
       pdf.save(`${doc.title}.pdf`);
-    } catch (e) { console.error("PDF export error:", e); }
+      alert("PDF exported successfully!");
+    } catch (e) { console.error("PDF export error:", e); alert("PDF export failed. Please try again."); }
     setExporting(false);
   };
 
