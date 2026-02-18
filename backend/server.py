@@ -448,7 +448,16 @@ async def search_documents(q: str = "", user=Depends(get_current_user)):
             if idx >= 0:
                 start = max(0, idx - 60)
                 end = min(len(content), idx + len(q) + 60)
-                snippet = ("..." if start > 0 else "") + content[start:end].replace("\n", " ") + ("..." if end < len(content) else "")
+                raw = content[start:end].replace("\n", " ")
+                # Strip markdown syntax from snippet
+                raw = re.sub(r'\*\*(.+?)\*\*', r'\1', raw)
+                raw = re.sub(r'\*(.+?)\*', r'\1', raw)
+                raw = re.sub(r'`([^`]+)`', r'\1', raw)
+                raw = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', raw)
+                raw = re.sub(r'\|', ' ', raw)
+                raw = re.sub(r'#{1,6}\s*', '', raw)
+                raw = re.sub(r'\s{2,}', ' ', raw).strip()
+                snippet = ("..." if start > 0 else "") + raw + ("..." if end < len(content) else "")
         results.append({"id": d["id"], "title": d["title"], "category_id": d.get("category_id", ""), "snippet": snippet, "tags": d.get("tags", [])})
     return results
 
