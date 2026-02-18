@@ -4,36 +4,25 @@
 
 ## All Implemented Features
 - [x] Notion-style UI with collapsible resizable sidebar, dark/light modes
-- [x] 14 unique cover images per category
-- [x] Collapsible H2 sections, Mermaid zoom controls, reading progress bar (doc pages only)
+- [x] 14 unique cover images, collapsible H2 sections, reading progress (doc pages only)
 - [x] AI Chatbot (Claude Sonnet), full-text search, templates, tags, comments, versioning
 - [x] Soft delete/restore with sidebar auto-refresh, public sharing, bookmarks
 - [x] 33 mermaid diagrams with step-by-step flow explanations
 - [x] P0: Real-time Collaborative Editing (WebSocket, presence, auto-save)
 - [x] P1: Analytics Dashboard (views, searches, chatbot usage, activity)
-- [x] Comprehensive QA bug fixes (iteration 9):
-  - Tool/document/permanent delete confirmations
+- [x] Comprehensive QA fixes (iterations 8-10):
+  - Delete confirmations (tool, document, permanent)
   - Sidebar auto-refresh after trash restore
-  - Breadcrumb links functional (clickable, navigate to home)
+  - Breadcrumb links clickable (navigate to home)
   - PDF export success/failure feedback
   - Inline italic markdown rendering
   - URLs auto-linked in markdown tables
-  - Role change confirmation alert
-  - Analytics: "[Deleted document]" for orphaned views
-  - Test data cleanup (search queries, tools, users, orphaned views)
-  - Table/diagram overflow CSS fixes
-  - E1 comparison table header fixed ("Capability")
-  - Shadcn language label corrected
-
-## Remaining Known Issues (from QA report)
-- B-04: Bookmark badge counter can get out of sync after delete/restore cycles
-- B-08: Server cold start shows empty state (infra-level)
-- B-09: Duplicate TOC on custom-created pages
-- B-23: Search snippets show raw markdown table formatting
-- B-26: Tag filter pill persists visually after clear (functionally works)
-- B-30: Test Cases category visible to all users (should be admin-only)
-- S-01: Undo toast after soft delete suggestion
-- S-15: Version history diff view
+  - Search snippets strip raw markdown (code blocks, pipes, bold markers)
+  - Duplicate TOC entries deduplicated
+  - Bookmark badge uses actual doc count (not stale IDs)
+  - Analytics: "[Deleted document]" for orphaned views, title stored with views
+  - Test data cleaned (search queries, tools, users, orphaned views)
+  - Content fixes: E1 table header, Shadcn language, token count consistency
 
 ## Backlog
 - P2: Slack/Discord Notifications
