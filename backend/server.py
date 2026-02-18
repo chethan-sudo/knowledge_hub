@@ -779,7 +779,7 @@ if origins == ['*']:
 
             async def send_with_cors(message):
                 if message["type"] == "http.response.start":
-                    headers = dict(message.get("headers", []))
+                    headers = dict(message.get("headers", []))  # noqa: F841
                     extra = [
                         (b"access-control-allow-origin", (origin or "*").encode()),
                         (b"access-control-allow-credentials", b"true"),
