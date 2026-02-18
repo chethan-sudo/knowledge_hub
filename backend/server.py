@@ -616,8 +616,10 @@ async def seed_data():
 # --- Document View Tracking ---
 @api_router.post("/documents/{doc_id}/view")
 async def track_document_view(doc_id: str):
+    doc = await db.documents.find_one({"id": doc_id, "deleted": {"$ne": True}}, {"_id": 0, "title": 1})
     await db.doc_views.insert_one({
         "document_id": doc_id,
+        "title": doc.get("title", "Unknown") if doc else "Unknown",
         "viewed_at": datetime.now(timezone.utc).isoformat()
     })
     return {"status": "tracked"}
