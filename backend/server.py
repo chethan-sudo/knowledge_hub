@@ -434,8 +434,10 @@ async def search_documents(q: str = "", user=Depends(get_current_user)):
     for d in docs:
         snippet = ""
         content = d.get("content", "")
+        # Strip code blocks (including mermaid) for cleaner snippets
+        clean_content = re.sub(r'```.*?```', '', content, flags=re.DOTALL)
         # Search in headings and content
-        lines = content.split("\n")
+        lines = clean_content.split("\n")
         heading_match = None
         for line in lines:
             if line.startswith("#") and q.lower() in line.lower():
@@ -444,11 +446,11 @@ async def search_documents(q: str = "", user=Depends(get_current_user)):
         if heading_match:
             snippet = f"Section: {heading_match}"
         else:
-            idx = content.lower().find(q.lower())
+            idx = clean_content.lower().find(q.lower())
             if idx >= 0:
                 start = max(0, idx - 60)
-                end = min(len(content), idx + len(q) + 60)
-                raw = content[start:end].replace("\n", " ")
+                end = min(len(clean_content), idx + len(q) + 60)
+                raw = clean_content[start:end].replace("\n", " ")
                 # Strip markdown syntax from snippet
                 raw = re.sub(r'\*\*(.+?)\*\*', r'\1', raw)
                 raw = re.sub(r'\*(.+?)\*', r'\1', raw)
