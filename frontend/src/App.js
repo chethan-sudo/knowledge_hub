@@ -278,16 +278,19 @@ function renderInline(text) {
     const boldMatch = remaining.match(/\*\*(.+?)\*\*/);
     const codeMatch = remaining.match(/`([^`]+)`/);
     const linkMatch = remaining.match(/\[([^\]]+)\]\(([^)]+)\)/);
+    const italicMatch = remaining.match(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/);
     let earliest = null;
     let earliestIdx = remaining.length;
     if (boldMatch && boldMatch.index < earliestIdx) { earliest = "bold"; earliestIdx = boldMatch.index; }
     if (codeMatch && codeMatch.index < earliestIdx) { earliest = "code"; earliestIdx = codeMatch.index; }
     if (linkMatch && linkMatch.index < earliestIdx) { earliest = "link"; earliestIdx = linkMatch.index; }
+    if (italicMatch && italicMatch.index < earliestIdx) { earliest = "italic"; earliestIdx = italicMatch.index; }
     if (!earliest) { parts.push(remaining); break; }
     if (earliestIdx > 0) parts.push(remaining.slice(0, earliestIdx));
     if (earliest === "bold") { parts.push(<strong key={key++}>{boldMatch[1]}</strong>); remaining = remaining.slice(earliestIdx + boldMatch[0].length); }
     else if (earliest === "code") { parts.push(<code key={key++} className="doc-inline-code">{codeMatch[1]}</code>); remaining = remaining.slice(earliestIdx + codeMatch[0].length); }
     else if (earliest === "link") { parts.push(<a key={key++} href={linkMatch[2]} className="doc-link" target="_blank" rel="noreferrer">{linkMatch[1]}</a>); remaining = remaining.slice(earliestIdx + linkMatch[0].length); }
+    else if (earliest === "italic") { parts.push(<em key={key++}>{italicMatch[1]}</em>); remaining = remaining.slice(earliestIdx + italicMatch[0].length); }
   }
   return parts;
 }
