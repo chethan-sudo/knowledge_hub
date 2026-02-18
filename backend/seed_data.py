@@ -811,7 +811,7 @@ flowchart LR
 |--------|----------------|-----------|
 | OS | Full OS with own kernel | Shares host kernel |
 | Size | Gigabytes | Megabytes |
-| Startup | Minutes | Seconds |
+| Startup | Minutes | Seconds (cached images) |
 | Isolation | Hardware-level | Process-level |
 
 ## How Containers Work
