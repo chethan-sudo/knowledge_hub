@@ -611,6 +611,87 @@ async def seed_data():
     await db.documents.create_index("category_id")
     return {"status": "seeded", "categories": len(CATEGORIES), "documents": len(DOCUMENTS)}
 
+# --- Document View Tracking ---
+@api_router.post("/documents/{doc_id}/view")
+async def track_document_view(doc_id: str):
+    await db.doc_views.insert_one({
+        "document_id": doc_id,
+        "viewed_at": datetime.now(timezone.utc).isoformat()
+    })
+    return {"status": "tracked"}
+
+# --- Analytics ---
+@api_router.get("/analytics/overview")
+async def analytics_overview(user=Depends(require_admin)):
+    total_docs = await db.documents.count_documents({"deleted": {"$ne": True}})
+    total_categories = await db.categories.count_documents({})
+    total_views = await db.doc_views.count_documents({})
+    total_chats = await db.chat_messages.count_documents({})
+    total_searches = await db.search_logs.count_documents({})
+    total_comments = await db.comments.count_documents({})
+    # Views in last 7 days
+    week_ago = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+    views_7d = await db.doc_views.count_documents({"viewed_at": {"$gte": week_ago}})
+    chats_7d = await db.chat_messages.count_documents({"created_at": {"$gte": week_ago}})
+    return {
+        "total_docs": total_docs, "total_categories": total_categories,
+        "total_views": total_views, "total_chats": total_chats,
+        "total_searches": total_searches, "total_comments": total_comments,
+        "views_7d": views_7d, "chats_7d": chats_7d
+    }
+
+@api_router.get("/analytics/popular-docs")
+async def analytics_popular_docs(user=Depends(require_admin)):
+    pipeline = [
+        {"$group": {"_id": "$document_id", "views": {"$sum": 1}}},
+        {"$sort": {"views": -1}},
+        {"$limit": 15}
+    ]
+    results = await db.doc_views.aggregate(pipeline).to_list(15)
+    # Enrich with doc titles
+    doc_ids = [r["_id"] for r in results]
+    docs = await db.documents.find({"id": {"$in": doc_ids}}, {"_id": 0, "id": 1, "title": 1, "category_id": 1}).to_list(100)
+    doc_map = {d["id"]: d for d in docs}
+    return [{"doc_id": r["_id"], "views": r["views"],
+             "title": doc_map.get(r["_id"], {}).get("title", "Unknown"),
+             "category_id": doc_map.get(r["_id"], {}).get("category_id", "")}
+            for r in results]
+
+@api_router.get("/analytics/searches")
+async def analytics_searches(user=Depends(require_admin)):
+    pipeline = [
+        {"$group": {"_id": "$query", "count": {"$sum": 1}, "last_searched": {"$max": "$searched_at"}}},
+        {"$sort": {"count": -1}},
+        {"$limit": 20}
+    ]
+    results = await db.search_logs.aggregate(pipeline).to_list(20)
+    return [{"query": r["_id"], "count": r["count"], "last_searched": r.get("last_searched", "")} for r in results]
+
+@api_router.get("/analytics/chatbot")
+async def analytics_chatbot(user=Depends(require_admin)):
+    total = await db.chat_messages.count_documents({})
+    # Group by day for last 14 days
+    two_weeks_ago = (datetime.now(timezone.utc) - timedelta(days=14)).isoformat()
+    pipeline = [
+        {"$match": {"created_at": {"$gte": two_weeks_ago}}},
+        {"$project": {"day": {"$substr": ["$created_at", 0, 10]}}},
+        {"$group": {"_id": "$day", "count": {"$sum": 1}}},
+        {"$sort": {"_id": 1}}
+    ]
+    daily = await db.chat_messages.aggregate(pipeline).to_list(14)
+    # Recent questions
+    recent = await db.chat_messages.find({}, {"_id": 0, "user_message": 1, "created_at": 1, "doc_id": 1}).sort("created_at", -1).to_list(10)
+    return {"total": total, "daily": [{"date": d["_id"], "count": d["count"]} for d in daily],
+            "recent": [{"question": r.get("user_message", ""), "asked_at": r.get("created_at", ""), "doc_id": r.get("doc_id")} for r in recent]}
+
+@api_router.get("/analytics/activity")
+async def analytics_activity(user=Depends(require_admin)):
+    # Recent document changes
+    recent_docs = await db.documents.find({"deleted": {"$ne": True}}, {"_id": 0, "id": 1, "title": 1, "updated_at": 1, "created_at": 1}).sort("updated_at", -1).to_list(10)
+    # Recent comments
+    recent_comments = await db.comments.find({}, {"_id": 0, "id": 1, "content": 1, "user_name": 1, "document_id": 1, "created_at": 1}).sort("created_at", -1).to_list(10)
+    return {"recent_docs": recent_docs, "recent_comments": recent_comments}
+
 @api_router.get("/")
 async def root():
     return {"message": "Emergent Knowledge Hub API"}
