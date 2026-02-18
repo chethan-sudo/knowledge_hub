@@ -1091,7 +1091,7 @@ function ToolsPage({ isAdmin }) {
     } catch {}
   };
 
-  const del = async (id) => { try { await api("delete", `/tools/${id}`); setTools(prev => prev.filter(t => t.id !== id)); } catch {} };
+  const del = async (id) => { if (!window.confirm("Delete this tool?")) return; try { await api("delete", `/tools/${id}`); setTools(prev => prev.filter(t => t.id !== id)); } catch {} };
 
   const categories = [...new Set(tools.map(t => t.category))].sort();
 
