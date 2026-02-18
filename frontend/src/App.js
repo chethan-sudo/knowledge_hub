@@ -1643,6 +1643,7 @@ function Dashboard() {
   const currentCat = activeDoc ? categories.find(c => c.id === activeDoc.category_id) : null;
   const parentCat = currentCat?.parent_id ? categories.find(c => c.id === currentCat.parent_id) : null;
   const bookmarkedDocs = documents.filter(d => bookmarkedIds.includes(d.id));
+  const activeBookmarkCount = bookmarkedDocs.length;
   const isBookmarksRoute = window.location.pathname === "/bookmarks";
   const isToolsRoute = window.location.pathname === "/tools";
   const isTrashRoute = window.location.pathname === "/trash";
