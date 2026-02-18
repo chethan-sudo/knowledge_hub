@@ -393,7 +393,7 @@ flowchart TD
 - **LLM Engine:** The actual language model (Claude Sonnet, GPT-5.2, etc.) used ONLY for reasoning. It receives the full context (system prompt + conversation history + tool results) and generates a response. It has no state between calls — the Decision Layer manages all state
 - **Why this architecture?** Because LLMs alone cannot act. They can only generate text. E1 wraps the LLM with action capabilities, state management, and decision logic. This is what makes E1 an agent, not just a chatbot
 
-| | LLM (Claude/GPT) | E1 (The Agent) |
+| Capability | LLM (Claude/GPT) | E1 (The Agent) |
 |---|---|---|
 | **Nature** | A model that generates text | A software system that acts |
 | **Can run code?** | No | Yes, via tools |
