@@ -1695,7 +1695,16 @@ function Dashboard() {
 
   const startNew = () => { setCreating(true); setEditing(false); setActiveDoc(null); };
 
-  if (loading) return <div className="edh-loading"><div className="edh-spinner"/></div>;
+  if (loading || connectionError) return (
+    <div className="edh-loading" data-testid="loading-screen">
+      <div className="edh-loading-content">
+        <div className="edh-spinner"/>
+        <h2 className="edh-loading-title">{connectionError ? "Connecting to server..." : "Loading Knowledge Hub..."}</h2>
+        {connectionError && <p className="edh-loading-subtitle">The server is waking up. Retrying automatically...</p>}
+        {connectionError && <button className="edh-loading-retry" data-testid="retry-btn" onClick={() => { if (retryTimeout.current) clearTimeout(retryTimeout.current); loadData(true); }}>Retry Now</button>}
+      </div>
+    </div>
+  );
 
   const currentCat = activeDoc ? categories.find(c => c.id === activeDoc.category_id) : null;
   const parentCat = currentCat?.parent_id ? categories.find(c => c.id === currentCat.parent_id) : null;
