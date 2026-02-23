@@ -1,4 +1,11 @@
-"""Seed data for Emergent Document Hub - Categories and Documents."""
+"""Seed data for Emergent Document Hub - Categories and Documents.
+
+NOTE: Content has been significantly enhanced beyond what's in this file.
+The MongoDB database contains the latest, expanded versions of all documents.
+New categories (Getting Started, Tutorials) and 7 new documents were added
+directly to MongoDB via content enhancement scripts.
+To re-seed, drop the database first: db.categories.drop() && db.documents.drop()
+"""
 from datetime import datetime, timezone
 import uuid
 
