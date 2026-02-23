@@ -444,19 +444,19 @@ flowchart TD
 Subagents are specialized AI agents that E1 delegates work to. Each has its own system prompt, LLM instance, and tools. They operate independently — E1 spawns them, they do their job, and return results.
 
 ```mermaid
-flowchart TD
-    E1[E1 Orchestrator] -->|"Test the app"| TA[Testing Agent]
-    E1 -->|"Design the UI"| DA[Design Agent]
-    E1 -->|"How to integrate Stripe?"| IA[Integration Expert]
-    E1 -->|"Why is this crashing?"| TRA[Troubleshoot Agent]
-    E1 -->|"Platform question"| SA[Support Agent]
-    E1 -->|"Ready to deploy?"| DEP[Deployment Agent]
-    TA -->|test report + git diff| E1
-    DA -->|design_guidelines.json| E1
-    IA -->|integration playbook| E1
-    TRA -->|root cause + fix| E1
+flowchart LR
+    E1[E1 Orchestrator] -->|test app| TA[Testing Agent]
+    E1 -->|design UI| DA[Design Agent]
+    E1 -->|integrate| IA[Integration Expert]
+    E1 -->|debug| TRA[Troubleshoot Agent]
+    E1 -->|question| SA[Support Agent]
+    E1 -->|deploy| DEP[Deployment Agent]
+    TA -->|report| E1
+    DA -->|guidelines| E1
+    IA -->|playbook| E1
+    TRA -->|fix| E1
     SA -->|answer| E1
-    DEP -->|validation report| E1
+    DEP -->|status| E1
 ```
 
 **Flow Explanation — Subagent Delegation:**
