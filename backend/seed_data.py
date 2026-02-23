@@ -121,6 +121,7 @@ CATEGORIES = [
 
     {"id": CAT_LIMITATIONS, "name": "Limitations & Constraints", "icon": "Lock", "order": 12, "parent_id": None},
     {"id": CAT_UI_GUIDE, "name": "UI Guide", "icon": "Monitor", "order": 13, "parent_id": None},
+    {"id": CAT_FAQ, "name": "FAQ", "icon": "MessageSquare", "order": 14, "parent_id": None},
 ]
 
 DOCUMENTS = [
