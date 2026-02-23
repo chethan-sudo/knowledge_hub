@@ -1036,8 +1036,7 @@ function HomePage({ categories, documents, onSelectDoc }) {
 
   useEffect(() => { api("get", "/tags").then(r => setAllTags(r.data)).catch(() => {}); }, [api]);
 
-  const parentCats = categories.filter(c => !c.parent_id).sort((a,b) => a.order - b.order);
-  const getChildCount = (catId) => { const children = categories.filter(c => c.parent_id === catId); return documents.filter(d => d.category_id === catId || children.some(c => c.id === d.category_id)).length; };
+  const parentCats = categories.filter(c => !c.parent_id && !c.internal).sort((a,b) => a.order - b.order);
   const filteredDocs = selectedTag ? documents.filter(d => (d.tags || []).includes(selectedTag)) : [];
 
   return (
