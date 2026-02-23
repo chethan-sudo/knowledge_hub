@@ -1637,16 +1637,28 @@ function Dashboard() {
   const [catManagerOpen, setCatManagerOpen] = useState(false);
   const isAdmin = user?.role === "admin";
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const [catRes, docRes, bmRes] = await Promise.all([api("get", "/categories"), api("get", "/documents"), api("get", "/bookmarks")]);
-        setCategories(catRes.data); setDocuments(docRes.data); setBookmarkedIds(bmRes.data.bookmarks.map(b => b.document_id));
-      } catch (e) { console.error(e); }
+  const [connectionError, setConnectionError] = useState(false);
+  const retryTimeout = useRef(null);
+
+  const loadData = useCallback(async (isRetry = false) => {
+    if (!isRetry) setLoading(true);
+    setConnectionError(false);
+    try {
+      const [catRes, docRes, bmRes] = await Promise.all([api("get", "/categories"), api("get", "/documents"), api("get", "/bookmarks")]);
+      setCategories(catRes.data); setDocuments(docRes.data); setBookmarkedIds(bmRes.data.bookmarks.map(b => b.document_id));
       setLoading(false);
-    };
-    load();
+    } catch (e) {
+      console.error(e);
+      setConnectionError(true);
+      setLoading(false);
+      retryTimeout.current = setTimeout(() => loadData(true), 5000);
+    }
   }, [api]);
+
+  useEffect(() => {
+    loadData();
+    return () => { if (retryTimeout.current) clearTimeout(retryTimeout.current); };
+  }, [loadData]);
 
   useEffect(() => {
     if (docId && documents.length > 0) {
