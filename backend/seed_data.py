@@ -161,7 +161,7 @@ flowchart TD
 **Flow Explanation — End-to-End Request Flow (step by step):**
 
 1. **User types a message** in the Emergent chat interface (e.g., "Build me a todo app with authentication")
-2. **Frontend sends the message** via WebSocket to the Agent Service. The frontend is a React web app that provides the chat UI, file browser, and live preview panel
+2. **Frontend sends the message** via a streaming HTTP connection to the Agent Service. The frontend is a React web app that provides the chat UI, file browser, and live preview panel
 3. **Agent Service receives and stores** the message in MongoDB (chat_history collection), creates or updates the job record, then routes the message to the E1 Orchestrator instance assigned to this job
 4. **E1 Orchestrator processes the message.** E1 is NOT an LLM — it is a software system. It takes the user's message, combines it with the full system prompt (~15,000 tokens of rules), all previous conversation history, and all pending tool results, then sends this entire context to the LLM
 5. **LLM Proxy intercepts the LLM call.** The proxy validates the Universal Key, checks the user's token budget, selects the correct provider (OpenAI, Anthropic, or Google based on the model requested), and forwards the request
