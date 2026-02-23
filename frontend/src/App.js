@@ -1116,7 +1116,7 @@ function TrashPage({ onDocumentsChanged }) {
   );
 }
 
-// --- Tools Page ---
+// --- Tools & Resources Page ---
 function ToolsPage({ isAdmin }) {
   const { api } = useAuth();
   const [tools, setTools] = useState([]);
@@ -1136,44 +1136,53 @@ function ToolsPage({ isAdmin }) {
     } catch {}
   };
 
-  const del = async (id) => { if (!window.confirm("Delete this tool?")) return; try { await api("delete", `/tools/${id}`); setTools(prev => prev.filter(t => t.id !== id)); } catch {} };
+  const del = async (id) => { if (!window.confirm("Delete this resource?")) return; try { await api("delete", `/tools/${id}`); setTools(prev => prev.filter(t => t.id !== id)); } catch {} };
 
   const categories = [...new Set(tools.map(t => t.category))].sort();
+  const getDomain = (url) => { try { return new URL(url).hostname.replace("www.", ""); } catch { return ""; } };
+  const getFavicon = (url) => { try { const domain = new URL(url).origin; return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`; } catch { return ""; } };
 
   if (loading) return <div className="edh-loading"><div className="edh-spinner"/></div>;
   return (
-    <div className="bookmarks-page" data-testid="tools-page">
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"2rem"}}>
-        <h1>Tools & Resources</h1>
-        {isAdmin && <button className="editor-btn-primary" data-testid="add-tool-btn" onClick={() => { setAdding(true); setEditId(null); setForm({ name: "", url: "", description: "", category: "General" }); }}><Icon name="Plus" size={14}/> Add Tool</button>}
+    <div className="tools-page" data-testid="tools-page">
+      <div className="tools-header">
+        <div>
+          <h1><Icon name="Link" size={28}/> Tools & Resources</h1>
+          <p className="tools-subtitle">Useful links, documentation, and resources for the team</p>
+        </div>
+        {isAdmin && <button className="editor-btn-primary" data-testid="add-tool-btn" onClick={() => { setAdding(true); setEditId(null); setForm({ name: "", url: "", description: "", category: "General" }); }}><Icon name="Plus" size={14}/> Add Resource</button>}
       </div>
       {(adding || editId) && (
-        <div className="tool-form" data-testid="tool-form">
-          <input data-testid="tool-name" placeholder="Tool name" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
-          <input data-testid="tool-url" placeholder="URL" value={form.url} onChange={e => setForm({...form, url: e.target.value})} />
-          <input data-testid="tool-desc" placeholder="Description" value={form.description} onChange={e => setForm({...form, description: e.target.value})} />
-          <input data-testid="tool-category" placeholder="Category" value={form.category} onChange={e => setForm({...form, category: e.target.value})} />
-          <div className="tool-form-actions">
-            <button className="editor-btn-primary" data-testid="tool-save-btn" onClick={save}>Save</button>
-            <button className="editor-btn-secondary" onClick={() => { setAdding(false); setEditId(null); }}>Cancel</button>
+        <div className="tools-form-card" data-testid="tool-form">
+          <h3>{editId ? "Edit Resource" : "Add New Resource"}</h3>
+          <div className="tools-form-grid">
+            <div className="tools-form-field"><label>Name</label><input data-testid="tool-name" placeholder="e.g., FastAPI Documentation" value={form.name} onChange={e => setForm({...form, name: e.target.value})} /></div>
+            <div className="tools-form-field"><label>URL</label><input data-testid="tool-url" placeholder="https://fastapi.tiangolo.com" value={form.url} onChange={e => setForm({...form, url: e.target.value})} /></div>
+            <div className="tools-form-field"><label>Description</label><input data-testid="tool-desc" placeholder="Brief description" value={form.description} onChange={e => setForm({...form, description: e.target.value})} /></div>
+            <div className="tools-form-field"><label>Category</label><input data-testid="tool-category" placeholder="e.g., Documentation, Video, API" value={form.category} onChange={e => setForm({...form, category: e.target.value})} /></div>
           </div>
+          {form.url && <div className="tools-form-preview"><img src={getFavicon(form.url)} alt="" width="16" height="16" onError={e => e.target.style.display='none'} /><span>{getDomain(form.url)}</span></div>}
+          <div className="tools-form-actions"><button className="editor-btn-primary" data-testid="tool-save-btn" onClick={save} disabled={!form.name.trim() || !form.url.trim()}>Save</button><button className="editor-btn-secondary" onClick={() => { setAdding(false); setEditId(null); }}>Cancel</button></div>
         </div>
       )}
       {categories.map(cat => (
-        <div key={cat} className="tool-group">
-          <h3 className="tool-group-title">{cat}</h3>
-          {tools.filter(t => t.category === cat).map(t => (
-            <div key={t.id} className="tool-item" data-testid={`tool-${t.id}`}>
-              <div className="tool-info"><a href={t.url} target="_blank" rel="noreferrer" className="tool-link"><Icon name="Link" size={14}/> {t.name}</a>{t.description && <p className="tool-desc">{t.description}</p>}</div>
-              {isAdmin && <div className="tool-actions">
-                <button data-testid={`edit-tool-${t.id}`} onClick={() => { setEditId(t.id); setAdding(false); setForm({ name: t.name, url: t.url, description: t.description, category: t.category }); }}><Icon name="Edit" size={14}/></button>
-                <button data-testid={`delete-tool-${t.id}`} onClick={() => del(t.id)}><Icon name="Trash" size={14}/></button>
-              </div>}
-            </div>
-          ))}
+        <div key={cat} className="tools-category">
+          <h2 className="tools-category-title">{cat}</h2>
+          <div className="tools-grid">
+            {tools.filter(t => t.category === cat).map(t => (
+              <div key={t.id} className="tools-card" data-testid={`tool-${t.id}`}>
+                <div className="tools-card-header"><img src={getFavicon(t.url)} alt="" width="20" height="20" className="tools-card-favicon" onError={e => e.target.style.display='none'} /><a href={t.url} target="_blank" rel="noreferrer" className="tools-card-name">{t.name}</a></div>
+                {t.description && <p className="tools-card-desc">{t.description}</p>}
+                <div className="tools-card-footer">
+                  <span className="tools-card-domain"><Icon name="Link" size={12}/> {getDomain(t.url)}</span>
+                  {isAdmin && <div className="tools-card-actions"><button data-testid={`edit-tool-${t.id}`} onClick={() => { setEditId(t.id); setAdding(false); setForm({ name: t.name, url: t.url, description: t.description, category: t.category }); }}><Icon name="Edit" size={13}/></button><button data-testid={`delete-tool-${t.id}`} onClick={() => del(t.id)}><Icon name="Trash" size={13}/></button></div>}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       ))}
-      {tools.length === 0 && !adding && <div className="doc-empty"><Icon name="Link" size={48}/><h2>No tools yet</h2><p>{isAdmin ? "Add tools using the button above." : "Tools will appear here when added by admin."}</p></div>}
+      {tools.length === 0 && !adding && <div className="doc-empty"><Icon name="Link" size={48}/><h2>No resources yet</h2><p>{isAdmin ? "Add useful links and resources using the button above." : "Resources will appear here when added."}</p></div>}
     </div>
   );
 }
