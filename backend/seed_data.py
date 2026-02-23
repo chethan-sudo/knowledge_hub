@@ -329,7 +329,7 @@ All requests flow through Kubernetes Ingress:
 |------------|-----------|---------|
 | /api/* | FastAPI on port 8001 | Backend API calls for the app being built |
 | /* | React on port 3000 | Frontend pages of the app being built |
-| WebSocket | Agent Service | Real time chat between user and E1 |
+| Streaming Connection | Agent Service | Real time chat between user and E1 |
 
 ## The Orchestration Loop
 
