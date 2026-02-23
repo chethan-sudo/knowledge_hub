@@ -1,7 +1,7 @@
 # Emergent Knowledge Hub - PRD
 
 ## Original Problem Statement
-Build a comprehensive, Notion-style documentation website. Features: resizable sidebar, light/dark modes, Markdown/Mermaid rendering, AI chatbot, full-text search, document management. Public access model with hardcoded admin user.
+Build a comprehensive, Notion-style documentation website covering AI agent architecture, LLMs, and software development. Public access model with hardcoded admin user.
 
 ## Architecture
 - **Frontend**: React (`App.js`) — sidebar, doc viewer, Markdown/Mermaid, AI chat, analytics
@@ -11,26 +11,18 @@ Build a comprehensive, Notion-style documentation website. Features: resizable s
 
 ## Content Status (Feb 2026)
 - **45 total documents** (38 public + 7 internal test cases)
-- **~145K characters** of authentic, general-purpose technical content
-- All content is generalized — covers AI agents, LLMs, and software development concepts without fabricating platform-specific claims
-- New categories: "Getting Started" (3 docs), "Tutorials" (4 docs)
+- **~145K characters** of general-purpose technical content
+- **Zero** E1/Emergent-specific references in all public documents
+- All content is universal — covers AI agent architecture, LLMs, and software development generically
+- Categories: Getting Started (3), Tutorials (4), Platform Architecture (4), LLM Internals (4), Infrastructure (3), Frontend (2), Backend (3), DevOps (2), Security (2), Data & Storage (3), Advanced Concepts (3), Future (1), Limitations (1), UI Guide (1), FAQ (1)
 
-### Content Philosophy
-- All technical content is authentic, based on real CS/AI knowledge
-- No fabricated claims about any specific platform internals
-- General AI agent concepts, not tied to any specific product
-- Code examples use real, runnable patterns (FastAPI, React, MongoDB)
-
-## What's Implemented
-- All core features (sidebar, search, AI chat, collab, analytics, tools, bookmarks, etc.)
-- 25+ bug fixes from QA reports
-- Content enhancement: code examples, troubleshooting, tutorials, comparisons, glossary
-- Internal categories hidden from public view
+## Pending
+- **Access control**: Make the hub accessible only to Emergent employees (user requested, to be done after content is finalized)
 
 ## Backlog
-- **P2**: Real-time notifications (Slack/Discord)
-- **Backlog**: PWA/Offline access
-- **Backlog**: Refactor monolithic App.js and server.py
+- Refactor monolithic App.js and server.py
+- PWA/Offline access
+- Real-time notifications
 
 ## Authentication
-MOCKED — Hardcoded admin user. No real login flow.
+MOCKED — Hardcoded admin user. No real login flow. Employee-only access needs auth implementation.
