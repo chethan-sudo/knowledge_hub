@@ -521,7 +521,7 @@ function CommentsSection({ docId }) {
         </div>
         {replyTo === comment.id && (
           <div className="comment-reply-box">
-            <input data-testid={`reply-input-${comment.id}`} placeholder="Write a reply..." value={replyText} onChange={e => setReplyText(e.target.value)} onKeyDown={e => { if (e.key === "Enter") submit(replyText, comment.id); }} />
+            <input autoFocus data-testid={`reply-input-${comment.id}`} placeholder="Write a reply..." value={replyText} onChange={e => setReplyText(e.target.value)} onKeyDown={e => { if (e.key === "Enter") submit(replyText, comment.id); }} />
             <button data-testid={`reply-submit-${comment.id}`} onClick={() => submit(replyText, comment.id)} disabled={!replyText.trim()}>Reply</button>
           </div>
         )}
