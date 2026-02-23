@@ -21,36 +21,39 @@ Build and refine "Emergent Knowledge Hub," a comprehensive, Notion-style documen
 - Tools & Resources page
 - Bookmarks, Trash, Settings pages
 - Reading progress indicator, scroll-spy TOC
-- Document export (PDF)
-- Tag filtering
-- Light/dark mode
+- Document export (PDF), Tag filtering, Light/dark mode
 
-## Content
-All documentation managed in `backend/seed_data.py` covering: Platform Architecture, LLM Internals, Infrastructure, Frontend/Backend Dev, DevOps, Security, Data & Storage, Advanced Concepts, Future of AI Agents, Limitations, UI Guide, FAQ, and internal Test Cases.
+## Content Structure (45 documents, 220K+ chars)
+
+### New Categories (Feb 2026)
+- **Getting Started** (3 docs): "Your First 10 Minutes", "How to Talk to E1", "Platform Glossary"
+- **Tutorials** (4 docs): "Building a REST API", "Debugging a 500 Error", "Choosing the Right LLM", "MongoDB vs PostgreSQL"
+
+### Existing Categories (enhanced)
+- Platform Architecture, LLM Internals, Infrastructure, Frontend Dev, Backend Dev, DevOps, Security, Data & Storage, Advanced Concepts, Future of AI Agents, Limitations, UI Guide, FAQ, Tools & Resources
+
+### Content Enhancement (all 7 areas completed)
+1. Real code examples added to every document
+2. Troubleshooting sections with problem/cause/solution tables
+3. Real-world use case tutorials (CRUD API, debugging walkthrough)
+4. Comparison & decision-making content (LLM comparison, MongoDB vs PostgreSQL)
+5. All thin documents expanded from ~1K-3K to 5K-7K chars
+6. Visual content: sequence diagrams, architecture diagrams, decision flowcharts
+7. Getting Started onboarding guide with glossary
+
+### Internal Categories (hidden from public)
+- Test Cases (7 subcategories, marked `internal: true`)
 
 ## Key DB Schema
-- `users`: {email, name, role, avatar}
-- `documents`: {id, title, content, category_id, author_id, deleted, tags, ...}
 - `categories`: {id, name, icon, order, parent_id, internal}
+- `documents`: {id, title, content, category_id, author_id, deleted, tags}
 - `tools`: {name, url, description, category}
-- `doc_views`, `search_logs`, `chat_messages`: analytics collections
-
-## What's Implemented (as of Feb 2026)
-- All core features listed above
-- 25+ bug fixes from comprehensive QA report
-- Real-time collaboration via WebSocket
-- Analytics dashboard with metrics
-- Extensive content with FAQ section
-- Delete confirmation for resources
-- Cold start loading screen with auto-retry
-- Internal categories hidden from public sidebar/homepage
-- Consistent table formatting across all test case documents
+- `doc_views`, `search_logs`, `chat_messages`: analytics
 
 ## Backlog
-- **P2**: Further content enhancement with more examples
 - **P2**: Real-time notifications (Slack/Discord)
 - **Backlog**: PWA/Offline access
-- **Backlog**: Refactor monolithic App.js and server.py into modular components/routes
+- **Backlog**: Refactor monolithic App.js and server.py into modular components
 
 ## Authentication
 MOCKED - Hardcoded admin user (admin@emergent.sh). No real login flow.
