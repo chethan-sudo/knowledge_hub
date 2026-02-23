@@ -555,7 +555,7 @@ function Sidebar({ categories, documents, activeDocId, onSelectDoc, onNewDoc, co
   const resizing = useRef(false);
   const currentPath = window.location.pathname;
 
-  const parentCats = categories.filter(c => !c.parent_id).sort((a,b) => a.order - b.order);
+  const parentCats = categories.filter(c => !c.parent_id && !c.internal).sort((a,b) => a.order - b.order);
   const getChildren = (pid) => categories.filter(c => c.parent_id === pid).sort((a,b) => a.order - b.order);
   const getDocsForCat = (catId) => documents.filter(d => d.category_id === catId).sort((a,b) => a.order - b.order);
   const toggleCat = (id) => setExpanded(p => ({...p, [id]: !p[id]}));
