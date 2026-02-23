@@ -553,6 +553,7 @@ function Sidebar({ categories, documents, activeDocId, onSelectDoc, onNewDoc, co
   const navigate = useNavigate();
   const navRef = useRef(null);
   const resizing = useRef(false);
+  const currentPath = window.location.pathname;
 
   const parentCats = categories.filter(c => !c.parent_id).sort((a,b) => a.order - b.order);
   const getChildren = (pid) => categories.filter(c => c.parent_id === pid).sort((a,b) => a.order - b.order);
