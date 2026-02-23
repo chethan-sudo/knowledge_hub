@@ -649,6 +649,37 @@ function Sidebar({ categories, documents, activeDocId, onSelectDoc, onNewDoc, co
   );
 }
 
+// --- TOC with Scroll Spy ---
+function TocScrollSpy({ headings }) {
+  const [activeId, setActiveId] = useState("");
+  useEffect(() => {
+    const main = document.querySelector('.main-content');
+    if (!main) return;
+    const handler = () => {
+      let current = "";
+      for (const h of headings) {
+        const el = document.getElementById(h.id);
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          if (rect.top <= 150) current = h.id;
+        }
+      }
+      setActiveId(current);
+    };
+    main.addEventListener('scroll', handler);
+    handler();
+    return () => main.removeEventListener('scroll', handler);
+  }, [headings]);
+  return (
+    <div className="doc-toc" data-testid="doc-toc">
+      <div className="doc-toc-title">On this page</div>
+      {headings.map((h, i) => (
+        <a key={i} href={`#${h.id}`} className={`doc-toc-link ${activeId === h.id ? "toc-active" : ""}`}>{h.text}</a>
+      ))}
+    </div>
+  );
+}
+
 // --- Presence Avatars ---
 function PresenceAvatars({ users, identity }) {
   const others = users.filter(u => u.user_id !== identity?.id);
