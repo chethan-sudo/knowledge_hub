@@ -238,7 +238,7 @@ This diagram shows the SIX distinct layers in the Emergent platform and exactly 
 
 2. **Frontend → Backend (the app being built):** When the user previews their app, the React frontend at port 3000 serves the app's HTML/JS/CSS. API calls from the app go to FastAPI at port 8001. FastAPI reads/writes to MongoDB for the app's data. This is the user's application — the thing E1 is building
 
-3. **Browser → Agent Service (AI chat):** Separately from the app, the browser maintains a WebSocket connection to the Agent Service for the AI chat. When the user types a message to E1, it goes through this channel — NOT through FastAPI. The Agent Service stores every message in MongoDB for conversation history
+3. **Browser → Agent Service (AI chat):** Separately from the app, the browser maintains a streaming connection to the Agent Service for the AI chat. When the user types a message to E1, it goes through this channel — NOT through FastAPI. The Agent Service stores every message in MongoDB for conversation history
 
 4. **Agent Service → E1 Instance:** The Agent Service routes the user's message to the E1 Instance assigned to this job. One E1 instance per active job. E1 receives the message along with full conversation history from MongoDB
 
