@@ -2,22 +2,22 @@
 
 ## Stats: 38 documents, 47 categories, 15 categories on home page
 
-## Completed in This Session
-- [x] Sidebar tab highlighting (Home/Bookmarks/Tools/Trash/Settings/Analytics all highlight when active)
-- [x] TOC scroll-spy (On This Page highlights current section based on scroll position)
-- [x] Comment reply autoFocus + cursor fix (z-index, cursor:text)
-- [x] Mermaid diagram text overlap fix (nodeSpacing:100, rankSpacing:100, useMaxWidth:false, shortened edge labels)
-- [x] FAQ document added (13 detailed Q&As from team discussions)
-- [x] Orphaned analytics data cleaned (127 orphaned views, 2 test searches)
+## Completed This Session
+- [x] Sidebar tab highlighting (all tabs highlight when active)
+- [x] TOC scroll-spy (auto-highlights current section on scroll)
+- [x] Comment reply autoFocus + cursor fix
+- [x] Mermaid diagram text overlap fix (nodeSpacing:100, useMaxWidth:false, shortened labels)
+- [x] FAQ document (13 Q&As from team discussions)
+- [x] WebSocket references corrected to "streaming connection"
+- [x] Tools & Resources page completely redesigned (card layout, favicons, domain display, labeled form)
+- [x] Settings page verified working (invite, role change with confirmation, delete)
+- [x] Test data cleaned (orphaned views, test users, test tools)
 
-## Remaining Items (from user's latest message)
-- [ ] Content enhancement: Better explanations with examples (learning experience)
-- [ ] Tools UI redesign
-- [ ] Settings page functionality
-- [ ] Resources section with link previews (YouTube/website image display)
-- [ ] Analytics showing only actual data (orphaned views cleaned)
-- [ ] WebSocket reference in docs needs correction (may be SSE)
+## Remaining Items
+- [ ] Content enhancement with real-world examples (learning experience quality)
+- [ ] Resources section with YouTube/website image previews
+- [ ] Correct WebSocket references verified by user (may be SSE)
 
 ## Backlog
 - P2: Slack/Discord Notifications
-- Refactoring: Split monolithic App.js and server.py
+- Refactoring: Split monolithic App.js (~1800 lines) and server.py (~800 lines)
