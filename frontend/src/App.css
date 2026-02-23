@@ -293,8 +293,9 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 .comment-action:hover { background: var(--code-bg); color: var(--text-primary); }
 .comment-action.upvoted { color: var(--accent); }
 .comment-delete:hover { color: var(--danger); }
-.comment-reply-box { display: flex; gap: 6px; margin-top: 6px; margin-left: 32px; }
-.comment-reply-box input { flex: 1; height: 32px; padding: 0 10px; border: 1px solid var(--border-clr); border-radius: 6px; background: var(--content-bg); color: var(--text-primary); font-size: 0.8rem; font-family: inherit; outline: none; }
+.comment-reply-box { display: flex; gap: 6px; margin-top: 6px; margin-left: 32px; position: relative; z-index: 5; }
+.comment-reply-box input { flex: 1; height: 32px; padding: 0 10px; border: 1px solid var(--border-clr); border-radius: 6px; background: var(--content-bg); color: var(--text-primary); font-size: 0.8rem; font-family: inherit; outline: none; cursor: text; }
+.comment-reply-box input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
 .comment-reply-box button { padding: 0 12px; border: none; border-radius: 6px; background: var(--accent); color: white; font-size: 0.75rem; font-weight: 500; cursor: pointer; font-family: inherit; }
 .comment-reply-box button:disabled { opacity: 0.4; }
 
