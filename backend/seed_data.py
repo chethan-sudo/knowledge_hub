@@ -2804,4 +2804,183 @@ The Universal Key is a single API key (format: sk-emergent-xxx) that works acros
 """
 
     },
+
+    # ===== FAQ =====
+    {
+        "id": _id(), "title": "Frequently Asked Questions", "category_id": CAT_FAQ, "author_id": SYSTEM_AUTHOR,
+        "created_at": NOW, "updated_at": NOW, "order": 0,
+        "content": """# Frequently Asked Questions
+
+Common questions from the Emergent team, answered with accurate technical detail.
+
+## How does E1 communicate with the LLM?
+
+E1 does NOT chat with the LLM the way you chat with ChatGPT. It uses **function calling / tool use** — a special API mode.
+
+E1 sends the LLM three things in every API call:
+- **System prompt** (~15,000 tokens of rules and instructions)
+- **Messages** (full conversation history including all previous tool calls and their results)
+- **Tool definitions** (JSON schemas for every available tool — create_file, execute_bash, etc.)
+
+The LLM responds with either:
+- **Text** (explanation to the user) — `stop_reason: end_turn`
+- **Structured tool calls** (JSON specifying which tool to call with what parameters) — `stop_reason: tool_use`
+
+Example LLM response with tool call:
+```json
+{
+  "type": "tool_use",
+  "name": "mcp_create_file",
+  "input": {
+    "path": "/app/server.py",
+    "file_text": "from fastapi import FastAPI..."
+  }
+}
+```
+
+E1 then executes the tool and feeds the result back to the LLM for the next decision.
+
+## Who writes the code — E1 or the LLM?
+
+**The LLM writes the code.** E1 does NOT generate code. E1 decides what needs to be done (orchestration), then asks the LLM to generate the code. The LLM outputs a tool call with the code as a parameter. E1 executes that tool call — it places the file at the right path.
+
+So E1 is the **decision maker** and the LLM is the **code generator**.
+
+## Who decides the project structure?
+
+**The LLM proposes it**, guided by **E1's system prompt**. The system prompt contains rules like:
+- Backend code goes in /app/backend/
+- Frontend code goes in /app/frontend/src/
+- API routes must be prefixed with /api
+- Use FastAPI for backend, React for frontend
+
+The LLM follows these constraints when generating tool calls.
+
+## If there's an edit, does E1 send the whole code to the LLM?
+
+**No.** E1 sends:
+- The relevant file contents (reads the file first using view_file)
+- The user's request (e.g., "add dark mode")
+- The full conversation history
+
+The LLM responds with a `search_replace` tool call — it specifies the exact text to find and what to replace it with. It does NOT rewrite the entire file.
+
+## What is the Universal Key?
+
+A single API key (format: `sk-emergent-xxx`) that works across multiple LLM providers through Emergent's proxy:
+
+- **Supported for text:** OpenAI (GPT-5.2, GPT-4o), Anthropic (Claude Sonnet, Opus), Google (Gemini Flash, Pro)
+- **Supported for images:** OpenAI GPT Image 1, Google Nano Banana
+- **Supported for video:** Sora 2
+- **Supported for audio:** OpenAI Whisper (speech-to-text)
+- **NOT supported for:** Stripe, SendGrid, Twilio, fal.ai, or any non-LLM service
+
+The proxy authenticates with your Universal Key, routes to the correct provider, tracks token usage, and deducts from your balance.
+
+If your key budget is low: Profile > Universal Key > Add Balance, or enable Auto Top-up.
+
+## How do integrations work? (e.g., Stripe)
+
+When you ask E1 to integrate a third-party service like Stripe:
+
+1. E1 calls the **Integration Playbook Expert** subagent
+2. The subagent returns a verified playbook with exact code, SDK version, and setup steps
+3. E1 asks you for the required API keys (Stripe keys are NOT handled through the Universal Key)
+4. E1 implements the code exactly as the playbook specifies
+
+**Important:** The Universal Key only works for LLM providers. Third-party services (Stripe, SendGrid, Twilio) require their own API keys.
+
+## What is stored in the database?
+
+Everything:
+- **chat_history:** Every message between user and E1
+- **job_audits:** Every tool call — tool name, input, output, duration, timestamp
+- **jobs:** Job ID, user ID, status, model used, timestamps
+- **job_metadata:** Which LLM model, system prompt version, available tools
+- **users:** User accounts, sessions
+- **env_variables:** Per-user environment variables
+
+## What does the Debug panel show?
+
+The Debug panel shows the **raw LLM API call log**. Key fields:
+
+| Field | What It Shows |
+|-------|--------------|
+| `log.url` | Which provider was called (api.anthropic.com, api.openai.com) |
+| `log.status_code` | 200 = success, 429 = rate limited, 500 = provider error |
+| `log.latency_ms` | How long the LLM took to respond (in milliseconds) |
+| `response_body.model` | Exact model version used (e.g., claude-sonnet-4-6) |
+| `response_body.stop_reason` | Why the LLM stopped: end_turn (text), tool_use (calling a tool), max_tokens (hit limit) |
+| `response_body.usage` | Token breakdown: cache_creation, cache_read, input, output tokens |
+| `body.system` | The full system prompt sent to the LLM |
+| `body.messages` | Full conversation history including all tool calls and results |
+| `body.tools` | All tool definitions available to the LLM |
+
+The first ~15,000 tokens in the Debug body look identical every time — that is the system prompt. Scroll past it to find the actual conversation content.
+
+## What does latency mean in Debug?
+
+**Latency** = the time between when the request was sent to the LLM provider and when the full response came back. Measured in milliseconds.
+
+| Latency | What It Means |
+|---------|---------------|
+| < 5,000 ms | Fast — simple response |
+| 5,000 - 15,000 ms | Normal — typical code generation |
+| 15,000 - 30,000 ms | Moderate — complex reasoning or long output |
+| 30,000 - 60,000 ms | Slow — very large context |
+| > 60,000 ms | Warning — possible provider issues |
+
+It does NOT include tool execution time, network time to the user, or E1's decision-making time. It only measures the LLM provider's thinking time.
+
+## What is inside body in the Debug panel?
+
+The body contains 10 fields — the actual request payload sent to the LLM:
+
+| Field | What It Contains |
+|-------|-----------------|
+| `model` | Which LLM to use (e.g., claude-sonnet-4-6) |
+| `system` | The ~15,000 token system prompt — same every call |
+| `messages` | Full conversation history — grows every turn |
+| `tools` | Tool definitions with JSON schemas — same every call |
+| `max_tokens` | Maximum output length (e.g., 64000) |
+| `temperature` | Randomness (1 = creative, 0 = deterministic) |
+| `top_p` | Nucleus sampling parameter |
+| `top_k` | Top-k sampling parameter |
+| `stream` | Whether to stream response token-by-token |
+| `metadata` | User ID, session ID for billing |
+
+## What is aps.yaml?
+
+The Agent Configuration file that defines everything about how an agent behaves:
+
+- **metadata:** Agent ID, name, version, tags
+- **spec.model:** Which LLM provider, model, temperature, max_tokens, thinking params
+- **spec.prompt:** The prompt_id that loads the system prompt
+- **spec.toolsets:** All available tools grouped by type (MCP tools, builtins, subagents)
+- **overrides:** Tool renaming (internal names to display names) and custom descriptions
+- **policy:** Max iterations, timeout
+- **context:** Squashing strategy, threshold, preserve_last_n messages
+- **hooks:** Communication layer (secondary LLM for formatting finish/ask_human responses)
+
+The resolution chain: Use Case + Model → aps.yaml → agent_id → agent file → prompt_id → runtime system prompt.
+
+## What is the communication layer hook?
+
+A **second, cheaper LLM** (GPT-4.1-mini) that post-processes certain responses. It only activates for `finish` and `ask_human` tool calls — formatting the output for cleaner user-facing messages. Regular tool calls and code generation go directly through the primary model.
+
+## How can I verify the correct agent is deployed?
+
+**L1 Verification (Configuration):**
+1. Check Use Case + Model selection in UI
+2. Open aps.yaml → find the agent_id for that model
+3. Open the agent file → find the prompt_id
+4. Verify the UI shows the correct prompt_id as the agent name
+
+**L2 Verification (Runtime):**
+1. Copy unique sentences from the prompt file in GitHub
+2. Start a job, send a message, open Debug
+3. Search for those unique sentences in the runtime system prompt (body.system)
+4. If found → correct prompt is loaded at runtime
+"""
+    },
 ]
