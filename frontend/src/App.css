@@ -150,8 +150,9 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 .doc-sidebar-right { width: 200px; flex-shrink: 0; position: sticky; top: 2rem; align-self: flex-start; }
 .doc-toc { width: 100%; }
 .doc-toc-title { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 8px; }
-.doc-toc-link { display: block; font-size: 0.75rem; color: var(--text-muted); text-decoration: none; padding: 4px 0; border-left: 2px solid var(--border-clr); padding-left: 12px; margin-bottom: 2px; }
+.doc-toc-link { display: block; font-size: 0.75rem; color: var(--text-muted); text-decoration: none; padding: 4px 0; border-left: 2px solid var(--border-clr); padding-left: 12px; margin-bottom: 2px; transition: color 0.15s, border-color 0.15s; }
 .doc-toc-link:hover { color: var(--accent); border-color: var(--accent); }
+.doc-toc-link.toc-active { color: var(--accent); border-color: var(--accent); font-weight: 500; }
 .doc-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 6rem 2rem; color: var(--text-muted); text-align: center; }
 .doc-empty h2 { font-size: 1.25rem; margin: 16px 0 8px; color: var(--text-secondary); }
 .doc-empty p { font-size: 0.85rem; }
