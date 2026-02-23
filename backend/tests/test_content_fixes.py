@@ -4,7 +4,7 @@ import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://emergent-docs-dev.preview.emergentagent.com')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://hub-preview-2.preview.emergentagent.com')
 
 class TestCategoriesAndDocuments:
     """Test category and document counts after seed data update."""
