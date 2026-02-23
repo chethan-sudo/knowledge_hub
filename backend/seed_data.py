@@ -59,6 +59,7 @@ CAT_TOOLS = _id()
 SUB_LLM_PROXY = _id()
 CAT_LIMITATIONS = _id()
 CAT_UI_GUIDE = _id()
+CAT_FAQ = _id()
 
 CATEGORIES = [
     {"id": CAT_PLATFORM, "name": "Platform Architecture", "icon": "Layers", "order": 0, "parent_id": None},
