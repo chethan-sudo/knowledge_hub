@@ -31,7 +31,12 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--content-bg); color: var(--text-primary); -webkit-font-smoothing: antialiased; }
 
-.edh-loading { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: var(--content-bg); }
+.edh-loading { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: var(--content-bg); flex-direction: column; }
+.edh-loading-content { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+.edh-loading-title { color: var(--text-primary); font-size: 1.1rem; font-weight: 600; margin: 0; }
+.edh-loading-subtitle { color: var(--text-secondary); font-size: 0.875rem; margin: 0; text-align: center; }
+.edh-loading-retry { background: var(--accent); color: #fff; border: none; padding: 8px 20px; border-radius: var(--radius); font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: opacity 0.2s; }
+.edh-loading-retry:hover { opacity: 0.85; }
 .edh-spinner { width: 32px; height: 32px; border: 3px solid var(--border-clr); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
