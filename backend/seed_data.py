@@ -2268,349 +2268,150 @@ Comprehensive test suite for the Emergent platform authentication system.
 
 Comprehensive test suite covering E1 orchestration, tool execution, subagent management, LLM proxy, and the complete agent lifecycle.
 
-## E1 Orchestrator Tests
-
-### TC-AGT-001: E1 Initialization
-
-| Field | Detail |
-|-------|--------|
-| TC ID | TC-AGT-001 |
-| Priority | Critical |
-| Component | E1 Orchestrator |
-| Preconditions | Platform deployed, agent service running |
-
-**Steps:**
-1. Send a new user message to the agent endpoint
-2. Verify E1 receives the message via Agent Service
-3. Check that E1 loads the system prompt from configuration
-4. Verify tool registry is initialized with all available tools
-5. Confirm subagent registry is loaded
-
-**Expected Result:**
-- E1 initializes within 2 seconds
-- System prompt loaded correctly (no truncation)
-- All tools registered (file ops, bash, search, screenshot, etc.)
-- Subagent list matches configuration
-- Session context created in database
-
-### TC-AGT-002: Tool Selection Decision
-
-| Field | Detail |
-|-------|--------|
-| TC ID | TC-AGT-002 |
-| Priority | Critical |
-| Component | E1 Decision Layer |
-| Preconditions | E1 initialized, user message received |
-
-**Steps:**
-1. Send message: "Create a new file called test.py with hello world"
-2. Monitor E1's decision layer
-3. Verify E1 selects `create_file` tool (not bash, not edit)
-4. Check tool parameters match the request
-5. Verify tool execution in container
-
-**Expected Result:**
-- E1 correctly identifies `create_file` as the right tool
-- Parameters: path="/app/test.py", content="print('hello world')"
-- File created successfully in Kubernetes pod
-- E1 reports success to user
-
-### TC-AGT-003: Multi-Tool Orchestration
-
-| Field | Detail |
-|-------|--------|
-| TC ID | TC-AGT-003 |
-| Priority | High |
-| Component | E1 Orchestrator |
-| Preconditions | E1 initialized |
-
-**Steps:**
-1. Send message: "Read server.py, find the main route, and add a health check endpoint"
-2. Monitor E1's tool call sequence
-3. Verify E1 calls `view_file` first to read the file
-4. Verify E1 calls `search_replace` to add the endpoint
-5. Verify E1 calls `execute_bash` to test the endpoint
-
-**Expected Result:**
-- Tool calls in correct order: read -> edit -> verify
-- No unnecessary tool calls
-- Each tool call has correct parameters
-- Final response summarizes all changes made
-
-### TC-AGT-004: Parallel Tool Execution
-
-| Field | Detail |
-|-------|--------|
-| TC ID | TC-AGT-004 |
-| Priority | High |
-| Component | Tool Execution Engine |
-| Preconditions | Multiple independent operations needed |
-
-**Steps:**
-1. Send message requiring independent file operations (e.g., "Create files a.py, b.py, c.py")
-2. Monitor tool execution
-3. Verify E1 batches independent calls in parallel
-4. Check all files created correctly
-
-**Expected Result:**
-- Independent tool calls executed in parallel (not sequential)
-- All 3 files created correctly
-- Execution time less than 3x sequential time
-- No race conditions or file conflicts
-
-## Subagent Tests
-
-### TC-AGT-005: Subagent Delegation
-
-| Field | Detail |
-|-------|--------|
-| TC ID | TC-AGT-005 |
-| Priority | Critical |
-| Component | Subagent System |
-| Preconditions | E1 initialized, testing_agent available |
-
-**Steps:**
-1. Complete a feature implementation
-2. Trigger testing via "test this feature"
-3. Verify E1 delegates to testing_agent
-4. Verify subagent receives full context (problem statement, files, credentials)
-5. Verify subagent returns structured test report
-
-**Expected Result:**
-- E1 correctly identifies testing as a subagent task
-- testing_agent receives complete context
-- Subagent executes tests independently
-- Test report returned in JSON format at /app/test_reports/
-- E1 reads report and acts on findings
-
-### TC-AGT-006: Subagent Context Isolation
-
-| Field | Detail |
-|-------|--------|
-| TC ID | TC-AGT-006 |
-| Priority | High |
-| Component | Subagent System |
-| Preconditions | Multiple subagents available |
-
-**Steps:**
-1. Call design_agent for UI guidelines
-2. Immediately call testing_agent for API tests
-3. Verify each subagent has independent context
-4. Verify one subagent's actions don't affect another
-
-**Expected Result:**
-- Each subagent runs in isolated context
-- No cross-contamination of instructions
-- Both return correct results for their specific task
-- Main agent correctly merges both results
-
-### TC-AGT-007: Subagent Error Recovery
-
-| Field | Detail |
-|-------|--------|
-| TC ID | TC-AGT-007 |
-| Priority | Medium |
-| Component | Subagent System |
-| Preconditions | Subagent available |
-
-**Steps:**
-1. Trigger subagent with intentionally problematic input
-2. Verify subagent handles error gracefully
-3. Verify E1 receives error report
-4. Verify E1 attempts alternative approach or reports to user
-
-**Expected Result:**
-- Subagent doesn't crash on bad input
-- Error message returned to E1
-- E1 doesn't retry infinitely
-- User informed of issue with actionable next steps
-
-## LLM Proxy Tests
-
-### TC-AGT-008: Universal Key Routing
-
-| Field | Detail |
-|-------|--------|
-| TC ID | TC-AGT-008 |
-| Priority | Critical |
-| Component | LLM Proxy |
-| Preconditions | Emergent LLM key configured |
-
-**Steps:**
-1. Make API call with Universal Key specifying GPT-5.2
-2. Verify proxy routes to OpenAI
-3. Make call specifying Claude Sonnet
-4. Verify proxy routes to Anthropic
-5. Make call specifying Gemini Flash
-6. Verify proxy routes to Google
-
-**Expected Result:**
-- Each call routed to correct provider
-- Response format normalized across providers
-- Token usage tracked per-call
-- Cost attributed to user's balance
-
-### TC-AGT-009: LLM Proxy Failover
-
-| Field | Detail |
-|-------|--------|
-| TC ID | TC-AGT-009 |
-| Priority | High |
-| Component | LLM Proxy |
-| Preconditions | Multiple providers configured |
-
-**Steps:**
-1. Simulate primary provider timeout (>30s)
-2. Verify proxy attempts failover to secondary provider
-3. Check response is still valid
-4. Verify failover logged for monitoring
-
-**Expected Result:**
-- Automatic failover within 5 seconds of timeout
-- Secondary provider returns valid response
-- Failover event logged with reason
-- User not aware of the switch (seamless)
-
-### TC-AGT-010: Token Budget Enforcement
-
-| Field | Detail |
-|-------|--------|
-| TC ID | TC-AGT-010 |
-| Priority | Critical |
-| Component | LLM Proxy |
-| Preconditions | User has limited balance |
-
-**Steps:**
-1. Set user balance to a small amount (e.g., $0.01)
-2. Make a large LLM call that would exceed balance
-3. Verify proxy rejects the call
-4. Verify clear error message returned
-
-**Expected Result:**
-- Call rejected before sending to provider
-- Error: "Insufficient balance"
-- No negative balance created
-- User directed to top-up page
-
-## Tool Execution Engine Tests
-
-### TC-AGT-011: File Operations in Container
-
-| Field | Detail |
-|-------|--------|
-| TC ID | TC-AGT-011 |
-| Priority | Critical |
-| Component | Tool Execution Engine |
-| Preconditions | Kubernetes pod running |
-
-**Steps:**
-1. Create a file using create_file tool
-2. Read the file using view_file tool
-3. Edit the file using search_replace tool
-4. Delete content and verify changes
-5. Execute the file using execute_bash tool
-
-**Expected Result:**
-- File created at correct path
-- Read returns exact content written
-- Edit preserves unmodified content
-- Bash execution returns correct output
-- All operations within the same pod
-
-### TC-AGT-012: Bash Execution Timeout
-
-| Field | Detail |
-|-------|--------|
-| TC ID | TC-AGT-012 |
-| Priority | High |
-| Component | Tool Execution Engine |
-| Preconditions | Bash tool available |
-
-**Steps:**
-1. Execute a command that takes > 120 seconds
-2. Verify timeout is enforced
-3. Verify partial output returned
-4. Verify process killed after timeout
-
-**Expected Result:**
-- Command times out at 120 seconds
-- Partial stdout/stderr captured
-- Process terminated cleanly
-- E1 informed of timeout (not hung)
-
-## End-to-End Agent Workflow Tests
-
-### TC-AGT-013: Full Feature Build Cycle
-
-| Field | Detail |
-|-------|--------|
-| TC ID | TC-AGT-013 |
-| Priority | Critical |
-| Component | Full System |
-| Preconditions | Fresh environment |
-
-**Steps:**
-1. Send: "Build a REST API with FastAPI that has CRUD for tasks"
-2. Monitor E1 planning phase
-3. Verify file creation (server.py, requirements.txt)
-4. Verify dependency installation
-5. Verify server starts successfully
-6. Verify E1 tests endpoints with curl
-7. Verify E1 provides summary
-
-**Expected Result:**
-- E1 creates well-structured code
-- Dependencies installed correctly
-- Server starts without errors
-- All CRUD endpoints functional
-- Summary includes what was built and how to use it
-
-### TC-AGT-014: Bug Fix Workflow
-
-| Field | Detail |
-|-------|--------|
-| TC ID | TC-AGT-014 |
-| Priority | High |
-| Component | Full System |
-| Preconditions | Existing app with known bug |
-
-**Steps:**
-1. Report: "The login endpoint returns 500 error"
-2. Verify E1 reads relevant log files
-3. Verify E1 identifies root cause
-4. Verify E1 applies fix
-5. Verify E1 tests the fix
-6. Verify E1 provides RCA summary
-
-**Expected Result:**
-- E1 investigates before fixing (reads logs first)
-- Root cause correctly identified
-- Fix applied surgically (minimal changes)
-- Fix verified with curl test
-- Clear summary of what was wrong and what was fixed
-
-### TC-AGT-015: Context Window Management
-
-| Field | Detail |
-|-------|--------|
-| TC ID | TC-AGT-015 |
-| Priority | High |
-| Component | E1 Orchestrator |
-| Preconditions | Long session with many interactions |
-
-**Steps:**
-1. Conduct 50+ interactions in a single session
-2. Monitor context window usage
-3. Verify E1 handles context compaction
-4. Verify E1 doesn't lose critical information
-5. Test that E1 can still reference early decisions
-
-**Expected Result:**
-- Context compaction triggers automatically
-- Critical information preserved (file paths, decisions)
-- E1 can reference earlier work accurately
-- No sudden quality degradation
-- Memory file used for persistence if needed
+## TC-AGT-001: E1 Initialization
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Send a new user message to the agent endpoint | E1 receives message via Agent Service |
+| 2 | Check system prompt loading from configuration | System prompt loaded correctly (no truncation) |
+| 3 | Verify tool registry initialization | All tools registered (file ops, bash, search, screenshot, etc.) |
+| 4 | Confirm subagent registry is loaded | Subagent list matches configuration |
+| 5 | Check session context creation | Session context created in database, init < 2 seconds |
+
+## TC-AGT-002: Tool Selection Decision
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Send message: "Create a new file called test.py with hello world" | E1 receives and processes the request |
+| 2 | Monitor E1's decision layer for tool selection | E1 selects `create_file` tool (not bash, not edit) |
+| 3 | Verify tool parameters match the request | Parameters: path="/app/test.py", content="print('hello world')" |
+| 4 | Verify tool execution in Kubernetes container | File created successfully in pod |
+| 5 | Check E1 response to user | E1 reports success with file path |
+
+## TC-AGT-003: Multi-Tool Orchestration
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Send: "Read server.py, find the main route, and add a health check endpoint" | E1 begins planning phase |
+| 2 | Monitor first tool call | E1 calls `view_file` to read the file |
+| 3 | Monitor second tool call | E1 calls `search_replace` to add the endpoint |
+| 4 | Monitor third tool call | E1 calls `execute_bash` to test the endpoint |
+| 5 | Verify final response | Summary of all changes, no unnecessary tool calls |
+
+## TC-AGT-004: Parallel Tool Execution
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Send: "Create files a.py, b.py, c.py with hello world" | E1 identifies independent operations |
+| 2 | Monitor tool execution batching | E1 batches all 3 `create_file` calls in parallel |
+| 3 | Check all files created correctly | All 3 files exist with correct content |
+| 4 | Verify execution timing | Time < 3x sequential time, no race conditions |
+
+## TC-AGT-005: Subagent Delegation
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Complete a feature implementation | Feature code written |
+| 2 | Trigger testing via "test this feature" | E1 identifies testing as a subagent task |
+| 3 | Verify E1 delegates to testing_agent | testing_agent receives full context (problem, files, credentials) |
+| 4 | Verify subagent executes tests independently | Tests run without main agent involvement |
+| 5 | Check test report | JSON report at /app/test_reports/, E1 reads and acts on findings |
+
+## TC-AGT-006: Subagent Context Isolation
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Call design_agent for UI guidelines | design_agent returns UI guidelines |
+| 2 | Immediately call testing_agent for API tests | testing_agent returns test results |
+| 3 | Verify each subagent has independent context | No cross-contamination of instructions |
+| 4 | Verify main agent merges both results | Both results correctly incorporated |
+
+## TC-AGT-007: Subagent Error Recovery
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Trigger subagent with intentionally problematic input | Subagent receives bad input |
+| 2 | Verify subagent handles error gracefully | No crash, error message returned to E1 |
+| 3 | Verify E1 receives error report | E1 does not retry infinitely |
+| 4 | Check user notification | User informed with actionable next steps |
+
+## TC-AGT-008: Universal Key Routing
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Make API call with Universal Key specifying GPT-5.2 | Proxy routes call to OpenAI |
+| 2 | Make call specifying Claude Sonnet | Proxy routes call to Anthropic |
+| 3 | Make call specifying Gemini Flash | Proxy routes call to Google |
+| 4 | Check response format across providers | Responses normalized, token usage tracked |
+| 5 | Verify billing | Cost attributed to user's balance |
+
+## TC-AGT-009: LLM Proxy Failover
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Simulate primary provider timeout (>30s) | Timeout detected by proxy |
+| 2 | Verify proxy attempts failover to secondary provider | Automatic failover within 5 seconds |
+| 3 | Check response validity | Secondary provider returns valid response |
+| 4 | Verify failover logging | Event logged with reason, seamless to user |
+
+## TC-AGT-010: Token Budget Enforcement
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Set user balance to $0.01 | Balance updated |
+| 2 | Make a large LLM call exceeding balance | Call rejected before sending to provider |
+| 3 | Verify error message | "Insufficient balance" error returned |
+| 4 | Check balance did not go negative | No negative balance, user directed to top-up |
+
+## TC-AGT-011: File Operations in Container
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Create a file using create_file tool | File created at correct path |
+| 2 | Read the file using view_file tool | Returns exact content written |
+| 3 | Edit the file using search_replace tool | Edit preserves unmodified content |
+| 4 | Execute the file using execute_bash tool | Correct output returned |
+| 5 | Verify all operations in same pod | All operations within single Kubernetes pod |
+
+## TC-AGT-012: Bash Execution Timeout
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Execute a command that takes > 120 seconds | Command starts executing |
+| 2 | Wait for timeout enforcement | Timeout at 120 seconds |
+| 3 | Verify partial output returned | Partial stdout/stderr captured |
+| 4 | Verify process cleanup | Process terminated cleanly, E1 informed |
+
+## TC-AGT-013: Full Feature Build Cycle
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Send: "Build a REST API with FastAPI that has CRUD for tasks" | E1 enters planning phase |
+| 2 | Verify file creation | server.py and requirements.txt created |
+| 3 | Verify dependency installation | All packages installed correctly |
+| 4 | Verify server startup | Server starts without errors |
+| 5 | Verify endpoint testing | E1 tests endpoints with curl, all CRUD functional |
+| 6 | Check final summary | Summary includes what was built and usage instructions |
+
+## TC-AGT-014: Bug Fix Workflow
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Report: "The login endpoint returns 500 error" | E1 begins investigation |
+| 2 | Verify E1 reads relevant log files | Logs read before attempting any fix |
+| 3 | Verify root cause identification | Correct root cause identified |
+| 4 | Verify fix applied | Minimal, surgical code change |
+| 5 | Verify fix tested and summarized | Fix verified with curl, clear RCA summary provided |
+
+## TC-AGT-015: Context Window Management
+
+| Step | Action | Expected Result |
+|------|--------|----------------|
+| 1 | Conduct 50+ interactions in a single session | Session progresses normally |
+| 2 | Monitor context window usage | Usage tracked |
+| 3 | Verify context compaction triggers | Automatic compaction when approaching limits |
+| 4 | Verify critical information preserved | File paths, decisions still accessible |
+| 5 | Test reference to early decisions | E1 accurately references earlier work, memory file used if needed |
 """
     },
 
