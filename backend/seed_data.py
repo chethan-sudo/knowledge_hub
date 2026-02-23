@@ -138,7 +138,7 @@ A complete map of how the Emergent platform works — every component, every dat
 ```mermaid
 flowchart TD
     U[User] -->|message| FE[Frontend]
-    FE -->|WebSocket| AS[Agent Service]
+    FE -->|streaming| AS[Agent Service]
     AS -->|route + store| E1[E1 Orchestrator]
     E1 -->|reason| LLP[LLM Proxy]
     LLP -->|forward| LLM[LLM Provider]
