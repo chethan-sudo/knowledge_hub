@@ -786,7 +786,7 @@ function DocumentViewer({ doc, category, parentCategory, isBookmarked, onToggleB
             </div>
           )}
           {headings.length > 2 && !showVersions && (
-            <div className="doc-toc" data-testid="doc-toc"><div className="doc-toc-title">On this page</div>{headings.map((h, i) => <a key={i} href={`#${h.id}`} className="doc-toc-link">{h.text}</a>)}</div>
+            <TocScrollSpy headings={headings} />
           )}
         </aside>
       </div>
