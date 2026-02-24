@@ -589,7 +589,7 @@ function Sidebar({ categories, documents, activeDocId, onSelectDoc, onNewDoc, co
   return (
     <aside className={`sidebar ${collapsed ? "sidebar-collapsed" : ""}`} data-testid="sidebar" style={!collapsed ? {width: sidebarWidth} : undefined}>
       <div className="sidebar-header">
-        {!collapsed && <div className="sidebar-brand" data-testid="sidebar-brand"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="M8 7h6"/><path d="M8 11h4"/></svg><span>Knowledge Hub</span></div>}
+        {!collapsed && <div className="sidebar-brand" data-testid="sidebar-brand"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="M8 7h6"/><path d="M8 11h4"/></svg><span>AgentVault</span></div>}
         <button className="sidebar-collapse-btn" data-testid="sidebar-collapse-btn" onClick={() => setCollapsed(!collapsed)}><Icon name="PanelLeft" size={18}/></button>
       </div>
       {!collapsed && (
@@ -1042,7 +1042,7 @@ function HomePage({ categories, documents, onSelectDoc }) {
 
   return (
     <div className="home-page" data-testid="home-page">
-      <div className="home-hero"><h1>Emergent Knowledge Hub</h1><p>A comprehensive knowledge base covering AI agents, LLMs, platform architecture, infrastructure, and the future of software development.</p></div>
+      <div className="home-hero"><h1>AgentVault</h1><p>The definitive guide to AI agents — architecture, orchestration, LLMs, tooling, and the infrastructure that powers them.</p></div>
       {allTags.length > 0 && (
         <div className="tag-cloud" data-testid="tag-cloud">
           <span className="tag-cloud-label">Filter by tag:</span>
@@ -1509,7 +1509,7 @@ function PublicDocPage() {
 
   return (
     <div className="public-doc" data-testid="public-doc">
-      <div className="public-header"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="M8 7h6"/><path d="M8 11h4"/></svg><span>Emergent Knowledge Hub</span></div>
+      <div className="public-header"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="M8 7h6"/><path d="M8 11h4"/></svg><span>AgentVault</span></div>
       <article className="doc-viewer" style={{maxWidth:800,margin:"0 auto",padding:"2rem"}}>
         <h1 className="doc-title" data-testid="public-doc-title">{doc.title}</h1>
         {doc.tags?.length > 0 && <div className="doc-tags">{doc.tags.map((t,i) => <span key={i} className="doc-tag"><Icon name="Tag" size={11}/>{t}</span>)}</div>}
@@ -1699,7 +1699,7 @@ function Dashboard() {
     <div className="edh-loading" data-testid="loading-screen">
       <div className="edh-loading-content">
         <div className="edh-spinner"/>
-        <h2 className="edh-loading-title">{connectionError ? "Connecting to server..." : "Loading Knowledge Hub..."}</h2>
+        <h2 className="edh-loading-title">{connectionError ? "Connecting to server..." : "Loading AgentVault..."}</h2>
         {connectionError && <p className="edh-loading-subtitle">The server is waking up. Retrying automatically...</p>}
         {connectionError && <button className="edh-loading-retry" data-testid="retry-btn" onClick={() => { if (retryTimeout.current) clearTimeout(retryTimeout.current); loadData(true); }}>Retry Now</button>}
       </div>
