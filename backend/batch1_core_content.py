@@ -355,13 +355,13 @@ the agent may try to create the file again.
 
 ```python
 # Agent writes a decision to a persistent file
-create_file("PRD.md", """
+create_file("PRD.md", content='''
 # Project Requirements
 - Auth: Google OAuth
 - Database: MongoDB
 - Frontend: React with dark theme
 - Decision: Using JWT tokens (not sessions) because...
-""")
+''')
 
 # In a new session, the agent reads this file first
 # to understand what was previously decided
