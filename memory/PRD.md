@@ -1,50 +1,43 @@
 # Agent Anatomy - PRD
 
-## Original Problem Statement
-Build a comprehensive documentation website covering AI agent architecture, LLMs, and software development. Notion-style UI with sidebar, Markdown/Mermaid rendering, AI chatbot, search.
+## Overview
+A comprehensive documentation site covering AI agent architecture, LLMs, and software development. Notion-style UI with sidebar, Markdown/Mermaid rendering, AI chatbot, search.
 
-## Content Status (Feb 2026)
-- **45 public documents**, ~240K characters
-- **Zero** platform-specific references — all content is universal
-- **7 new core agent docs** added: What Is an AI Agent?, The Agent Loop, Memory Systems, Planning & Reasoning, Design Patterns, Guardrails & Safety, Error Recovery
+## Content: 52 public documents, 282K characters
 
-### Module Structure (17 categories, 45 docs)
-1. Getting Started (4) — What Is an AI Agent?, First AI Coding Session, Communicating with Agents, Glossary
-2. Tutorials (4) — REST API, Debugging 500, Choosing LLM, MongoDB vs PostgreSQL
-3. Agent Anatomy (6) — Agent Loop, Memory Systems, Planning & Reasoning, Design Patterns, Guardrails & Safety, Error Recovery
-4. Platform Architecture (4) — System Architecture, Orchestrator, Subagents, Tool Engine
-5. LLM Internals (4) — Transformers, Training, Tokens, LLM Proxy
-6. Infrastructure (3) — Kubernetes, Docker, Hot Reload
-7. Frontend (2) — React, Browser Rendering
-8. Backend (3) — FastAPI, MongoDB, Auth
-9. DevOps (2) — Deployment, Git
-10. Security (2) — Rate Limiting, SSL/CORS
-11. Data & Storage (3) — Sessions, Assets, Observability
-12. Advanced (3) — RAG, Frameworks, Prompt Engineering
-13. Future of AI Agents (1)
-14. Tools & Resources (1)
-15. Limitations (1)
-16. UI Guide (1)
-17. FAQ (1)
+### 1. Getting Started (4 docs)
+- What Is an AI Agent?
+- Your First AI Coding Session
+- Communicating with AI Coding Agents
+- AI Development Glossary
 
-## Pending — Batch 2 (Technical gaps)
-- Function Calling Deep Dive
-- Structured Outputs
-- Fine-Tuning vs Prompting vs RAG
-- Multi-Agent Communication (A2A, MCP)
+### 2. Agent Anatomy (9 docs)
+- The Agent Loop: Perceive, Think, Act
+- Agent Memory Systems
+- Planning & Reasoning Patterns
+- Agent Design Patterns
+- Guardrails & Safety
+- Error Recovery & Self-Correction
+- Multi-Agent Communication
 - Evaluation & Observability
-- Cost Optimization Strategies
-- Real-World Agent Examples (Devin, Claude Code, Cursor)
+- Ethical Considerations
 
-## Pending — Batch 3 (Category reorg + dedup)
-- Restructure categories to match recommended structure
-- Deduplicate Universal Key, tool calling content
-- Fix any remaining model name inaccuracies
+### 3. Tutorials (7 docs)
+- Building a REST API from Scratch
+- Debugging a 500 Error Step-by-Step
+- Choosing the Right LLM
+- MongoDB vs PostgreSQL
+- Fine-Tuning vs Prompting vs RAG
+- Cost Optimization for AI Agents
+- Real-World AI Agents: Case Studies
 
-## Pending — Features
+### 4-17. Technical Reference (32 docs)
+Platform Architecture (4), LLM Internals (5), Infrastructure (3), Frontend (2), Backend (3), DevOps (2), Security (2), Data & Storage (3), Advanced Concepts (3), Future (1), Tools (1), Limitations (1), UI Guide (1), FAQ (1)
+
+## Pending Features
 - Employee-only access control (auth)
-- Codebase refactoring (App.js, server.py)
 - Interactive features (quizzes, learning paths, request tracing)
+- Codebase refactoring (App.js 1750+ lines, server.py 830+ lines)
 
-## Authentication
-MOCKED — Hardcoded admin user. No real login flow.
+## Auth
+MOCKED — Hardcoded admin user
