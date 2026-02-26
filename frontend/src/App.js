@@ -1181,7 +1181,6 @@ function ToolsPage({ isAdmin }) {
             <div className="tools-form-field"><label>Name</label><input data-testid="tool-name" placeholder="e.g., FastAPI Documentation" value={form.name} onChange={e => setForm({...form, name: e.target.value})} /></div>
             <div className="tools-form-field"><label>URL</label><input data-testid="tool-url" placeholder="https://fastapi.tiangolo.com" value={form.url} onChange={e => setForm({...form, url: e.target.value})} /></div>
             <div className="tools-form-field"><label>Description</label><input data-testid="tool-desc" placeholder="Brief description" value={form.description} onChange={e => setForm({...form, description: e.target.value})} /></div>
-            <div className="tools-form-field"><label>Category</label><input data-testid="tool-category" placeholder="e.g., Documentation, Video, API" value={form.category} onChange={e => setForm({...form, category: e.target.value})} /></div>
           </div>
           {form.url && <div className="tools-form-preview"><img src={getFavicon(form.url)} alt="" width="16" height="16" onError={e => e.target.style.display='none'} /><span>{getDomain(form.url)}</span></div>}
           <div className="tools-form-actions"><button className="editor-btn-primary" data-testid="tool-save-btn" onClick={save} disabled={!form.name.trim() || !form.url.trim()}>Save</button><button className="editor-btn-secondary" onClick={() => { setAdding(false); setEditId(null); }}>Cancel</button></div>
