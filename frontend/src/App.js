@@ -102,16 +102,20 @@ function AuthProvider({ children }) {
   const [loading] = useState(false);
 
   const api = useCallback(async (method, url, data) => {
-    try {
-      return await axios({ method, url: `${API}${url}`, data });
-    } catch (e) {
-      // Retry with trailing slash if 307 redirect failed
-      if (e.response?.status === 307 || (!e.response && e.message?.includes('Network'))) {
-        const altUrl = url.endsWith('/') ? url.slice(0, -1) : url + '/';
-        return await axios({ method, url: `${API}${altUrl}`, data });
+    // Use fetch for DELETE/PUT to handle 307 cross-origin redirects
+    if (method === 'delete' || method === 'put') {
+      const opts = { method: method.toUpperCase(), redirect: 'follow', headers: {} };
+      if (data) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(data); }
+      const resp = await fetch(`${API}${url}`, opts);
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({ detail: resp.statusText }));
+        const error = new Error(err.detail || 'Request failed');
+        error.response = { status: resp.status, data: err };
+        throw error;
       }
-      throw e;
+      return { data: await resp.json() };
     }
+    return axios({ method, url: `${API}${url}`, data });
   }, []);
 
   const logout = () => {};
