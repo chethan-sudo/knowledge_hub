@@ -378,6 +378,21 @@ async def get_learning_path(path_id: str):
     return path
 
 
+@api_router.get("/module-tests/{category_id}")
+async def get_module_test(category_id: str):
+    test = await db.module_tests.find_one({"category_id": category_id}, {"_id": 0})
+    if not test:
+        return {"category_id": category_id, "questions": []}
+    return test
+
+@api_router.get("/path-tests/{path_id}")
+async def get_path_test(path_id: str):
+    test = await db.path_tests.find_one({"path_id": path_id}, {"_id": 0})
+    if not test:
+        return {"path_id": path_id, "questions": []}
+    return test
+
+
 # --- Collaboration Presence ---
 @api_router.get("/documents/{doc_id}/presence")
 async def get_document_presence(doc_id: str):
