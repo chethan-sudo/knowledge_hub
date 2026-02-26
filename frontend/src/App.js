@@ -1917,11 +1917,12 @@ function Dashboard() {
   const bookmarkedDocs = documents.filter(d => bookmarkedIds.includes(d.id));
   const activeBookmarkCount = bookmarkedDocs.length;
   const isBookmarksRoute = window.location.pathname === "/bookmarks";
+  const isLearnRoute = window.location.pathname === "/learn";
   const isToolsRoute = window.location.pathname === "/tools";
   const isTrashRoute = window.location.pathname === "/trash";
   const isSettingsRoute = window.location.pathname === "/settings";
   const isAnalyticsRoute = window.location.pathname === "/analytics";
-  const showHome = !docId && !creating && !editing && !isBookmarksRoute && !isToolsRoute && !isTrashRoute && !isSettingsRoute && !isAnalyticsRoute;
+  const showHome = !docId && !creating && !editing && !isBookmarksRoute && !isLearnRoute && !isToolsRoute && !isTrashRoute && !isSettingsRoute && !isAnalyticsRoute;
 
   return (
     <div className="dashboard" data-testid="dashboard">
