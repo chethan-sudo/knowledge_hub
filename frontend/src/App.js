@@ -742,6 +742,35 @@ function PresenceAvatars({ users, identity }) {
   );
 }
 
+
+function RelatedDocs({ currentDoc, categories, documents, onSelect }) {
+  if (!currentDoc || !documents?.length) return null;
+  const siblings = documents.filter(d => d.category_id === currentDoc.category_id && d.id !== currentDoc.id);
+  // Also find docs from parent category
+  const currentCat = categories?.find(c => c.id === currentDoc.category_id);
+  const parentId = currentCat?.parent_id;
+  const cousins = parentId ? documents.filter(d => {
+    if (d.id === currentDoc.id) return false;
+    const dCat = categories?.find(c => c.id === d.category_id);
+    return dCat?.parent_id === parentId && d.category_id !== currentDoc.category_id;
+  }) : [];
+  const related = [...siblings, ...cousins.slice(0, 3)].slice(0, 5);
+  if (related.length === 0) return null;
+  const getCatName = (id) => categories?.find(c => c.id === id)?.name || "";
+  return (
+    <div className="related-docs" data-testid="related-docs">
+      <h3 className="related-docs-title">Related Documents</h3>
+      <div className="related-docs-list">
+        {related.map(d => (
+          <button key={d.id} className="related-doc-item" data-testid={`related-${d.id}`} onClick={() => onSelect(d.id)}>
+            <Icon name="FileText" size={15}/><div><span className="related-doc-name">{d.title}</span><span className="related-doc-cat">{getCatName(d.category_id)}</span></div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // --- Document Viewer ---
 function DocumentViewer({ doc, category, parentCategory, isBookmarked, onToggleBookmark, onEdit, onDelete, isAdmin, onNavigateHome, categories, documents, onSelectDoc }) {
   const { api } = useAuth();
