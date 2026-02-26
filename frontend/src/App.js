@@ -1789,6 +1789,7 @@ function LearningPathsPage() {
             <Icon name="Check" size={24}/> <span>Path Complete! You've finished all {activePath.steps.length} lessons.</span>
           </div>
         )}
+        <PathTest pathId={activePath.id} pathTitle={activePath.title} enabled={pct === 100} />
       </div>
     );
   }
