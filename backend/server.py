@@ -310,6 +310,52 @@ async def restore_version(doc_id: str, version_id: str, user=Depends(require_adm
     return updated
 
 
+@api_router.get("/keywords")
+async def get_keyword_links():
+    """Returns a map of keywords to document IDs for auto-linking."""
+    internal_cats = await db.categories.find({"internal": True}, {"_id": 0, "id": 1}).to_list(100)
+    internal_ids = {c["id"] for c in internal_cats}
+    docs = await db.documents.find(
+        {"deleted": {"$ne": True}, "category_id": {"$nin": list(internal_ids)}},
+        {"_id": 0, "id": 1, "title": 1}
+    ).to_list(500)
+    keywords = {}
+    for d in docs:
+        title = d["title"]
+        doc_id = d["id"]
+        # Use meaningful title phrases as keywords
+        keywords[title] = doc_id
+        # Extract key terms from specific important titles
+        lower = title.lower()
+        # Map common concepts to their docs
+        concept_map = {
+            "orchestrator": ["orchestrator"],
+            "subagent": ["subagent"],
+            "transformer": ["transformer"],
+            "function calling": ["function calling", "tool use"],
+            "rag": ["retrieval augmented generation", "rag"],
+            "react pattern": ["react pattern"],
+            "mermaid": ["mermaid"],
+            "token": ["token economics"],
+            "memory systems": ["memory system"],
+            "design patterns": ["design pattern"],
+            "guardrails": ["guardrail", "safety"],
+            "prompt engineering": ["prompt engineering"],
+            "multi-agent": ["multi-agent"],
+            "fine-tuning": ["fine-tuning", "fine tuning"],
+            "llm proxy": ["llm proxy"],
+            "kubernetes": ["kubernetes", "k8s"],
+            "docker": ["docker", "container"],
+            "fastapi": ["fastapi"],
+            "mongodb": ["mongodb"],
+        }
+        for concept, triggers in concept_map.items():
+            if any(t in lower for t in triggers):
+                for trigger in triggers:
+                    keywords[trigger] = doc_id
+    return keywords
+
+
 # --- Collaboration Presence ---
 @api_router.get("/documents/{doc_id}/presence")
 async def get_document_presence(doc_id: str):
