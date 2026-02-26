@@ -617,6 +617,8 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 .doc-quiz-start:hover { border-color: var(--accent); background: var(--accent-light); color: var(--accent); }
 .doc-quiz-count { font-size: 0.78rem; font-weight: 400; color: var(--text-muted); margin-left: auto; }
 .doc-quiz-title { display: flex; align-items: center; gap: 8px; font-size: 1rem; font-weight: 600; color: var(--text-primary); margin-bottom: 20px; }
+.doc-quiz-minimize { background: none; border: none; color: var(--text-muted); cursor: pointer; margin-left: auto; padding: 4px; border-radius: 4px; }
+.doc-quiz-minimize:hover { color: var(--text-primary); background: var(--hover-bg); }
 .quiz-question { margin-bottom: 20px; }
 .quiz-question-text { font-size: 0.9rem; font-weight: 500; color: var(--text-primary); margin-bottom: 10px; }
 .quiz-options { display: flex; flex-direction: column; gap: 6px; }
