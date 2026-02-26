@@ -238,11 +238,11 @@ function MarkdownContent({ content, currentDocId }) {
       while (idx < parsed.length && parsed[idx].type !== "h2") { sectionItems.push(parsed[idx]); idx++; }
       elements.push(
         <CollapsibleH2 key={elements.length} text={item.text} id={item.id}>
-          {sectionItems.map((si, j) => renderParsedItem(si, `${elements.length}-${j}`))}
+          {sectionItems.map((si, j) => renderParsedItem(si, `${elements.length}-${j}`, currentDocId))}
         </CollapsibleH2>
       );
     } else {
-      elements.push(renderParsedItem(item, elements.length));
+      elements.push(renderParsedItem(item, elements.length, currentDocId));
       idx++;
     }
   }
