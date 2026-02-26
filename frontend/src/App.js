@@ -851,6 +851,7 @@ function DocumentViewer({ doc, category, parentCategory, isBookmarked, onToggleB
             {doc.cover_image && <div className="doc-cover-image" data-testid="doc-cover"><img src={doc.cover_image} alt="" /></div>}
             <MarkdownContent content={displayContent} currentDocId={doc?.id} />
           </div>
+          <RelatedDocs currentDoc={doc} categories={categories} documents={documents} onSelect={onSelectDoc} />
           <CommentsSection docId={doc.id} />
         </article>
         <aside className="doc-sidebar-right">
