@@ -1117,8 +1117,10 @@ function DocumentViewer({ doc, category, parentCategory, isBookmarked, onToggleB
 // --- Document Editor (Collaborative) ---
 function DocumentEditor({ doc, categories, onSave, onCancel }) {
   const { api } = useAuth();
-  const [title, setTitle] = useState(doc?.title || "");
-  const [content, setContent] = useState(doc?.content || "");
+  // Load draft if creating new doc
+  const draft = !doc ? (() => { try { const d = JSON.parse(localStorage.getItem("aa-draft") || "null"); if (d && Date.now() - d.timestamp < 3600000) return d; } catch {} return null; })() : null;
+  const [title, setTitle] = useState(doc?.title || draft?.title || "");
+  const [content, setContent] = useState(doc?.content || draft?.content || "");
   const [categoryId, setCategoryId] = useState(doc?.category_id || "");
   const [saving, setSaving] = useState(false);
   const [showPreview, setShowPreview] = useState(true);
