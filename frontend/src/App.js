@@ -703,7 +703,7 @@ function Sidebar({ categories, documents, activeDocId, onSelectDoc, onNewDoc, co
             <button className={`sidebar-item ${currentPath === "/bookmarks" ? "active" : ""}`} data-testid="sidebar-bookmarks-btn" onClick={() => navigate("/bookmarks")}><Icon name="Bookmark" size={16}/><span>Bookmarks</span>{bookmarkCount > 0 && <span className="sidebar-badge">{bookmarkCount}</span>}</button>
             <button className={`sidebar-item ${currentPath === "/learn" ? "active" : ""}`} data-testid="sidebar-learn-btn" onClick={() => navigate("/learn")}><Icon name="Rocket" size={16}/><span>Learning Paths</span></button>
             <button className={`sidebar-item ${currentPath === "/tools" ? "active" : ""}`} data-testid="sidebar-tools-btn" onClick={() => navigate("/tools")}><Icon name="Monitor" size={16}/><span>Tools</span></button>
-            {isAdmin && <button className={`sidebar-item ${currentPath === "/trash" ? "active" : ""}`} data-testid="sidebar-trash-btn" onClick={() => navigate("/trash")}><Icon name="Undo" size={16}/><span>Trash</span></button>}
+            {isAdmin && <button className={`sidebar-item ${currentPath === "/trash" ? "active" : ""}`} data-testid="sidebar-trash-btn" onClick={() => navigate("/trash")}><Icon name="FolderOpen" size={16}/><span>Trash</span></button>}
             {isAdmin && <button className={`sidebar-item ${currentPath === "/analytics" ? "active" : ""}`} data-testid="sidebar-analytics-btn" onClick={() => navigate("/analytics")}><Icon name="BarChart" size={16}/><span>Analytics</span></button>}
             <div className="sidebar-divider"/>
             {parentCats.map(cat => {
