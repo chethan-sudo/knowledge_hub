@@ -1744,7 +1744,7 @@ function LearningPathsPage() {
           <span><Icon name="Clock" size={13}/> {activePath.estimated_time}</span>
           <span>{completedCount}/{activePath.steps.length} completed</span>
         </div>
-        <div className="lp-progress-bar"><div className="lp-progress-fill" style={{width: `${pct}%`}} /><span>{pct}%</span></div>
+        <div className="lp-progress-bar"><div className="lp-progress-fill" style={{width: `${pct}%`}} /><span>{pct}% — {completedCount}/{activePath.steps.length} completed</span></div>
 
         {/* Animated Roadmap */}
         <div className="lp-roadmap" data-testid="lp-roadmap">
