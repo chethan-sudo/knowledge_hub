@@ -814,12 +814,10 @@ function PresenceAvatars({ users, identity }) {
 
 function DocNavigation({ currentDoc, documents, categories, onSelect }) {
   if (!currentDoc || !documents?.length) return null;
-  // Get docs in the same category, sorted by order
   const sameCat = documents.filter(d => d.category_id === currentDoc.category_id).sort((a,b) => (a.order || 0) - (b.order || 0));
   const idx = sameCat.findIndex(d => d.id === currentDoc.id);
   const prev = idx > 0 ? sameCat[idx - 1] : null;
   const next = idx < sameCat.length - 1 ? sameCat[idx + 1] : null;
-  // If no prev/next in same category, try adjacent categories
   const parentCats = categories.filter(c => !c.parent_id && !c.internal).sort((a,b) => a.order - b.order);
   const allCatIds = [];
   parentCats.forEach(pc => { allCatIds.push(pc.id); categories.filter(c => c.parent_id === pc.id).sort((a,b) => a.order - b.order).forEach(sc => allCatIds.push(sc.id)); });
@@ -841,10 +839,24 @@ function DocNavigation({ currentDoc, documents, categories, onSelect }) {
   const prevFinal = prev || prevDoc;
   const nextFinal = next || nextDoc;
   if (!prevFinal && !nextFinal) return null;
+
+  const trackAndNavigate = (targetId) => {
+    // Mark current doc as complete in any learning path that contains it
+    try {
+      const progress = JSON.parse(localStorage.getItem("aa-learning-progress") || "{}");
+      const pathId = localStorage.getItem("aa-from-path");
+      if (pathId) {
+        progress[`${pathId}:${currentDoc.id}`] = true;
+        localStorage.setItem("aa-learning-progress", JSON.stringify(progress));
+      }
+    } catch {}
+    onSelect(targetId);
+  };
+
   return (
     <div className="doc-nav" data-testid="doc-navigation">
-      {prevFinal ? <button className="doc-nav-btn doc-nav-prev" data-testid="nav-prev" onClick={() => onSelect(prevFinal.id)}><Icon name="ArrowLeft" size={14}/><div><span className="doc-nav-label">Previous</span><span className="doc-nav-title">{prevFinal.title}</span></div></button> : <div/>}
-      {nextFinal ? <button className="doc-nav-btn doc-nav-next" data-testid="nav-next" onClick={() => onSelect(nextFinal.id)}><div><span className="doc-nav-label">Next</span><span className="doc-nav-title">{nextFinal.title}</span></div><Icon name="ChevronRight" size={14}/></button> : <div/>}
+      {prevFinal ? <button className="doc-nav-btn doc-nav-prev" data-testid="nav-prev" onClick={() => trackAndNavigate(prevFinal.id)}><Icon name="ArrowLeft" size={14}/><div><span className="doc-nav-label">Previous</span><span className="doc-nav-title">{prevFinal.title}</span></div></button> : <div/>}
+      {nextFinal ? <button className="doc-nav-btn doc-nav-next" data-testid="nav-next" onClick={() => trackAndNavigate(nextFinal.id)}><div><span className="doc-nav-label">Next</span><span className="doc-nav-title">{nextFinal.title}</span></div><Icon name="ChevronRight" size={14}/></button> : <div/>}
     </div>
   );
 }
