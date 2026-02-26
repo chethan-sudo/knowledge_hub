@@ -1957,7 +1957,7 @@ function LearningPathsPage() {
           <span>{completedCount}/{activePath.steps.length} completed</span>
         </div>
         <div className="lp-progress-bar"><div className="lp-progress-fill" style={{width: `${pct}%`}} /><span>{pct}% — {completedCount}/{activePath.steps.length} completed</span></div>
-        {completedCount > 0 && <button className="lp-reset-btn" data-testid="lp-reset" onClick={() => resetPath(activePath.id)}><Icon name="Undo" size={13}/> Start Again</button>}
+        {pct === 100 && <button className="lp-reset-btn" data-testid="lp-reset" onClick={() => resetPath(activePath.id)}><Icon name="Undo" size={13}/> Start Again</button>}
 
         {/* Animated Roadmap */}
         <div className="lp-roadmap" data-testid="lp-roadmap">
