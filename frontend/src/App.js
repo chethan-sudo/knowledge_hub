@@ -1991,6 +1991,7 @@ function LearningPathsPage() {
                       {done ? (pct < 100 ? "Continue" : "Review") : "Start Reading"}
                     </button>
                     {!done && <button className="editor-btn-secondary" onClick={() => markComplete(activePath.id, step.document_id)}>Mark Complete</button>}
+                    {done && <button className="editor-btn-secondary" onClick={() => markIncomplete(activePath.id, step.document_id)}>Mark Incomplete</button>}
                   </div>
                 </div>
               </div>
