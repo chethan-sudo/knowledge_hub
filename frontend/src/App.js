@@ -881,6 +881,7 @@ function DocumentViewer({ doc, category, parentCategory, isBookmarked, onToggleB
             <MarkdownContent content={displayContent} currentDocId={doc?.id} />
           </div>
           <RelatedDocs currentDoc={doc} categories={categories} documents={documents} onSelect={onSelectDoc} />
+          <DocQuiz docId={doc.id} />
           <CommentsSection docId={doc.id} />
         </article>
         <aside className="doc-sidebar-right">
