@@ -825,6 +825,10 @@ function DocumentViewer({ doc, category, parentCategory, isBookmarked, onToggleB
       <div className="doc-header">
         <div>
           <h1 className="doc-title" data-testid="doc-title">{viewingVersion ? `${doc.title} (version)` : doc.title}</h1>
+          <div className="doc-meta" data-testid="doc-meta">
+            <span className="doc-meta-item"><Icon name="Clock" size={12}/> {Math.max(1, Math.ceil((doc.content?.split(/\s+/).length || 0) / 200))} min read</span>
+            {doc.updated_at && <span className="doc-meta-item">Updated {new Date(doc.updated_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>}
+          </div>
           {tags.length > 0 && <div className="doc-tags" data-testid="doc-tags">{tags.map((t, i) => <span key={i} className="doc-tag"><Icon name="Tag" size={11}/>{t}</span>)}</div>}
         </div>
         <div className="doc-actions">
