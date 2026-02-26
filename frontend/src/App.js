@@ -2123,8 +2123,9 @@ function Dashboard() {
   const isLearnRoute = window.location.pathname === "/learn";
   const isToolsRoute = window.location.pathname === "/tools";
   const isTrashRoute = window.location.pathname === "/trash";
+  const isSettingsRoute = window.location.pathname === "/settings";
   const isAnalyticsRoute = window.location.pathname === "/analytics";
-  const showHome = !docId && !creating && !editing && !isBookmarksRoute && !isLearnRoute && !isToolsRoute && !isTrashRoute && !isAnalyticsRoute;
+  const showHome = !docId && !creating && !editing && !isBookmarksRoute && !isLearnRoute && !isToolsRoute && !isTrashRoute && !isSettingsRoute && !isAnalyticsRoute;
 
   return (
     <div className="dashboard" data-testid="dashboard">
