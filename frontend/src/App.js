@@ -1950,6 +1950,7 @@ function AppRouter() {
     <Routes>
       <Route path="/share/:shareId" element={<PublicDocPage />} />
       <Route path="/bookmarks" element={<Dashboard />} />
+      <Route path="/learn" element={<Dashboard />} />
       <Route path="/tools" element={<Dashboard />} />
       <Route path="/trash" element={<Dashboard />} />
       <Route path="/settings" element={<Dashboard />} />
