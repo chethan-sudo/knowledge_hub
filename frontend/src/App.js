@@ -823,35 +823,68 @@ function PresenceAvatars({ users, identity }) {
 
 
 function DocNavigation({ currentDoc, documents, categories, onSelect }) {
-  if (!currentDoc || !documents?.length) return null;
-  const sameCat = documents.filter(d => d.category_id === currentDoc.category_id).sort((a,b) => (a.order || 0) - (b.order || 0));
-  const idx = sameCat.findIndex(d => d.id === currentDoc.id);
-  const prev = idx > 0 ? sameCat[idx - 1] : null;
-  const next = idx < sameCat.length - 1 ? sameCat[idx + 1] : null;
-  const parentCats = categories.filter(c => !c.parent_id && !c.internal).sort((a,b) => a.order - b.order);
-  const allCatIds = [];
-  parentCats.forEach(pc => { allCatIds.push(pc.id); categories.filter(c => c.parent_id === pc.id).sort((a,b) => a.order - b.order).forEach(sc => allCatIds.push(sc.id)); });
-  if (!prev || !next) {
-    const catIdx = allCatIds.indexOf(currentDoc.category_id);
-    if (!prev && catIdx > 0) {
-      for (let i = catIdx - 1; i >= 0; i--) {
-        const prevCatDocs = documents.filter(d => d.category_id === allCatIds[i]).sort((a,b) => (a.order || 0) - (b.order || 0));
-        if (prevCatDocs.length > 0) { var prevDoc = prevCatDocs[prevCatDocs.length - 1]; break; }
-      }
+  const { api } = useAuth();
+  const [pathSteps, setPathSteps] = useState(null);
+
+  // Load learning path steps if user came from a path
+  useEffect(() => {
+    const pathId = localStorage.getItem("aa-from-path");
+    if (pathId && pathId !== "true") {
+      api("get", `/learning-paths/${pathId}`).then(r => {
+        if (r.data?.steps) setPathSteps(r.data.steps);
+      }).catch(() => {});
     }
-    if (!next && catIdx < allCatIds.length - 1) {
-      for (let i = catIdx + 1; i < allCatIds.length; i++) {
-        const nextCatDocs = documents.filter(d => d.category_id === allCatIds[i]).sort((a,b) => (a.order || 0) - (b.order || 0));
-        if (nextCatDocs.length > 0) { var nextDoc = nextCatDocs[0]; break; }
+  }, [api, currentDoc?.id]);
+
+  if (!currentDoc || !documents?.length) return null;
+
+  let prevFinal = null;
+  let nextFinal = null;
+
+  // If in a learning path, use path order
+  if (pathSteps) {
+    const stepIdx = pathSteps.findIndex(s => s.document_id === currentDoc.id);
+    if (stepIdx !== -1) {
+      if (stepIdx > 0) {
+        const prevStep = pathSteps[stepIdx - 1];
+        prevFinal = documents.find(d => d.id === prevStep.document_id) || { id: prevStep.document_id, title: prevStep.title };
+      }
+      if (stepIdx < pathSteps.length - 1) {
+        const nextStep = pathSteps[stepIdx + 1];
+        nextFinal = documents.find(d => d.id === nextStep.document_id) || { id: nextStep.document_id, title: nextStep.title };
       }
     }
   }
-  const prevFinal = prev || prevDoc;
-  const nextFinal = next || nextDoc;
+
+  // Fallback to category order if not in a path or doc not found in path
+  if (!prevFinal && !nextFinal && !pathSteps) {
+    const sameCat = documents.filter(d => d.category_id === currentDoc.category_id).sort((a,b) => (a.order || 0) - (b.order || 0));
+    const idx = sameCat.findIndex(d => d.id === currentDoc.id);
+    prevFinal = idx > 0 ? sameCat[idx - 1] : null;
+    nextFinal = idx < sameCat.length - 1 ? sameCat[idx + 1] : null;
+    if (!prevFinal || !nextFinal) {
+      const parentCats = categories.filter(c => !c.parent_id && !c.internal).sort((a,b) => a.order - b.order);
+      const allCatIds = [];
+      parentCats.forEach(pc => { allCatIds.push(pc.id); categories.filter(c => c.parent_id === pc.id).sort((a,b) => a.order - b.order).forEach(sc => allCatIds.push(sc.id)); });
+      const catIdx = allCatIds.indexOf(currentDoc.category_id);
+      if (!prevFinal && catIdx > 0) {
+        for (let i = catIdx - 1; i >= 0; i--) {
+          const prevCatDocs = documents.filter(d => d.category_id === allCatIds[i]).sort((a,b) => (a.order || 0) - (b.order || 0));
+          if (prevCatDocs.length > 0) { prevFinal = prevCatDocs[prevCatDocs.length - 1]; break; }
+        }
+      }
+      if (!nextFinal && catIdx < allCatIds.length - 1) {
+        for (let i = catIdx + 1; i < allCatIds.length; i++) {
+          const nextCatDocs = documents.filter(d => d.category_id === allCatIds[i]).sort((a,b) => (a.order || 0) - (b.order || 0));
+          if (nextCatDocs.length > 0) { nextFinal = nextCatDocs[0]; break; }
+        }
+      }
+    }
+  }
+
   if (!prevFinal && !nextFinal) return null;
 
   const trackAndNavigate = (targetId) => {
-    // Mark current doc as complete in any learning path that contains it
     try {
       const progress = JSON.parse(localStorage.getItem("aa-learning-progress") || "{}");
       const pathId = localStorage.getItem("aa-from-path");
