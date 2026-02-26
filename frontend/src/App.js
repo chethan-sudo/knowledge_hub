@@ -1360,6 +1360,7 @@ function SettingsPage({ isAdmin }) {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("viewer");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -1377,18 +1378,23 @@ function SettingsPage({ isAdmin }) {
   };
 
   const changeRole = async (userId, newRole) => {
+    setError("");
     try {
       await api("put", `/users/${userId}/role`, { role: newRole });
       setUsers(prev => prev.map(u => u.user_id === userId ? { ...u, role: newRole } : u));
-      alert(`Role updated to ${newRole}`);
-    } catch {}
+      setSuccess(`Role updated to ${newRole}`);
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (e) { setError(e.response?.data?.detail || "Failed to update role"); }
   };
 
   const removeUser = async (userId) => {
     if (!window.confirm("Remove this user?")) return;
+    setError("");
     try {
       await api("delete", `/users/${userId}`);
       setUsers(prev => prev.filter(u => u.user_id !== userId));
+      setSuccess("User removed");
+      setTimeout(() => setSuccess(""), 3000);
     } catch (e) { setError(e.response?.data?.detail || "Cannot remove"); }
   };
 
