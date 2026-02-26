@@ -1677,6 +1677,95 @@ function ReadingProgress() {
   );
 }
 
+
+// --- Learning Paths Page ---
+function LearningPathsPage() {
+  const { api } = useAuth();
+  const navigate = useNavigate();
+  const [paths, setPaths] = useState([]);
+  const [activePath, setActivePath] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [progress, setProgress] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("aa-learning-progress") || "{}"); } catch { return {}; }
+  });
+
+  useEffect(() => { api("get", "/learning-paths").then(r => setPaths(r.data)).catch(() => {}).finally(() => setLoading(false)); }, [api]);
+
+  const markComplete = (pathId, docId) => {
+    const key = `${pathId}:${docId}`;
+    const updated = { ...progress, [key]: true };
+    setProgress(updated);
+    localStorage.setItem("aa-learning-progress", JSON.stringify(updated));
+  };
+
+  const getPathProgress = (path) => {
+    if (!path?.steps) return 0;
+    const completed = path.steps.filter(s => progress[`${path.id}:${s.document_id}`]).length;
+    return Math.round((completed / path.steps.length) * 100);
+  };
+
+  if (loading) return <div className="edh-loading"><div className="edh-spinner"/></div>;
+
+  if (activePath) {
+    const pct = getPathProgress(activePath);
+    return (
+      <div className="lp-detail" data-testid="learning-path-detail">
+        <button className="lp-back" data-testid="lp-back" onClick={() => setActivePath(null)}><Icon name="ArrowLeft" size={16}/> All Paths</button>
+        <h1>{activePath.title}</h1>
+        <p className="lp-desc">{activePath.description}</p>
+        <div className="lp-progress-bar"><div className="lp-progress-fill" style={{width: `${pct}%`}} /><span>{pct}% complete</span></div>
+        <div className="lp-steps">
+          {activePath.steps.map((step, i) => {
+            const done = progress[`${activePath.id}:${step.document_id}`];
+            return (
+              <div key={i} className={`lp-step ${done ? "completed" : ""}`} data-testid={`lp-step-${i}`}>
+                <div className="lp-step-number">{done ? <Icon name="Check" size={16}/> : i + 1}</div>
+                <div className="lp-step-content">
+                  <h3>{step.title}</h3>
+                  <p>{step.description}</p>
+                  <div className="lp-step-actions">
+                    <button className="editor-btn-primary" onClick={() => { markComplete(activePath.id, step.document_id); navigate(`/doc/${step.document_id}`); }}>
+                      {done ? "Review" : "Start Reading"}
+                    </button>
+                    {!done && <button className="editor-btn-secondary" onClick={() => markComplete(activePath.id, step.document_id)}>Mark Complete</button>}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="lp-page" data-testid="learning-paths-page">
+      <div className="lp-hero">
+        <h1>Learning Paths</h1>
+        <p>Guided sequences to master AI agent concepts — from beginner to advanced.</p>
+      </div>
+      <div className="lp-grid">
+        {paths.map(path => {
+          const pct = getPathProgress(path);
+          return (
+            <button key={path.id} className="lp-card" data-testid={`lp-card-${path.id}`} onClick={() => setActivePath(path)}>
+              <div className="lp-card-icon"><Icon name={path.icon} size={28}/></div>
+              <h2>{path.title}</h2>
+              <p className="lp-card-desc">{path.description}</p>
+              <div className="lp-card-meta">
+                <span className={`lp-badge lp-badge-${path.difficulty}`}>{path.difficulty}</span>
+                <span><Icon name="Clock" size={13}/> {path.estimated_time}</span>
+                <span>{path.steps?.length} lessons</span>
+              </div>
+              {pct > 0 && <div className="lp-card-progress"><div className="lp-card-progress-fill" style={{width: `${pct}%`}} /><span>{pct}%</span></div>}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // --- AI Chatbot ---
 function AIChatbot({ docId }) {
   const { api, user } = useAuth();
