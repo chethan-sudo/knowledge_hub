@@ -2113,6 +2113,20 @@ function Dashboard() {
   const [catManagerOpen, setCatManagerOpen] = useState(false);
   const isAdmin = user?.role === "admin";
 
+  // Auto-save draft and exit editor when navigating away
+  useEffect(() => {
+    if ((creating || editing) && !docId) {
+      // User navigated to a non-doc route while in editor — save draft and exit
+      const editorTitle = document.querySelector('[data-testid="editor-title"]')?.value;
+      const editorContent = document.querySelector('[data-testid="editor-content"]')?.value;
+      if (editorTitle || editorContent) {
+        localStorage.setItem("aa-draft", JSON.stringify({ title: editorTitle || "", content: editorContent || "", category_id: "", timestamp: Date.now() }));
+      }
+      setCreating(false);
+      setEditing(false);
+    }
+  }, [window.location.pathname]);
+
   const [connectionError, setConnectionError] = useState(false);
   const retryTimeout = useRef(null);
 
