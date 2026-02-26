@@ -1373,7 +1373,7 @@ function ToolsPage({ isAdmin }) {
     } catch {}
   };
 
-  const del = async (id) => { if (!window.confirm("Delete this resource?")) return; try { await api("delete", `/tools/${id}`); setTools(prev => prev.filter(t => t.id !== id)); } catch {} };
+  const del = async (id) => { if (!window.confirm("Are you sure you want to delete this resource? This cannot be undone.")) return; try { await api("delete", `/tools/${id}`); setTools(prev => prev.filter(t => t.id !== id)); } catch (e) { console.error("Delete tool error:", e); alert("Failed to delete. Please try again."); } };
 
   const categories = [...new Set(tools.map(t => t.category))].sort();
   const getDomain = (url) => { try { return new URL(url).hostname.replace("www.", ""); } catch { return ""; } };
