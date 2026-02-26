@@ -635,7 +635,7 @@ function Sidebar({ categories, documents, activeDocId, onSelectDoc, onNewDoc, co
     <aside className={`sidebar ${collapsed ? "sidebar-collapsed" : ""}`} data-testid="sidebar" style={!collapsed ? {width: sidebarWidth} : undefined}>
       <div className="sidebar-header">
         {!collapsed && <div className="sidebar-brand" data-testid="sidebar-brand"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="M8 7h6"/><path d="M8 11h4"/></svg><span>Agent Anatomy</span></div>}
-        <button className="sidebar-collapse-btn" data-testid="sidebar-collapse-btn" onClick={() => setCollapsed(!collapsed)}><Icon name="PanelLeft" size={18}/></button>
+        <button className="sidebar-collapse-btn" data-testid="sidebar-collapse-btn" onClick={() => setCollapsed(!collapsed)}><Icon name={collapsed ? "Menu" : "PanelLeft"} size={18}/></button>
       </div>
       {!collapsed && (
         <>
