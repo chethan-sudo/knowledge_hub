@@ -1703,6 +1703,95 @@ function ReadingProgress() {
 }
 
 
+
+// --- Path Final Test + Certificate ---
+function PathTest({ pathId, pathTitle, enabled }) {
+  const { api } = useAuth();
+  const [test, setTest] = useState(null);
+  const [answers, setAnswers] = useState({});
+  const [submitted, setSubmitted] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [showCert, setShowCert] = useState(false);
+
+  useEffect(() => {
+    if (pathId) api("get", `/path-tests/${pathId}`).then(r => { if (r.data?.questions?.length) setTest(r.data); }).catch(() => {});
+  }, [pathId, api]);
+
+  if (!test || !test.questions.length) return null;
+
+  const score = test.questions.reduce((acc, q) => acc + (answers[q.id] === q.correct ? 1 : 0), 0);
+  const total = test.questions.length;
+  const allAnswered = Object.keys(answers).length === total;
+  const passed = submitted && score >= Math.ceil(total * 0.7);
+
+  if (!expanded) {
+    return (
+      <div className="path-test-section" data-testid="path-test">
+        <button className={`doc-quiz-start ${!enabled ? "disabled" : ""}`} data-testid="path-test-btn" onClick={() => enabled && setExpanded(true)} disabled={!enabled}>
+          <Icon name="Check" size={20}/> <span>Final Assessment</span> <span className="doc-quiz-count">{total} questions{!enabled ? " — complete all lessons first" : ""}</span>
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="doc-quiz path-test-section" data-testid="path-test-expanded">
+      <h3 className="doc-quiz-title"><Icon name="Check" size={18}/> {pathTitle} — Final Assessment <button className="doc-quiz-minimize" onClick={() => setExpanded(false)}><Icon name="X" size={14}/></button></h3>
+      {test.questions.map((q, qi) => (
+        <div key={q.id} className="quiz-question">
+          <p className="quiz-question-text">{qi + 1}. {q.question}</p>
+          <div className="quiz-options">
+            {q.options.map((opt, oi) => {
+              const selected = answers[q.id] === oi;
+              const isCorrect = submitted && oi === q.correct;
+              const isWrong = submitted && selected && oi !== q.correct;
+              return (
+                <button key={oi} className={`quiz-option ${selected ? "selected" : ""} ${isCorrect ? "correct" : ""} ${isWrong ? "wrong" : ""}`} onClick={() => { if (!submitted) setAnswers(prev => ({...prev, [q.id]: oi})); }} disabled={submitted}>
+                  <span className="quiz-option-letter">{String.fromCharCode(65 + oi)}</span>{opt}
+                </button>
+              );
+            })}
+          </div>
+          {submitted && answers[q.id] !== undefined && (
+            <p className={`quiz-explanation ${answers[q.id] === q.correct ? "correct" : "wrong"}`}>
+              {answers[q.id] === q.correct ? "Correct! " : "Incorrect. "}{q.explanation}
+            </p>
+          )}
+        </div>
+      ))}
+      <div className="quiz-footer">
+        {!submitted ? (
+          <button className="editor-btn-primary" onClick={() => setSubmitted(true)} disabled={!allAnswered}>Submit Assessment ({Object.keys(answers).length}/{total})</button>
+        ) : (
+          <div className="quiz-result">
+            <span className="quiz-score">Score: {score}/{total} ({Math.round(score/total*100)}%)</span>
+            {passed && <button className="editor-btn-primary" onClick={() => setShowCert(true)}>View Certificate</button>}
+            <button className="editor-btn-secondary" onClick={() => { setAnswers({}); setSubmitted(false); }}>Try Again</button>
+          </div>
+        )}
+      </div>
+      {showCert && (
+        <div className="search-overlay" onClick={() => setShowCert(false)}>
+          <div className="cert-modal" onClick={e => e.stopPropagation()} data-testid="certificate">
+            <div className="cert-border">
+              <div className="cert-header">Certificate of Completion</div>
+              <div className="cert-icon"><Icon name="Check" size={40}/></div>
+              <div className="cert-body">
+                <p className="cert-congrats">Congratulations!</p>
+                <p className="cert-text">You have successfully completed</p>
+                <h2 className="cert-path">{pathTitle}</h2>
+                <p className="cert-score">Score: {score}/{total} ({Math.round(score/total*100)}%)</p>
+                <p className="cert-date">{new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</p>
+              </div>
+              <button className="editor-btn-secondary" onClick={() => setShowCert(false)} style={{marginTop: 20}}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // --- Learning Paths Page ---
 function LearningPathsPage() {
   const { api } = useAuth();
