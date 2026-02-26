@@ -286,6 +286,30 @@ async def get_document_versions(doc_id: str, user=Depends(get_current_user)):
     versions = await db.doc_versions.find({"document_id": doc_id}, {"_id": 0}).sort("created_at", -1).to_list(50)
     return versions
 
+@api_router.post("/documents/{doc_id}/versions/{version_id}/restore")
+async def restore_version(doc_id: str, version_id: str, user=Depends(require_admin)):
+    doc = await db.documents.find_one({"id": doc_id, "deleted": {"$ne": True}}, {"_id": 0})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    version = await db.doc_versions.find_one({"id": version_id, "document_id": doc_id}, {"_id": 0})
+    if not version:
+        raise HTTPException(status_code=404, detail="Version not found")
+    # Save current state as a new version before restoring
+    current_version = {
+        "id": str(uuid.uuid4()), "document_id": doc_id,
+        "title": doc.get("title", ""), "content": doc.get("content", ""),
+        "edited_by": user["user_id"], "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.doc_versions.insert_one(current_version)
+    # Restore the old version
+    await db.documents.update_one({"id": doc_id}, {"$set": {
+        "title": version["title"], "content": version["content"],
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }})
+    updated = await db.documents.find_one({"id": doc_id}, {"_id": 0})
+    return updated
+
+
 # --- Collaboration Presence ---
 @api_router.get("/documents/{doc_id}/presence")
 async def get_document_presence(doc_id: str):
