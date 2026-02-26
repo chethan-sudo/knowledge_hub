@@ -556,7 +556,7 @@ function CommentsSection({ docId }) {
           <button className="comment-action" data-testid={`reply-btn-${comment.id}`} onClick={() => setReplyTo(replyTo === comment.id ? null : comment.id)}>
             <Icon name="Reply" size={13}/> Reply
           </button>
-          {(isOwn || user?.role === "admin") && (
+          {isOwn && (
             <button className="comment-action comment-delete" data-testid={`delete-comment-${comment.id}`} onClick={() => deleteComment(comment.id)}>
               <Icon name="Trash" size={13}/>
             </button>
