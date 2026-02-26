@@ -1734,19 +1734,60 @@ function AppRouter() {
       <Route path="/analytics" element={<Dashboard />} />
       <Route path="/doc/:docId" element={<Dashboard />} />
       <Route path="/" element={<Dashboard />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }
 
+function NotFoundPage() {
+  const navigate = useNavigate();
+  return (
+    <div className="edh-loading" data-testid="not-found-page">
+      <div className="edh-loading-content">
+        <h2 className="edh-loading-title">Page not found</h2>
+        <p className="edh-loading-subtitle">The page you're looking for doesn't exist.</p>
+        <button className="edh-loading-retry" onClick={() => navigate("/")}>Go Home</button>
+      </div>
+    </div>
+  );
+}
+
+function KeywordProvider({ children }) {
+  const [keywords, setKeywords] = useState({});
+  useEffect(() => {
+    axios.get(`${API}/keywords`).then(r => setKeywords(r.data)).catch(() => {});
+  }, []);
+  return <KeywordContext.Provider value={keywords}>{children}</KeywordContext.Provider>;
+}
+
+class ErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { hasError: false }; }
+  static getDerivedStateFromError() { return { hasError: true }; }
+  render() {
+    if (this.state.hasError) return (
+      <div className="edh-loading"><div className="edh-loading-content">
+        <h2 className="edh-loading-title">Something went wrong</h2>
+        <p className="edh-loading-subtitle">An unexpected error occurred.</p>
+        <button className="edh-loading-retry" onClick={() => { this.setState({ hasError: false }); window.location.href = "/"; }}>Reload</button>
+      </div></div>
+    );
+    return this.props.children;
+  }
+}
+
 function App() {
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <BrowserRouter>
-          <AppRouter />
-        </BrowserRouter>
-      </AuthProvider>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <AuthProvider>
+          <KeywordProvider>
+            <BrowserRouter>
+              <AppRouter />
+            </BrowserRouter>
+          </KeywordProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 
