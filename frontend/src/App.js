@@ -1809,8 +1809,7 @@ function LearningPathsPage() {
                 <span><Icon name="Clock" size={13}/> {path.estimated_time}</span>
                 <span>{path.steps?.length} lessons</span>
               </div>
-              <div className="lp-card-progress"><div className="lp-card-progress-fill" style={{width: `${pct}%`}} /></div>
-              <div className="lp-card-pct">{completedCount}/{path.steps?.length || 0} completed ({pct}%)</div>
+              {pct > 0 && <div className="lp-card-progress"><div className="lp-card-progress-fill" style={{width: `${pct}%`}} /></div>}
             </button>
           );
         })}
