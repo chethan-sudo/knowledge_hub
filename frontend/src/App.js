@@ -1771,15 +1771,10 @@ function LearningPathsPage() {
                   <p>{step.description}</p>
                   <div className="lp-step-actions">
                     <button className="editor-btn-primary" onClick={() => { markComplete(activePath.id, step.document_id); navigate(`/doc/${step.document_id}`); }}>
-                      {done ? "Review" : "Start Reading"}
+                      {done ? (pct < 100 ? "Continue" : "Review") : "Start Reading"}
                     </button>
                     {!done && <button className="editor-btn-secondary" onClick={() => markComplete(activePath.id, step.document_id)}>Mark Complete</button>}
                   </div>
-                  {done && nextStep && !progress[`${activePath.id}:${nextStep.document_id}`] && (
-                    <button className="lp-next-btn" data-testid={`lp-next-${i}`} onClick={() => { document.querySelector(`[data-testid="lp-step-${i+1}"]`)?.scrollIntoView({behavior:"smooth"}); }}>
-                      Next: {nextStep.title} <Icon name="ChevronRight" size={14}/>
-                    </button>
-                  )}
                 </div>
               </div>
             );
