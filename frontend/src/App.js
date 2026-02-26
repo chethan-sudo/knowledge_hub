@@ -1919,6 +1919,22 @@ function LearningPathsPage() {
     localStorage.setItem("aa-learning-progress", JSON.stringify(updated));
   };
 
+  const markIncomplete = (pathId, docId) => {
+    const key = `${pathId}:${docId}`;
+    const updated = { ...progress };
+    delete updated[key];
+    setProgress(updated);
+    localStorage.setItem("aa-learning-progress", JSON.stringify(updated));
+  };
+
+  const resetPath = (pathId) => {
+    if (!window.confirm("Reset all progress for this path? This will mark all lessons as incomplete.")) return;
+    const updated = { ...progress };
+    Object.keys(updated).forEach(k => { if (k.startsWith(`${pathId}:`)) delete updated[k]; });
+    setProgress(updated);
+    localStorage.setItem("aa-learning-progress", JSON.stringify(updated));
+  };
+
   const getPathProgress = (path) => {
     if (!path?.steps) return 0;
     const completed = path.steps.filter(s => progress[`${path.id}:${s.document_id}`]).length;
