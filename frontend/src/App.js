@@ -1770,7 +1770,7 @@ function LearningPathsPage() {
                   <h3>{step.title}</h3>
                   <p>{step.description}</p>
                   <div className="lp-step-actions">
-                    <button className="editor-btn-primary" onClick={() => { markComplete(activePath.id, step.document_id); navigate(`/doc/${step.document_id}`); }}>
+                    <button className="editor-btn-primary" onClick={() => { markComplete(activePath.id, step.document_id); localStorage.setItem("aa-from-path", "true"); navigate(`/doc/${step.document_id}`); }}>
                       {done ? (pct < 100 ? "Continue" : "Review") : "Start Reading"}
                     </button>
                     {!done && <button className="editor-btn-secondary" onClick={() => markComplete(activePath.id, step.document_id)}>Mark Complete</button>}
