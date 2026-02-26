@@ -80,8 +80,10 @@ function useCollaboration(docId, enabled = true) {
 // --- Contexts ---
 const AuthContext = createContext(null);
 const ThemeContext = createContext(null);
+const KeywordContext = createContext({});
 export const useAuth = () => useContext(AuthContext);
 export const useTheme = () => useContext(ThemeContext);
+export const useKeywords = () => useContext(KeywordContext);
 
 function ThemeProvider({ children }) {
   const [dark, setDark] = useState(() => {
