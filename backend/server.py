@@ -356,6 +356,28 @@ async def get_keyword_links():
     return keywords
 
 
+# --- Quizzes ---
+@api_router.get("/documents/{doc_id}/quiz")
+async def get_document_quiz(doc_id: str):
+    quiz = await db.quizzes.find_one({"document_id": doc_id}, {"_id": 0})
+    if not quiz:
+        return {"document_id": doc_id, "questions": []}
+    return quiz
+
+# --- Learning Paths ---
+@api_router.get("/learning-paths")
+async def get_learning_paths():
+    paths = await db.learning_paths.find({}, {"_id": 0}).sort("order", 1).to_list(20)
+    return paths
+
+@api_router.get("/learning-paths/{path_id}")
+async def get_learning_path(path_id: str):
+    path = await db.learning_paths.find_one({"id": path_id}, {"_id": 0})
+    if not path:
+        raise HTTPException(status_code=404, detail="Learning path not found")
+    return path
+
+
 # --- Collaboration Presence ---
 @api_router.get("/documents/{doc_id}/presence")
 async def get_document_presence(doc_id: str):
