@@ -1931,6 +1931,7 @@ function Dashboard() {
       <main className="main-content" data-testid="main-content" style={{marginLeft: sidebarCollapsed ? 48 : sidebarWidth}}>
         {creating || editing ? <DocumentEditor doc={editing ? activeDoc : null} categories={categories} onSave={handleSaveDoc} onCancel={() => { const wasCreating = creating; setCreating(false); setEditing(false); if (!wasCreating && activeDoc) navigate(`/doc/${activeDoc.id}`); }} />
         : isBookmarksRoute ? <BookmarksPage bookmarkedDocs={bookmarkedDocs} categories={categories} onSelectDoc={selectDoc} onToggleBookmark={toggleBookmark} />
+        : isLearnRoute ? <LearningPathsPage />
         : isToolsRoute ? <ToolsPage isAdmin={isAdmin} />
         : isTrashRoute && isAdmin ? <TrashPage onDocumentsChanged={refreshDocuments} />
         : isSettingsRoute && isAdmin ? <SettingsPage isAdmin={isAdmin} />
