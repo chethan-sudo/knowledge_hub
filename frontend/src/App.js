@@ -1744,17 +1744,17 @@ function LearningPathsPage() {
 
         {/* Animated Roadmap */}
         <div className="lp-roadmap" data-testid="lp-roadmap">
-          {activePath.steps.map((step, i) => {
-            const done = progress[`${activePath.id}:${step.document_id}`];
-            const isLast = i === activePath.steps.length - 1;
-            return (
-              <div key={i} className={`lp-road-node ${done ? "completed" : ""}`} data-testid={`lp-road-${i}`}>
-                <div className="lp-road-dot">{done ? <Icon name="Check" size={12}/> : <span>{i + 1}</span>}</div>
-                {!isLast && <div className={`lp-road-line ${done ? "completed" : ""}`} />}
-                <span className="lp-road-label">{step.title}</span>
-              </div>
-            );
-          })}
+          <div className="lp-road-nodes">
+            {activePath.steps.map((step, i) => {
+              const done = progress[`${activePath.id}:${step.document_id}`];
+              return (
+                <div key={i} className={`lp-road-node ${done ? "completed" : ""}`} data-testid={`lp-road-${i}`}>
+                  <div className="lp-road-dot">{done ? <Icon name="Check" size={14}/> : <span>{i + 1}</span>}</div>
+                  <span className="lp-road-label">{step.title}</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* Step Cards */}
