@@ -813,6 +813,7 @@ function DocumentViewer({ doc, category, parentCategory, isBookmarked, onToggleB
                   <span className="doc-version-date">{new Date(v.created_at).toLocaleString()}</span><span className="doc-version-title">{v.title}</span>
                 </button>
               ))}
+              {viewingVersion && <button className="editor-btn-primary" data-testid="restore-version-btn" style={{width:"100%",marginTop:8}} onClick={async () => { try { const r = await api("post", `/documents/${doc.id}/versions/${viewingVersion.id}/restore`); window.location.reload(); } catch { alert("Failed to restore version"); } }}>Restore this version</button>}
               <button className="doc-version-close" data-testid="version-close-btn" onClick={() => { setShowVersions(false); setViewingVersion(null); }}>Close</button>
             </div>
           )}
