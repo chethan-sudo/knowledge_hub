@@ -1172,7 +1172,7 @@ function ToolsPage({ isAdmin }) {
           <h1><Icon name="Link" size={28}/> Tools & Resources</h1>
           <p className="tools-subtitle">Useful links, documentation, and resources for the team</p>
         </div>
-        {isAdmin && <button className="editor-btn-primary" data-testid="add-tool-btn" onClick={() => { setAdding(true); setEditId(null); setForm({ name: "", url: "", description: "", category: "General" }); }}><Icon name="Plus" size={14}/> Add Resource</button>}
+        {isAdmin && <button className="editor-btn-primary" data-testid="add-tool-btn" onClick={() => { setAdding(true); setEditId(null); setForm({ name: "", url: "", description: "", category: "General" }); }}><Icon name="Plus" size={14}/> Add New Link</button>}
       </div>
       {(adding || editId) && (
         <div className="tools-form-card" data-testid="tool-form">
