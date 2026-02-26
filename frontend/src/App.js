@@ -507,9 +507,10 @@ function DocQuiz({ docId }) {
   const [quiz, setQuiz] = useState(null);
   const [answers, setAnswers] = useState({});
   const [submitted, setSubmitted] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
-    setQuiz(null); setAnswers({}); setSubmitted(false);
+    setQuiz(null); setAnswers({}); setSubmitted(false); setExpanded(false);
     if (docId) api("get", `/documents/${docId}/quiz`).then(r => { if (r.data?.questions?.length > 0) setQuiz(r.data); }).catch(() => {});
   }, [docId, api]);
 
@@ -518,6 +519,16 @@ function DocQuiz({ docId }) {
   const score = quiz.questions.reduce((acc, q) => acc + (answers[q.id] === q.correct ? 1 : 0), 0);
   const total = quiz.questions.length;
   const allAnswered = Object.keys(answers).length === total;
+
+  if (!expanded) {
+    return (
+      <div className="doc-quiz doc-quiz-collapsed" data-testid="doc-quiz">
+        <button className="doc-quiz-start" data-testid="quiz-start-btn" onClick={() => setExpanded(true)}>
+          <Icon name="Check" size={20}/> <span>Take Quiz</span> <span className="doc-quiz-count">{total} questions</span>
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="doc-quiz" data-testid="doc-quiz">
