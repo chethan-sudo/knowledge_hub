@@ -302,6 +302,46 @@ function renderInline(text) {
   return parts;
 }
 
+// Keyword auto-linking wrapper
+function KeywordLinkedText({ children }) {
+  const keywords = useKeywords();
+  const navigate = useNavigate();
+  if (!children || typeof children === "string" && !children.trim()) return children;
+  const entries = Object.entries(keywords);
+  if (entries.length === 0) return children;
+
+  const processText = (text) => {
+    if (typeof text !== "string" || text.length < 4) return text;
+    const lower = text.toLowerCase();
+    // Find the first keyword match
+    let bestMatch = null;
+    let bestIdx = text.length;
+    for (const [kw, docId] of entries) {
+      if (kw.length < 4) continue;
+      const idx = lower.indexOf(kw.toLowerCase());
+      if (idx !== -1 && idx < bestIdx) {
+        // Check word boundary
+        const before = idx > 0 ? lower[idx - 1] : " ";
+        const after = idx + kw.length < lower.length ? lower[idx + kw.length] : " ";
+        if (/\W/.test(before) && /\W/.test(after)) {
+          bestMatch = { keyword: kw, docId, index: idx, length: kw.length };
+          bestIdx = idx;
+        }
+      }
+    }
+    if (!bestMatch) return text;
+    const { index, length, docId } = bestMatch;
+    const before = text.slice(0, index);
+    const match = text.slice(index, index + length);
+    const after = text.slice(index + length);
+    return <>{before}<a className="doc-keyword-link" onClick={(e) => { e.preventDefault(); navigate(`/doc/${docId}`); }}>{match}</a>{after}</>;
+  };
+
+  if (typeof children === "string") return processText(children);
+  if (Array.isArray(children)) return children.map((c, i) => typeof c === "string" ? <React.Fragment key={i}>{processText(c)}</React.Fragment> : c);
+  return children;
+}
+
 function MermaidDiagram({ chart }) {
   const ref = useRef(null);
   const [svg, setSvg] = useState("");
