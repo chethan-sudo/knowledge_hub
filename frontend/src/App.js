@@ -1803,7 +1803,17 @@ function LearningPathsPage() {
     try { return JSON.parse(localStorage.getItem("aa-learning-progress") || "{}"); } catch { return {}; }
   });
 
-  useEffect(() => { api("get", "/learning-paths").then(r => setPaths(r.data)).catch(() => {}).finally(() => setLoading(false)); }, [api]);
+  useEffect(() => { 
+    api("get", "/learning-paths").then(r => { 
+      setPaths(r.data);
+      // Auto-open path if returning from a document
+      const resumeId = window.history.state?.usr?.resumePathId;
+      if (resumeId && r.data) {
+        const found = r.data.find(p => p.id === resumeId);
+        if (found) setActivePath(found);
+      }
+    }).catch(() => {}).finally(() => setLoading(false)); 
+  }, [api]);
 
   const markComplete = (pathId, docId) => {
     const key = `${pathId}:${docId}`;
