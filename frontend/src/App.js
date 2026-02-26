@@ -1757,7 +1757,7 @@ function Dashboard() {
         : isSettingsRoute && isAdmin ? <SettingsPage isAdmin={isAdmin} />
         : isAnalyticsRoute && isAdmin ? <AnalyticsPage />
         : showHome ? <HomePage categories={categories} documents={documents} onSelectDoc={selectDoc} />
-        : <DocumentViewer doc={activeDoc} category={currentCat} parentCategory={parentCat} isBookmarked={bookmarkedIds.includes(activeDoc?.id)} onToggleBookmark={() => activeDoc && toggleBookmark(activeDoc.id)} onEdit={() => setEditing(true)} onDelete={handleDelete} isAdmin={isAdmin} onNavigateHome={() => navigate("/")} />}
+        : <DocumentViewer doc={activeDoc} category={currentCat} parentCategory={parentCat} isBookmarked={bookmarkedIds.includes(activeDoc?.id)} onToggleBookmark={() => activeDoc && toggleBookmark(activeDoc.id)} onEdit={() => setEditing(true)} onDelete={handleDelete} isAdmin={isAdmin} onNavigateHome={() => navigate("/")} categories={categories} documents={documents} onSelectDoc={selectDoc} />}
       </main>
       <CategoryManager open={catManagerOpen} onClose={() => setCatManagerOpen(false)} categories={categories} onCategoriesChange={setCategories} isAdmin={isAdmin} />
       <AIChatbot docId={activeDoc?.id} />
