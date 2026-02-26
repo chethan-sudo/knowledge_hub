@@ -2196,7 +2196,7 @@ function Dashboard() {
 
   return (
     <div className="dashboard" data-testid="dashboard">
-      {false && <ReadingProgress />}
+      {activeDoc && !editing && !creating && <ReadingProgress />}
       <Sidebar categories={categories} documents={documents} activeDocId={activeDoc?.id} onSelectDoc={selectDoc} onNewDoc={startNew} collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} bookmarkCount={activeBookmarkCount} onManageCategories={() => setCatManagerOpen(true)} isAdmin={isAdmin} sidebarWidth={sidebarWidth} onResizeSidebar={setSidebarWidth} />
       <main className="main-content" data-testid="main-content" style={{marginLeft: sidebarCollapsed ? 48 : sidebarWidth}}>
         {creating || editing ? <DocumentEditor doc={editing ? activeDoc : null} categories={categories} onSave={handleSaveDoc} onCancel={() => { const wasCreating = creating; setCreating(false); setEditing(false); if (!wasCreating && activeDoc) navigate(`/doc/${activeDoc.id}`); }} />
