@@ -532,7 +532,7 @@ function DocQuiz({ docId }) {
 
   return (
     <div className="doc-quiz" data-testid="doc-quiz">
-      <h3 className="doc-quiz-title"><Icon name="Check" size={18}/> Test Your Understanding</h3>
+      <h3 className="doc-quiz-title"><Icon name="Check" size={18}/> Test Your Understanding <button className="doc-quiz-minimize" data-testid="quiz-minimize" onClick={() => setExpanded(false)}><Icon name="X" size={14}/></button></h3>
       {quiz.questions.map((q, qi) => (
         <div key={q.id} className="quiz-question" data-testid={`quiz-q-${qi}`}>
           <p className="quiz-question-text">{qi + 1}. {q.question}</p>
