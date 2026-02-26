@@ -1374,6 +1374,8 @@ function SettingsPage({ isAdmin }) {
       const r = await api("post", "/invite", { email: inviteEmail.trim(), role: inviteRole });
       setUsers(prev => [...prev, r.data]);
       setInviteEmail(""); setInviteRole("viewer");
+      setSuccess("Invitation sent!");
+      setTimeout(() => setSuccess(""), 3000);
     } catch (e) { setError(e.response?.data?.detail || "Failed to invite"); }
   };
 
