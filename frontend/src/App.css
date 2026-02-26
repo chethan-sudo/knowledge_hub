@@ -611,7 +611,11 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 }
 
 /* Quiz Component */
-.doc-quiz { margin-top: 32px; padding: 24px; background: var(--card-bg); border: 1px solid var(--border-clr); border-radius: var(--radius); }
+.doc-quiz { margin-top: 32px; padding: 24px; background: var(--card-bg); border: 1px solid var(--border-clr); border-radius: 12px; }
+.doc-quiz-collapsed { padding: 0; background: transparent; border: none; }
+.doc-quiz-start { display: flex; align-items: center; gap: 10px; width: 100%; padding: 16px 24px; border: 2px dashed var(--border-clr); border-radius: 12px; background: var(--card-bg); cursor: pointer; font-size: 0.95rem; font-weight: 600; color: var(--text-primary); transition: all 0.2s; }
+.doc-quiz-start:hover { border-color: var(--accent); background: var(--accent-light); color: var(--accent); }
+.doc-quiz-count { font-size: 0.78rem; font-weight: 400; color: var(--text-muted); margin-left: auto; }
 .doc-quiz-title { display: flex; align-items: center; gap: 8px; font-size: 1rem; font-weight: 600; color: var(--text-primary); margin-bottom: 20px; }
 .quiz-question { margin-bottom: 20px; }
 .quiz-question-text { font-size: 0.9rem; font-weight: 500; color: var(--text-primary); margin-bottom: 10px; }
