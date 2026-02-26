@@ -930,15 +930,32 @@ function DocumentViewer({ doc, category, parentCategory, isBookmarked, onToggleB
     if (!contentRef.current || exporting) return;
     setExporting(true);
     try {
-      const canvas = await html2canvas(contentRef.current, { scale: 2, useCORS: true, backgroundColor: "#ffffff", logging: false });
+      // Clone the content and force light theme for PDF
+      const clone = contentRef.current.cloneNode(true);
+      clone.style.cssText = "background:#fff;color:#111;padding:20px;width:800px;font-family:Inter,sans-serif;";
+      // Force light colors on all elements
+      clone.querySelectorAll("*").forEach(el => {
+        const style = window.getComputedStyle(el);
+        if (style.color === "rgb(250, 250, 250)" || style.color === "rgb(228, 228, 231)") el.style.color = "#111";
+        if (style.color === "rgb(161, 161, 170)") el.style.color = "#555";
+        if (style.backgroundColor === "rgb(9, 9, 11)" || style.backgroundColor === "rgb(18, 18, 20)") el.style.backgroundColor = "#fff";
+        if (style.backgroundColor === "rgb(24, 24, 27)" || style.backgroundColor === "rgb(39, 39, 42)") el.style.backgroundColor = "#f5f5f5";
+        if (style.borderColor === "rgb(39, 39, 42)") el.style.borderColor = "#ddd";
+      });
+      // Convert SVGs to inline for html2canvas
+      clone.querySelectorAll("svg").forEach(svg => {
+        svg.setAttribute("width", svg.getBoundingClientRect().width);
+        svg.setAttribute("height", svg.getBoundingClientRect().height);
+      });
+      document.body.appendChild(clone);
+      const canvas = await html2canvas(clone, { scale: 2, useCORS: true, backgroundColor: "#ffffff", logging: false, allowTaint: true });
+      document.body.removeChild(clone);
       const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF("p", "mm", "a4");
       const pdfW = pdf.internal.pageSize.getWidth();
       const pdfH = pdf.internal.pageSize.getHeight();
-      const imgW = canvas.width;
-      const imgH = canvas.height;
-      const ratio = pdfW / imgW;
-      const scaledH = imgH * ratio;
+      const ratio = pdfW / canvas.width;
+      const scaledH = canvas.height * ratio;
       let position = 0;
       while (position < scaledH) {
         if (position > 0) pdf.addPage();
@@ -946,7 +963,6 @@ function DocumentViewer({ doc, category, parentCategory, isBookmarked, onToggleB
         position += pdfH;
       }
       pdf.save(`${doc.title}.pdf`);
-      alert("PDF exported successfully!");
     } catch (e) { console.error("PDF export error:", e); alert("PDF export failed. Please try again."); }
     setExporting(false);
   };
