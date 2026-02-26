@@ -259,9 +259,9 @@ function renderParsedItem(item, key) {
         <tbody>{item.rows.map((r,j) => <tr key={j}>{r.map((c,k) => <td key={k} dangerouslySetInnerHTML={{__html: renderInlineHtml(c)}} />)}</tr>)}</tbody></table>
       </div>
     );
-    case "ul": return <ul key={key} className="doc-ul">{item.items.map((it, j) => <li key={j}>{renderInline(it)}</li>)}</ul>;
-    case "ol": return <ol key={key} className="doc-ol">{item.items.map((it, j) => <li key={j}>{renderInline(it)}</li>)}</ol>;
-    case "p": return <p key={key} className="doc-p">{renderInline(item.text)}</p>;
+    case "ul": return <ul key={key} className="doc-ul">{item.items.map((it, j) => <li key={j}><KeywordLinkedText>{renderInline(it)}</KeywordLinkedText></li>)}</ul>;
+    case "ol": return <ol key={key} className="doc-ol">{item.items.map((it, j) => <li key={j}><KeywordLinkedText>{renderInline(it)}</KeywordLinkedText></li>)}</ol>;
+    case "p": return <p key={key} className="doc-p"><KeywordLinkedText>{renderInline(item.text)}</KeywordLinkedText></p>;
     default: return null;
   }
 }
