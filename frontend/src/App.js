@@ -1031,38 +1031,12 @@ function DocumentEditor({ doc, categories, onSave, onCancel }) {
 
 // --- Home / Dashboard ---
 function HomePage({ categories, documents, onSelectDoc }) {
-  const { api } = useAuth();
-  const [allTags, setAllTags] = useState([]);
-  const [selectedTag, setSelectedTag] = useState(null);
-
-  useEffect(() => { api("get", "/tags").then(r => setAllTags(r.data)).catch(() => {}); }, [api]);
-
   const parentCats = categories.filter(c => !c.parent_id && !c.internal).sort((a,b) => a.order - b.order);
   const getChildCount = (catId) => { const children = categories.filter(c => c.parent_id === catId); return documents.filter(d => d.category_id === catId || children.some(c => c.id === d.category_id)).length; };
-  const filteredDocs = selectedTag ? documents.filter(d => (d.tags || []).includes(selectedTag)) : [];
 
   return (
     <div className="home-page" data-testid="home-page">
       <div className="home-hero"><h1>Agent Anatomy</h1><p>The definitive guide to AI agents — architecture, orchestration, LLMs, tooling, and the infrastructure that powers them.</p></div>
-      {allTags.length > 0 && (
-        <div className="tag-cloud" data-testid="tag-cloud">
-          <span className="tag-cloud-label">Filter by tag:</span>
-          {allTags.map(t => (
-            <button key={t} className={`tag-cloud-item ${selectedTag === t ? "active" : ""}`} data-testid={`tag-filter-${t}`} onClick={() => setSelectedTag(selectedTag === t ? null : t)}>{t}</button>
-          ))}
-          {selectedTag && <button className="tag-cloud-clear" onClick={() => setSelectedTag(null)}>Clear</button>}
-        </div>
-      )}
-      {selectedTag && filteredDocs.length > 0 && (
-        <div className="tag-results" data-testid="tag-results">
-          <h3>Documents tagged "{selectedTag}"</h3>
-          <div className="bookmarks-list">{filteredDocs.map(d => (
-            <button key={d.id} className="bookmark-item-content" onClick={() => onSelectDoc(d.id)} style={{border:"1px solid var(--border-clr)",borderRadius:"var(--radius)",marginBottom:4}}>
-              <Icon name="FileText" size={16}/><div><div className="bookmark-title">{d.title}</div></div>
-            </button>
-          ))}</div>
-        </div>
-      )}
       <div className="home-grid">{parentCats.map(cat => (
         <button key={cat.id} className="home-card" data-testid={`home-card-${cat.id}`} onClick={() => {
           const firstDoc = documents.find(d => { const children = categories.filter(c => c.parent_id === cat.id); return d.category_id === cat.id || children.some(c => c.id === d.category_id); });
