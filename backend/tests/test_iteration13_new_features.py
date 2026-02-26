@@ -325,7 +325,7 @@ class TestUserManagement:
         # Verify user is gone
         users_response = requests.get(f"{BASE_URL}/api/users", allow_redirects=True)
         users = users_response.json()
-        user_ids = [u['user_id'] for u in users]
+        user_ids = [u.get('user_id') for u in users if u.get('user_id')]
         assert user_id not in user_ids, "Deleted user should not appear in users list"
 
 
