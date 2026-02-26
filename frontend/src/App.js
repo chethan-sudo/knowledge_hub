@@ -881,6 +881,7 @@ function RelatedDocs({ currentDoc, categories, documents, onSelect }) {
 // --- Document Viewer ---
 function DocumentViewer({ doc, category, parentCategory, isBookmarked, onToggleBookmark, onEdit, onDelete, isAdmin, onNavigateHome, categories, documents, onSelectDoc }) {
   const { api } = useAuth();
+  const navigate = useNavigate();
   const [versions, setVersions] = useState([]);
   const [showVersions, setShowVersions] = useState(false);
   const [viewingVersion, setViewingVersion] = useState(null);
