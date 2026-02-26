@@ -1719,15 +1719,40 @@ function LearningPathsPage() {
 
   if (activePath) {
     const pct = getPathProgress(activePath);
+    const completedCount = activePath.steps.filter(s => progress[`${activePath.id}:${s.document_id}`]).length;
     return (
       <div className="lp-detail" data-testid="learning-path-detail">
         <button className="lp-back" data-testid="lp-back" onClick={() => setActivePath(null)}><Icon name="ArrowLeft" size={16}/> All Paths</button>
         <h1>{activePath.title}</h1>
         <p className="lp-desc">{activePath.description}</p>
-        <div className="lp-progress-bar"><div className="lp-progress-fill" style={{width: `${pct}%`}} /><span>{pct}% complete</span></div>
+        <div className="lp-stats">
+          <span className={`lp-badge lp-badge-${activePath.difficulty}`}>{activePath.difficulty}</span>
+          <span><Icon name="Clock" size={13}/> {activePath.estimated_time}</span>
+          <span>{completedCount}/{activePath.steps.length} completed</span>
+        </div>
+        <div className="lp-progress-bar"><div className="lp-progress-fill" style={{width: `${pct}%`}} /><span>{pct}%</span></div>
+
+        {/* Animated Roadmap */}
+        <div className="lp-roadmap" data-testid="lp-roadmap">
+          {activePath.steps.map((step, i) => {
+            const done = progress[`${activePath.id}:${step.document_id}`];
+            const isLast = i === activePath.steps.length - 1;
+            return (
+              <div key={i} className={`lp-road-node ${done ? "completed" : ""}`} data-testid={`lp-road-${i}`}>
+                <div className="lp-road-dot">{done ? <Icon name="Check" size={12}/> : <span>{i + 1}</span>}</div>
+                {!isLast && <div className={`lp-road-line ${done ? "completed" : ""}`} />}
+                <span className="lp-road-label">{step.title}</span>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Step Cards */}
         <div className="lp-steps">
           {activePath.steps.map((step, i) => {
             const done = progress[`${activePath.id}:${step.document_id}`];
+            const isLast = i === activePath.steps.length - 1;
+            const nextStep = !isLast ? activePath.steps[i + 1] : null;
             return (
               <div key={i} className={`lp-step ${done ? "completed" : ""}`} data-testid={`lp-step-${i}`}>
                 <div className="lp-step-number">{done ? <Icon name="Check" size={16}/> : i + 1}</div>
@@ -1740,11 +1765,21 @@ function LearningPathsPage() {
                     </button>
                     {!done && <button className="editor-btn-secondary" onClick={() => markComplete(activePath.id, step.document_id)}>Mark Complete</button>}
                   </div>
+                  {done && nextStep && !progress[`${activePath.id}:${nextStep.document_id}`] && (
+                    <button className="lp-next-btn" data-testid={`lp-next-${i}`} onClick={() => { document.querySelector(`[data-testid="lp-step-${i+1}"]`)?.scrollIntoView({behavior:"smooth"}); }}>
+                      Next: {nextStep.title} <Icon name="ChevronRight" size={14}/>
+                    </button>
+                  )}
                 </div>
               </div>
             );
           })}
         </div>
+        {pct === 100 && (
+          <div className="lp-complete-banner" data-testid="lp-complete">
+            <Icon name="Check" size={24}/> <span>Path Complete! You've finished all {activePath.steps.length} lessons.</span>
+          </div>
+        )}
       </div>
     );
   }
@@ -1758,6 +1793,7 @@ function LearningPathsPage() {
       <div className="lp-grid">
         {paths.map(path => {
           const pct = getPathProgress(path);
+          const completedCount = path.steps?.filter(s => progress[`${path.id}:${s.document_id}`]).length || 0;
           return (
             <button key={path.id} className="lp-card" data-testid={`lp-card-${path.id}`} onClick={() => setActivePath(path)}>
               <div className="lp-card-icon"><Icon name={path.icon} size={28}/></div>
@@ -1768,7 +1804,8 @@ function LearningPathsPage() {
                 <span><Icon name="Clock" size={13}/> {path.estimated_time}</span>
                 <span>{path.steps?.length} lessons</span>
               </div>
-              {pct > 0 && <div className="lp-card-progress"><div className="lp-card-progress-fill" style={{width: `${pct}%`}} /><span>{pct}%</span></div>}
+              <div className="lp-card-progress"><div className="lp-card-progress-fill" style={{width: `${pct}%`}} /></div>
+              <div className="lp-card-pct">{completedCount}/{path.steps?.length || 0} completed ({pct}%)</div>
             </button>
           );
         })}
