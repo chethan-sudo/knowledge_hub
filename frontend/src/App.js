@@ -2171,7 +2171,7 @@ function Dashboard() {
 
   const handleSaveDoc = async (data) => {
     try {
-      if (creating) { const r = await api("post", "/documents", data); setDocuments(prev => [...prev, r.data]); setCreating(false); navigate(`/doc/${r.data.id}`); }
+      if (creating) { const r = await api("post", "/documents", data); setDocuments(prev => [...prev, r.data]); setCreating(false); localStorage.removeItem("aa-draft"); navigate(`/doc/${r.data.id}`); }
       else if (editing && activeDoc) { const r = await api("put", `/documents/${activeDoc.id}`, data); setDocuments(prev => prev.map(d => d.id === activeDoc.id ? r.data : d)); setActiveDoc(r.data); setEditing(false); }
     } catch {}
   };
