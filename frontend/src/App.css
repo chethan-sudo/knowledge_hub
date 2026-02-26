@@ -746,3 +746,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 
 /* Settings invite role description */
 .invite-role-desc { font-size: 0.75rem; color: var(--text-muted); margin-top: 6px; }
+
+/* Learning path reset */
+.lp-reset-btn { display: flex; align-items: center; gap: 6px; background: none; border: 1px solid var(--border-clr); color: var(--text-muted); cursor: pointer; padding: 6px 14px; border-radius: var(--radius); font-size: 0.78rem; margin-top: 8px; transition: all 0.15s; }
+.lp-reset-btn:hover { color: var(--danger); border-color: var(--danger); }
