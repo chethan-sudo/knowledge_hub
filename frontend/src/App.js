@@ -500,6 +500,64 @@ function InlineSearch({ categories, documents, onSelect }) {
   );
 }
 
+
+// --- Document Quiz ---
+function DocQuiz({ docId }) {
+  const { api } = useAuth();
+  const [quiz, setQuiz] = useState(null);
+  const [answers, setAnswers] = useState({});
+  const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    setQuiz(null); setAnswers({}); setSubmitted(false);
+    if (docId) api("get", `/documents/${docId}/quiz`).then(r => { if (r.data?.questions?.length > 0) setQuiz(r.data); }).catch(() => {});
+  }, [docId, api]);
+
+  if (!quiz || quiz.questions.length === 0) return null;
+
+  const score = quiz.questions.reduce((acc, q) => acc + (answers[q.id] === q.correct ? 1 : 0), 0);
+  const total = quiz.questions.length;
+  const allAnswered = Object.keys(answers).length === total;
+
+  return (
+    <div className="doc-quiz" data-testid="doc-quiz">
+      <h3 className="doc-quiz-title"><Icon name="Check" size={18}/> Test Your Understanding</h3>
+      {quiz.questions.map((q, qi) => (
+        <div key={q.id} className="quiz-question" data-testid={`quiz-q-${qi}`}>
+          <p className="quiz-question-text">{qi + 1}. {q.question}</p>
+          <div className="quiz-options">
+            {q.options.map((opt, oi) => {
+              const selected = answers[q.id] === oi;
+              const isCorrect = submitted && oi === q.correct;
+              const isWrong = submitted && selected && oi !== q.correct;
+              return (
+                <button key={oi} className={`quiz-option ${selected ? "selected" : ""} ${isCorrect ? "correct" : ""} ${isWrong ? "wrong" : ""}`} data-testid={`quiz-opt-${qi}-${oi}`} onClick={() => { if (!submitted) setAnswers(prev => ({...prev, [q.id]: oi})); }} disabled={submitted}>
+                  <span className="quiz-option-letter">{String.fromCharCode(65 + oi)}</span>{opt}
+                </button>
+              );
+            })}
+          </div>
+          {submitted && answers[q.id] !== undefined && (
+            <p className={`quiz-explanation ${answers[q.id] === q.correct ? "correct" : "wrong"}`} data-testid={`quiz-explain-${qi}`}>
+              {answers[q.id] === q.correct ? "Correct! " : "Incorrect. "}{q.explanation}
+            </p>
+          )}
+        </div>
+      ))}
+      <div className="quiz-footer">
+        {!submitted ? (
+          <button className="editor-btn-primary" data-testid="quiz-submit" onClick={() => setSubmitted(true)} disabled={!allAnswered}>Check Answers ({Object.keys(answers).length}/{total})</button>
+        ) : (
+          <div className="quiz-result" data-testid="quiz-result">
+            <span className="quiz-score">Score: {score}/{total} ({Math.round(score/total*100)}%)</span>
+            <button className="editor-btn-secondary" onClick={() => { setAnswers({}); setSubmitted(false); }}>Try Again</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // --- Comments Section ---
 function CommentsSection({ docId }) {
   const { api, user } = useAuth();
