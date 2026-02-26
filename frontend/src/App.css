@@ -725,3 +725,21 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 /* Learning Path Card Progress */
 .lp-card-pct { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
 
+
+/* Path Test */
+.path-test-section { margin-top: 24px; }
+.doc-quiz-start.disabled { opacity: 0.5; cursor: not-allowed; border-color: var(--border-clr); }
+.doc-quiz-start.disabled:hover { border-color: var(--border-clr); background: var(--card-bg); color: var(--text-primary); }
+
+/* Certificate Modal */
+.cert-modal { background: var(--card-bg); border-radius: 16px; padding: 8px; max-width: 520px; width: 90%; }
+.cert-border { border: 3px solid var(--accent); border-radius: 12px; padding: 40px; text-align: center; background: linear-gradient(135deg, var(--content-bg), var(--card-bg)); }
+.cert-header { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.2em; color: var(--accent); font-weight: 700; margin-bottom: 16px; }
+.cert-icon { color: var(--accent); margin-bottom: 12px; }
+.cert-body { margin-bottom: 8px; }
+.cert-congrats { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); margin: 0 0 8px; }
+.cert-text { font-size: 0.85rem; color: var(--text-secondary); margin: 0 0 12px; }
+.cert-path { font-size: 1.1rem; font-weight: 600; color: var(--accent); margin: 0 0 12px; }
+.cert-score { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); margin: 0 0 8px; }
+.cert-date { font-size: 0.78rem; color: var(--text-muted); margin: 0; }
+
