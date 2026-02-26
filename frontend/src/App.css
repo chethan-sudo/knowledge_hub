@@ -609,3 +609,71 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
   .doc-sidebar-right { width: 180px; min-width: 180px; }
   .home-grid { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* Quiz Component */
+.doc-quiz { margin-top: 32px; padding: 24px; background: var(--card-bg); border: 1px solid var(--border-clr); border-radius: var(--radius); }
+.doc-quiz-title { display: flex; align-items: center; gap: 8px; font-size: 1rem; font-weight: 600; color: var(--text-primary); margin-bottom: 20px; }
+.quiz-question { margin-bottom: 20px; }
+.quiz-question-text { font-size: 0.9rem; font-weight: 500; color: var(--text-primary); margin-bottom: 10px; }
+.quiz-options { display: flex; flex-direction: column; gap: 6px; }
+.quiz-option { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border: 1px solid var(--border-clr); border-radius: var(--radius); background: var(--content-bg); cursor: pointer; text-align: left; font-size: 0.85rem; color: var(--text-primary); transition: border-color 0.15s, background 0.15s; width: 100%; }
+.quiz-option:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-light); }
+.quiz-option.selected { border-color: var(--accent); background: var(--accent-light); }
+.quiz-option.correct { border-color: #22c55e; background: rgba(34,197,94,0.1); }
+.quiz-option.wrong { border-color: #ef4444; background: rgba(239,68,68,0.1); }
+.quiz-option:disabled { cursor: default; }
+.quiz-option-letter { display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: var(--hover-bg); font-size: 0.75rem; font-weight: 600; color: var(--text-muted); flex-shrink: 0; }
+.quiz-option.selected .quiz-option-letter { background: var(--accent); color: #fff; }
+.quiz-option.correct .quiz-option-letter { background: #22c55e; color: #fff; }
+.quiz-option.wrong .quiz-option-letter { background: #ef4444; color: #fff; }
+.quiz-explanation { font-size: 0.82rem; padding: 8px 12px; margin-top: 8px; border-radius: 6px; line-height: 1.5; }
+.quiz-explanation.correct { background: rgba(34,197,94,0.08); color: #22c55e; border-left: 3px solid #22c55e; }
+.quiz-explanation.wrong { background: rgba(239,68,68,0.08); color: #ef4444; border-left: 3px solid #ef4444; }
+.quiz-footer { margin-top: 16px; display: flex; align-items: center; gap: 12px; }
+.quiz-result { display: flex; align-items: center; gap: 12px; }
+.quiz-score { font-size: 1rem; font-weight: 600; color: var(--accent); }
+
+/* Learning Paths Page */
+.lp-page { max-width: 900px; margin: 0 auto; padding: 40px 24px; }
+.lp-hero { margin-bottom: 32px; }
+.lp-hero h1 { font-size: 2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
+.lp-hero p { font-size: 1rem; color: var(--text-secondary); }
+.lp-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.lp-card { padding: 24px; border: 1px solid var(--border-clr); border-radius: var(--radius); background: var(--card-bg); cursor: pointer; text-align: left; transition: border-color 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; gap: 8px; }
+.lp-card:hover { border-color: var(--accent); box-shadow: 0 4px 12px rgba(99,102,241,0.1); }
+.lp-card-icon { color: var(--accent); }
+.lp-card h2 { font-size: 1.05rem; font-weight: 600; color: var(--text-primary); margin: 0; }
+.lp-card-desc { font-size: 0.82rem; color: var(--text-secondary); line-height: 1.5; flex: 1; }
+.lp-card-meta { display: flex; align-items: center; gap: 12px; font-size: 0.75rem; color: var(--text-muted); flex-wrap: wrap; }
+.lp-card-meta span { display: flex; align-items: center; gap: 4px; }
+.lp-badge { padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; }
+.lp-badge-beginner { background: rgba(34,197,94,0.15); color: #22c55e; }
+.lp-badge-intermediate { background: rgba(234,179,8,0.15); color: #eab308; }
+.lp-badge-advanced { background: rgba(239,68,68,0.15); color: #ef4444; }
+.lp-card-progress { height: 4px; background: var(--hover-bg); border-radius: 2px; overflow: hidden; position: relative; margin-top: 4px; }
+.lp-card-progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.3s; }
+.lp-card-progress span { position: absolute; right: 0; top: -16px; font-size: 0.7rem; color: var(--accent); font-weight: 600; }
+
+/* Learning Path Detail */
+.lp-detail { max-width: 700px; margin: 0 auto; padding: 40px 24px; }
+.lp-back { display: flex; align-items: center; gap: 6px; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.85rem; padding: 0; margin-bottom: 16px; }
+.lp-back:hover { color: var(--accent); }
+.lp-detail h1 { font-size: 1.6rem; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
+.lp-desc { font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 20px; }
+.lp-progress-bar { height: 8px; background: var(--hover-bg); border-radius: 4px; overflow: hidden; position: relative; margin-bottom: 32px; }
+.lp-progress-fill { height: 100%; background: var(--accent); border-radius: 4px; transition: width 0.5s ease; }
+.lp-progress-bar span { position: absolute; right: 0; top: -20px; font-size: 0.78rem; color: var(--accent); font-weight: 600; }
+.lp-steps { display: flex; flex-direction: column; gap: 0; }
+.lp-step { display: flex; gap: 16px; padding: 20px 0; border-bottom: 1px solid var(--border-clr); }
+.lp-step:last-child { border-bottom: none; }
+.lp-step-number { width: 36px; height: 36px; border-radius: 50%; background: var(--hover-bg); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); flex-shrink: 0; border: 2px solid var(--border-clr); }
+.lp-step.completed .lp-step-number { background: var(--accent); color: #fff; border-color: var(--accent); }
+.lp-step-content h3 { font-size: 0.95rem; font-weight: 600; color: var(--text-primary); margin: 0 0 4px 0; }
+.lp-step-content p { font-size: 0.82rem; color: var(--text-secondary); margin: 0 0 10px 0; }
+.lp-step-actions { display: flex; gap: 8px; }
+
+@media (max-width: 768px) {
+  .lp-grid { grid-template-columns: 1fr; }
+  .quiz-options { gap: 4px; }
+}
+
