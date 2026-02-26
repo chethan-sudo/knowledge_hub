@@ -102,7 +102,8 @@ function AuthProvider({ children }) {
   const [loading] = useState(false);
 
   const api = useCallback(async (method, url, data) => {
-    return axios({ method, url: `${API}${url}`, data });
+    const normalizedUrl = url.endsWith('/') ? url : url + '/';
+    return axios({ method, url: `${API}${normalizedUrl}`, data });
   }, []);
 
   const logout = () => {};
