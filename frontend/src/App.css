@@ -743,3 +743,6 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 .cert-score { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); margin: 0 0 8px; }
 .cert-date { font-size: 0.78rem; color: var(--text-muted); margin: 0; }
 
+
+/* Settings invite role description */
+.invite-role-desc { font-size: 0.75rem; color: var(--text-muted); margin-top: 6px; }
