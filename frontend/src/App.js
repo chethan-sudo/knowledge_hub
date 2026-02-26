@@ -182,7 +182,7 @@ function CollapsibleH2({ text, id, children }) {
   );
 }
 
-function MarkdownContent({ content }) {
+function MarkdownContent({ content, currentDocId }) {
   if (!content) return null;
   const lines = content.split("\n");
   // First pass: parse all elements
