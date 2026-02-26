@@ -585,8 +585,8 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
-  .sidebar { position: fixed; z-index: 100; height: 100vh; top: 0; left: 0; transition: transform 0.2s ease; }
-  .sidebar.sidebar-collapsed { transform: translateX(-100%); width: 0 !important; }
+  .sidebar { position: fixed; z-index: 100; height: 100vh; top: 0; left: 0; transition: transform 0.2s ease; width: 272px !important; }
+  .sidebar.sidebar-collapsed { transform: translateX(-272px); width: 0 !important; overflow: hidden; }
   .sidebar-collapse-btn { position: fixed !important; left: 8px; top: 8px; z-index: 101; background: var(--card-bg); border: 1px solid var(--border-clr); border-radius: var(--radius); padding: 8px; }
   .main-content { margin-left: 0 !important; padding-top: 48px; }
   .doc-layout { flex-direction: column; }
