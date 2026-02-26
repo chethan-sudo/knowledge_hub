@@ -1407,7 +1407,7 @@ function SettingsPage({ isAdmin }) {
       <div className="settings-section">
         <h2 className="settings-section-title">Invite People</h2>
         {error && <div className="auth-error">{error}</div>}
-        <div className="invite-row" data-testid="invite-row">
+        {success && <div className="auth-error" style={{background: "var(--accent-light)", color: "var(--accent)", borderColor: "var(--accent)"}}>{success}</div>}
           <input data-testid="invite-email" type="email" placeholder="Email address" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} />
           <div className="invite-role-picker" data-testid="invite-role-picker">
             <label className={`role-option ${inviteRole === "viewer" ? "selected" : ""}`}>
