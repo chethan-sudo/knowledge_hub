@@ -585,17 +585,17 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
-  .sidebar { position: fixed; z-index: 100; height: 100vh; transition: transform 0.2s ease; }
-  .sidebar.sidebar-collapsed { transform: translateX(-100%); }
-  .sidebar-collapsed .sidebar-collapse-btn { position: fixed; left: 8px; top: 8px; z-index: 101; background: var(--card-bg); border: 1px solid var(--border-clr); border-radius: var(--radius); padding: 8px; }
-  .main-content { margin-left: 0 !important; }
+  .sidebar { position: fixed; z-index: 100; height: 100vh; top: 0; left: 0; transition: transform 0.2s ease; }
+  .sidebar.sidebar-collapsed { transform: translateX(-100%); width: 0 !important; }
+  .sidebar-collapse-btn { position: fixed !important; left: 8px; top: 8px; z-index: 101; background: var(--card-bg); border: 1px solid var(--border-clr); border-radius: var(--radius); padding: 8px; }
+  .main-content { margin-left: 0 !important; padding-top: 48px; }
   .doc-layout { flex-direction: column; }
   .doc-sidebar-right { display: none; }
   .doc-header { flex-direction: column; gap: 12px; }
   .doc-actions { flex-wrap: wrap; }
-  .home-grid { grid-template-columns: 1fr; }
+  .home-grid { grid-template-columns: 1fr !important; }
   .home-hero h1 { font-size: 1.8rem; }
-  .tools-grid { grid-template-columns: 1fr; }
+  .tools-grid { grid-template-columns: 1fr !important; }
   .settings-section { padding: 12px; }
   .invite-row { flex-direction: column; gap: 8px; }
   .users-header { display: none; }
@@ -603,7 +603,6 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
   .inline-search-input kbd { display: none; }
   .mermaid-diagram { padding: 12px; overflow-x: scroll; }
   .doc-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .doc-content-inner { padding: 0 8px; }
 }
 
 @media (max-width: 1024px) {
