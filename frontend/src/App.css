@@ -564,3 +564,11 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 .tools-card-actions { display: flex; gap: 4px; }
 .tools-card-actions button { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; border-radius: 4px; transition: color 0.1s, background 0.1s; }
 .tools-card-actions button:hover { color: var(--accent); background: var(--accent-light); }
+
+/* Keyword auto-links */
+.doc-keyword-link { color: var(--accent); cursor: pointer; text-decoration: none; border-bottom: 1px dotted var(--accent); transition: opacity 0.15s; }
+.doc-keyword-link:hover { opacity: 0.75; }
+
+/* Document meta (reading time, last updated) */
+.doc-meta { display: flex; align-items: center; gap: 16px; margin-top: 4px; margin-bottom: 4px; }
+.doc-meta-item { display: flex; align-items: center; gap: 4px; font-size: 0.78rem; color: var(--text-muted); }
