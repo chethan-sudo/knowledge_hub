@@ -679,13 +679,15 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 
 
 /* Document Prev/Next Navigation */
-.doc-nav { display: flex; justify-content: space-between; gap: 16px; margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border-clr); }
-.doc-nav-btn { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border: 1px solid var(--border-clr); border-radius: var(--radius); background: var(--card-bg); cursor: pointer; transition: border-color 0.15s, background 0.15s; max-width: 48%; }
-.doc-nav-btn:hover { border-color: var(--accent); background: var(--accent-light); }
-.doc-nav-btn div { display: flex; flex-direction: column; gap: 2px; }
-.doc-nav-label { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
-.doc-nav-title { font-size: 0.85rem; font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.doc-nav-next { margin-left: auto; text-align: right; }
+.doc-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--border-clr); }
+.doc-nav-btn { display: flex; align-items: center; gap: 12px; padding: 16px 20px; border: 1px solid var(--border-clr); border-radius: 12px; background: var(--card-bg); cursor: pointer; transition: all 0.2s; }
+.doc-nav-btn:hover { border-color: var(--accent); background: var(--accent-light); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(99,102,241,0.12); }
+.doc-nav-btn div { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.doc-nav-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+.doc-nav-title { font-size: 0.88rem; font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.doc-nav-prev { justify-content: flex-start; }
+.doc-nav-next { justify-content: flex-end; text-align: right; }
+@media (max-width: 768px) { .doc-nav { grid-template-columns: 1fr; } }
 
 /* Learning Path Roadmap */
 .lp-stats { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; font-size: 0.82rem; color: var(--text-muted); }
