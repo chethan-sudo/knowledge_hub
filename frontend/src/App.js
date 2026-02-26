@@ -956,6 +956,9 @@ function DocumentViewer({ doc, category, parentCategory, isBookmarked, onToggleB
 
   return (
     <div className="doc-viewer" data-testid="doc-viewer">
+      {localStorage.getItem("aa-from-path") && (
+        <button className="lp-back" data-testid="back-to-path" onClick={() => { localStorage.removeItem("aa-from-path"); navigate("/learn"); }} style={{marginBottom: 8}}><Icon name="ArrowLeft" size={14}/> Back to Learning Path</button>
+      )}
       <div className="doc-breadcrumb" data-testid="doc-breadcrumb">
         {parentCategory && <><button className="doc-breadcrumb-link" onClick={onNavigateHome}>{parentCategory.name}</button><Icon name="ChevronRight" size={14}/></>}
         {category && <><button className="doc-breadcrumb-link" onClick={onNavigateHome}>{category.name}</button><Icon name="ChevronRight" size={14}/></>}
