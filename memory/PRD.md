@@ -1,28 +1,31 @@
 # Agent Anatomy - PRD
 
 ## Overview
-Production-ready documentation site for AI agent architecture. 51 docs, 282K+ chars, 16 categories.
+Production-ready AI agent education platform. 51 docs, 16 categories, interactive learning.
 
 ## All Features
-- Notion-style sidebar with collapsible categories (collapsed by default)
-- Document viewer with Markdown, Mermaid diagrams, code syntax highlighting
-- Table of Contents (scroll-spy on right sidebar)
-- Reading time + Last updated timestamp
+- Document viewer: Markdown, Mermaid, code blocks, TOC, reading time, timestamps
 - Version history with restore
-- Keyword auto-linking (concepts link to relevant docs, skips current doc)
-- Related Documents section (siblings + cousins from same parent category)
+- Keyword auto-linking (skips current doc)
+- Related documents, Next/Previous navigation
+- Interactive quizzes: 51 docs × 2-4 questions = 110 questions total
+- 5 module-level final tests (24 questions)
+- 4 learning path final assessments (24 questions) with completion certificates
+- 4 learning paths: Beginner, Builder, LLM Foundations, Practitioner
+- Animated roadmap with progress tracking
+- "Back to Learning Path" navigation from docs
+- Collapsible quiz (Take Quiz button, minimize with X)
+- Full-text search with Ctrl+K
+- Bookmarks, Trash (restore only), Tools page
 - AI Chatbot (Claude Sonnet)
-- Full-text search with Ctrl+K shortcut
-- Bookmarks, Trash (soft delete + restore + permanent delete)
-- Tools page (add/edit/delete external links)
-- Settings page (invite users, change roles, delete users with feedback)
 - Analytics dashboard
-- PDF export, sharing (public links)
-- Comments with owner-only delete
-- Light/dark mode
-- Real-time collaboration (WebSocket)
+- Light/dark mode, mobile responsive
 - 404 page, Error boundary
-- Mobile responsive (hamburger menu, single-column layout)
+- Comments with owner-only delete
+
+## Content
+51 public documents, 282K+ chars, zero platform-specific references
+All content is general AI agent architecture knowledge
 
 ## Auth
-MOCKED — Hardcoded admin. No real login flow.
+MOCKED — Hardcoded admin
