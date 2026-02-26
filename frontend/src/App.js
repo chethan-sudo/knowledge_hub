@@ -102,7 +102,16 @@ function AuthProvider({ children }) {
   const [loading] = useState(false);
 
   const api = useCallback(async (method, url, data) => {
-    return axios({ method, url: `${API}${url}`, data, maxRedirects: 5 });
+    try {
+      return await axios({ method, url: `${API}${url}`, data });
+    } catch (e) {
+      // Retry with trailing slash if 307 redirect failed
+      if (e.response?.status === 307 || (!e.response && e.message?.includes('Network'))) {
+        const altUrl = url.endsWith('/') ? url.slice(0, -1) : url + '/';
+        return await axios({ method, url: `${API}${altUrl}`, data });
+      }
+      throw e;
+    }
   }, []);
 
   const logout = () => {};
