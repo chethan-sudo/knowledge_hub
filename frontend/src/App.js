@@ -1688,7 +1688,7 @@ function Dashboard() {
   const [activeDoc, setActiveDoc] = useState(null);
   const [editing, setEditing] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => window.innerWidth < 768);
   const [sidebarWidth, setSidebarWidth] = useState(272);
   const [loading, setLoading] = useState(true);
   const [catManagerOpen, setCatManagerOpen] = useState(false);
