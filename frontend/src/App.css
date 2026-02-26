@@ -677,3 +677,43 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
   .quiz-options { gap: 4px; }
 }
 
+
+/* Document Prev/Next Navigation */
+.doc-nav { display: flex; justify-content: space-between; gap: 16px; margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border-clr); }
+.doc-nav-btn { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border: 1px solid var(--border-clr); border-radius: var(--radius); background: var(--card-bg); cursor: pointer; transition: border-color 0.15s, background 0.15s; max-width: 48%; }
+.doc-nav-btn:hover { border-color: var(--accent); background: var(--accent-light); }
+.doc-nav-btn div { display: flex; flex-direction: column; gap: 2px; }
+.doc-nav-label { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.doc-nav-title { font-size: 0.85rem; font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.doc-nav-next { margin-left: auto; text-align: right; }
+
+/* Learning Path Roadmap */
+.lp-stats { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; font-size: 0.82rem; color: var(--text-muted); }
+.lp-stats span { display: flex; align-items: center; gap: 4px; }
+.lp-roadmap { display: flex; align-items: flex-start; overflow-x: auto; padding: 24px 0; gap: 0; margin-bottom: 24px; }
+.lp-road-node { display: flex; flex-direction: column; align-items: center; position: relative; min-width: 80px; flex-shrink: 0; animation: roadFadeIn 0.4s ease both; }
+.lp-road-node:nth-child(1) { animation-delay: 0s; }
+.lp-road-node:nth-child(2) { animation-delay: 0.1s; }
+.lp-road-node:nth-child(3) { animation-delay: 0.2s; }
+.lp-road-node:nth-child(4) { animation-delay: 0.3s; }
+.lp-road-node:nth-child(5) { animation-delay: 0.4s; }
+.lp-road-node:nth-child(6) { animation-delay: 0.5s; }
+.lp-road-node:nth-child(7) { animation-delay: 0.6s; }
+@keyframes roadFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.lp-road-dot { width: 32px; height: 32px; border-radius: 50%; background: var(--hover-bg); border: 2px solid var(--border-clr); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); z-index: 2; transition: all 0.3s; }
+.lp-road-node.completed .lp-road-dot { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 0 12px rgba(99,102,241,0.3); }
+.lp-road-line { position: absolute; top: 15px; left: 56px; right: -24px; height: 2px; background: var(--border-clr); z-index: 1; width: calc(100% - 32px); }
+.lp-road-line.completed { background: var(--accent); }
+.lp-road-label { font-size: 0.68rem; color: var(--text-muted); text-align: center; margin-top: 8px; max-width: 90px; line-height: 1.3; }
+.lp-road-node.completed .lp-road-label { color: var(--accent); font-weight: 500; }
+
+/* Learning Path Next Button */
+.lp-next-btn { display: flex; align-items: center; gap: 6px; margin-top: 10px; padding: 8px 16px; background: var(--accent-light); border: 1px solid var(--accent); color: var(--accent); border-radius: var(--radius); cursor: pointer; font-size: 0.82rem; font-weight: 500; transition: background 0.15s; }
+.lp-next-btn:hover { background: var(--accent); color: #fff; }
+
+/* Learning Path Completion Banner */
+.lp-complete-banner { display: flex; align-items: center; gap: 12px; margin-top: 24px; padding: 16px 20px; background: rgba(34,197,94,0.1); border: 1px solid #22c55e; border-radius: var(--radius); color: #22c55e; font-weight: 600; font-size: 0.95rem; animation: roadFadeIn 0.5s ease; }
+
+/* Learning Path Card Progress */
+.lp-card-pct { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
+
