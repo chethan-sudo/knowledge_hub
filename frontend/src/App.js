@@ -2112,20 +2112,26 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [catManagerOpen, setCatManagerOpen] = useState(false);
   const isAdmin = user?.role === "admin";
+  const [searchParams] = useSearchParams();
+  const currentPath = window.location.pathname;
 
-  // Auto-save draft and exit editor when navigating away
+  // Exit editor when navigating to a different route
   useEffect(() => {
-    if ((creating || editing) && !docId) {
-      // User navigated to a non-doc route while in editor — save draft and exit
-      const editorTitle = document.querySelector('[data-testid="editor-title"]')?.value;
-      const editorContent = document.querySelector('[data-testid="editor-content"]')?.value;
-      if (editorTitle || editorContent) {
-        localStorage.setItem("aa-draft", JSON.stringify({ title: editorTitle || "", content: editorContent || "", category_id: "", timestamp: Date.now() }));
+    if (creating || editing) {
+      const isDocRoute = currentPath.startsWith("/doc/");
+      const isHomeRoute = currentPath === "/";
+      if (!isDocRoute && !isHomeRoute) {
+        // Save draft before exiting
+        const editorTitle = document.querySelector('[data-testid="editor-title"]')?.value;
+        const editorContent = document.querySelector('[data-testid="editor-content"]')?.value;
+        if (editorTitle || editorContent) {
+          localStorage.setItem("aa-draft", JSON.stringify({ title: editorTitle || "", content: editorContent || "", timestamp: Date.now() }));
+        }
+        setCreating(false);
+        setEditing(false);
       }
-      setCreating(false);
-      setEditing(false);
     }
-  }, [window.location.pathname]);
+  }, [currentPath]);
 
   const [connectionError, setConnectionError] = useState(false);
   const retryTimeout = useRef(null);
