@@ -23,7 +23,7 @@ db = client[os.environ['DB_NAME']]
 
 ADMIN_EMAIL = "chethan@emergent.sh"
 
-app = FastAPI(redirect_slashes=False)
+app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
