@@ -725,6 +725,7 @@ function Sidebar({ categories, documents, activeDocId, onSelectDoc, onNewDoc, co
             <button className={`sidebar-item ${currentPath === "/tools" ? "active" : ""}`} data-testid="sidebar-tools-btn" onClick={() => navigate("/tools")}><Icon name="Monitor" size={16}/><span>Tools</span></button>
             {isAdmin && <button className={`sidebar-item ${currentPath === "/trash" ? "active" : ""}`} data-testid="sidebar-trash-btn" onClick={() => navigate("/trash")}><Icon name="Trash" size={16}/><span>Trash</span></button>}
             {isAdmin && <button className={`sidebar-item ${currentPath === "/analytics" ? "active" : ""}`} data-testid="sidebar-analytics-btn" onClick={() => navigate("/analytics")}><Icon name="BarChart" size={16}/><span>Analytics</span></button>}
+            {isAdmin && <button className={`sidebar-item ${currentPath === "/settings" ? "active" : ""}`} data-testid="sidebar-settings-btn" onClick={() => navigate("/settings")}><Icon name="Sparkles" size={16}/><span>Settings</span></button>}
             <div className="sidebar-divider"/>
             {parentCats.map(cat => {
               const children = getChildren(cat.id);
