@@ -696,10 +696,10 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 /* Learning Path Roadmap - Winding Road */
 .lp-stats { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; font-size: 0.82rem; color: var(--text-muted); }
 .lp-stats span { display: flex; align-items: center; gap: 4px; }
-.lp-roadmap { position: relative; padding: 32px 24px; margin-bottom: 32px; background: var(--card-bg); border: 1px solid var(--border-clr); border-radius: 16px; overflow: hidden; }
-.lp-roadmap::before { content: ''; position: absolute; top: 50%; left: 40px; right: 40px; height: 3px; background: repeating-linear-gradient(90deg, var(--border-clr) 0px, var(--border-clr) 8px, transparent 8px, transparent 16px); transform: translateY(-50%); }
+.lp-roadmap { position: relative; padding: 40px 32px 20px; margin-bottom: 32px; background: var(--card-bg); border: 1px solid var(--border-clr); border-radius: 16px; }
 .lp-road-nodes { display: flex; justify-content: space-between; position: relative; z-index: 2; }
-.lp-road-node { display: flex; flex-direction: column; align-items: center; gap: 10px; flex: 1; animation: roadNodePop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.lp-road-nodes::before { content: ''; position: absolute; top: 20px; left: 20px; right: 20px; height: 3px; background: repeating-linear-gradient(90deg, var(--border-clr) 0px, var(--border-clr) 8px, transparent 8px, transparent 14px); z-index: 0; }
+.lp-road-node { display: flex; flex-direction: column; align-items: center; gap: 10px; position: relative; z-index: 2; flex: 1; animation: roadNodePop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
 .lp-road-node:nth-child(1) { animation-delay: 0.1s; }
 .lp-road-node:nth-child(2) { animation-delay: 0.2s; }
 .lp-road-node:nth-child(3) { animation-delay: 0.3s; }
