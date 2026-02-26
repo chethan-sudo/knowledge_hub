@@ -1186,23 +1186,18 @@ function ToolsPage({ isAdmin }) {
           <div className="tools-form-actions"><button className="editor-btn-primary" data-testid="tool-save-btn" onClick={save} disabled={!form.name.trim() || !form.url.trim()}>Save</button><button className="editor-btn-secondary" onClick={() => { setAdding(false); setEditId(null); }}>Cancel</button></div>
         </div>
       )}
-      {categories.map(cat => (
-        <div key={cat} className="tools-category">
-          <h2 className="tools-category-title">{cat}</h2>
-          <div className="tools-grid">
-            {tools.filter(t => t.category === cat).map(t => (
-              <div key={t.id} className="tools-card" data-testid={`tool-${t.id}`}>
-                <div className="tools-card-header"><img src={getFavicon(t.url)} alt="" width="20" height="20" className="tools-card-favicon" onError={e => e.target.style.display='none'} /><a href={t.url} target="_blank" rel="noreferrer" className="tools-card-name">{t.name}</a></div>
-                {t.description && <p className="tools-card-desc">{t.description}</p>}
-                <div className="tools-card-footer">
-                  <span className="tools-card-domain"><Icon name="Link" size={12}/> {getDomain(t.url)}</span>
-                  {isAdmin && <div className="tools-card-actions"><button data-testid={`edit-tool-${t.id}`} onClick={() => { setEditId(t.id); setAdding(false); setForm({ name: t.name, url: t.url, description: t.description, category: t.category }); }}><Icon name="Edit" size={13}/></button><button data-testid={`delete-tool-${t.id}`} onClick={() => del(t.id)}><Icon name="Trash" size={13}/></button></div>}
-                </div>
-              </div>
-            ))}
+      <div className="tools-grid">
+        {tools.map(t => (
+          <div key={t.id} className="tools-card" data-testid={`tool-${t.id}`}>
+            <div className="tools-card-header"><img src={getFavicon(t.url)} alt="" width="20" height="20" className="tools-card-favicon" onError={e => e.target.style.display='none'} /><a href={t.url} target="_blank" rel="noreferrer" className="tools-card-name">{t.name}</a></div>
+            {t.description && <p className="tools-card-desc">{t.description}</p>}
+            <div className="tools-card-footer">
+              <span className="tools-card-domain"><Icon name="Link" size={12}/> {getDomain(t.url)}</span>
+              {isAdmin && <div className="tools-card-actions"><button data-testid={`edit-tool-${t.id}`} onClick={() => { setEditId(t.id); setAdding(false); setForm({ name: t.name, url: t.url, description: t.description, category: t.category }); }}><Icon name="Edit" size={13}/></button><button data-testid={`delete-tool-${t.id}`} onClick={() => del(t.id)}><Icon name="Trash" size={13}/></button></div>}
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
       {tools.length === 0 && !adding && <div className="doc-empty"><Icon name="Link" size={48}/><h2>No resources yet</h2><p>{isAdmin ? "Add useful links and resources using the button above." : "Resources will appear here when added."}</p></div>}
     </div>
   );
