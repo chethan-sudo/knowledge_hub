@@ -1465,7 +1465,6 @@ function SettingsPage({ isAdmin }) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState("viewer");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -1478,22 +1477,12 @@ function SettingsPage({ isAdmin }) {
     if (!inviteEmail.trim()) return;
     setError("");
     try {
-      const r = await api("post", "/invite", { email: inviteEmail.trim(), role: inviteRole });
+      const r = await api("post", "/invite", { email: inviteEmail.trim(), role: "viewer" });
       setUsers(prev => [...prev, r.data]);
-      setInviteEmail(""); setInviteRole("viewer");
+      setInviteEmail("");
       setSuccess("Invitation sent!");
       setTimeout(() => setSuccess(""), 3000);
     } catch (e) { setError(e.response?.data?.detail || "Failed to invite"); }
-  };
-
-  const changeRole = async (userId, newRole) => {
-    setError("");
-    try {
-      await api("put", `/users/${userId}/role`, { role: newRole });
-      setUsers(prev => prev.map(u => u.user_id === userId ? { ...u, role: newRole } : u));
-      setSuccess(`Role updated to ${newRole}`);
-      setTimeout(() => setSuccess(""), 3000);
-    } catch (e) { setError(e.response?.data?.detail || "Failed to update role"); }
   };
 
   const removeUser = async (userId) => {
@@ -1507,47 +1496,30 @@ function SettingsPage({ isAdmin }) {
     } catch (e) { setError(e.response?.data?.detail || "Cannot remove"); }
   };
 
-  if (!isAdmin) return <div className="doc-empty"><Icon name="Lock" size={48}/><h2>Admin Only</h2><p>Only admins can access settings.</p></div>;
+  if (!isAdmin) return <div className="doc-empty"><Icon name="Lock" size={48}/><h2>Admin Only</h2></div>;
   if (loading) return <div className="edh-loading"><div className="edh-spinner"/></div>;
 
   return (
     <div className="bookmarks-page" data-testid="settings-page">
-      <h1>Settings</h1>
+      <h1>Team</h1>
       <div className="settings-section">
         <h2 className="settings-section-title">Invite People</h2>
         {error && <div className="auth-error">{error}</div>}
         {success && <div className="auth-error" style={{background: "var(--accent-light)", color: "var(--accent)", borderColor: "var(--accent)"}}>{success}</div>}
         <div className="invite-row" data-testid="invite-row">
-          <input data-testid="invite-email" type="email" placeholder="Email address" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} />
-          <div className="invite-role-picker" data-testid="invite-role-picker">
-            <label className={`role-option ${inviteRole === "viewer" ? "selected" : ""}`}>
-              <input type="radio" name="role" value="viewer" checked={inviteRole === "viewer"} onChange={() => setInviteRole("viewer")} />
-              <Icon name="FileText" size={14}/> Viewer
-            </label>
-            <label className={`role-option ${inviteRole === "admin" ? "selected" : ""}`}>
-              <input type="radio" name="role" value="admin" checked={inviteRole === "admin"} onChange={() => setInviteRole("admin")} />
-              <Icon name="Lock" size={14}/> Admin
-            </label>
-          </div>
+          <input data-testid="invite-email" type="email" placeholder="Email address" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} onKeyDown={e => { if (e.key === "Enter") invite(); }} />
           <button className="editor-btn-primary" data-testid="invite-btn" onClick={invite} disabled={!inviteEmail.trim()}>Invite</button>
         </div>
       </div>
       <div className="settings-section">
-        <h2 className="settings-section-title">Team Members ({users.length})</h2>
+        <h2 className="settings-section-title">Members ({users.length})</h2>
         <div className="users-list" data-testid="users-list">
-          <div className="users-header">
-            <span>User</span><span>Role</span><span>Actions</span>
-          </div>
           {users.map(u => (
-            <div key={u.user_id} className="user-row" data-testid={`user-${u.user_id}`}>
+            <div key={u.user_id || u.email} className="user-row" data-testid={`user-${u.user_id || u.email}`}>
               <div className="user-info">
                 <div className="sidebar-user-avatar">{u.name?.[0]?.toUpperCase() || "?"}</div>
                 <div><div className="user-name">{u.name || u.email}</div><div className="user-email">{u.email}</div></div>
               </div>
-              <select className="user-role-select" data-testid={`role-select-${u.user_id}`} value={u.role || "viewer"} onChange={e => changeRole(u.user_id, e.target.value)}>
-                <option value="viewer">Viewer</option>
-                <option value="admin">Admin</option>
-              </select>
               <button className="catmgr-action-btn catmgr-danger" data-testid={`remove-user-${u.user_id}`} onClick={() => removeUser(u.user_id)}><Icon name="Trash" size={14}/></button>
             </div>
           ))}
