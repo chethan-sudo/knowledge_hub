@@ -2194,9 +2194,11 @@ function Dashboard() {
   const isAnalyticsRoute = window.location.pathname === "/analytics";
   const showHome = !docId && !creating && !editing && !isBookmarksRoute && !isLearnRoute && !isToolsRoute && !isTrashRoute && !isSettingsRoute && !isAnalyticsRoute;
 
+  const showingDocViewer = !creating && !editing && !isBookmarksRoute && !isLearnRoute && !isToolsRoute && !isTrashRoute && !isSettingsRoute && !isAnalyticsRoute && !showHome && activeDoc;
+
   return (
     <div className="dashboard" data-testid="dashboard">
-      {activeDoc && !editing && !creating && <ReadingProgress />}
+      {showingDocViewer && <ReadingProgress />}
       <Sidebar categories={categories} documents={documents} activeDocId={activeDoc?.id} onSelectDoc={selectDoc} onNewDoc={startNew} collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} bookmarkCount={activeBookmarkCount} onManageCategories={() => setCatManagerOpen(true)} isAdmin={isAdmin} sidebarWidth={sidebarWidth} onResizeSidebar={setSidebarWidth} />
       <main className="main-content" data-testid="main-content" style={{marginLeft: sidebarCollapsed ? 48 : sidebarWidth}}>
         {creating || editing ? <DocumentEditor doc={editing ? activeDoc : null} categories={categories} onSave={handleSaveDoc} onCancel={() => { const wasCreating = creating; setCreating(false); setEditing(false); if (!wasCreating && activeDoc) navigate(`/doc/${activeDoc.id}`); }} />
