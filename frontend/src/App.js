@@ -1222,8 +1222,7 @@ function TrashPage({ onDocumentsChanged }) {
       : <div className="bookmarks-list">{docs.map(d => (
         <div key={d.id} className="bookmark-item" data-testid={`trash-item-${d.id}`}>
           <div className="bookmark-item-content"><Icon name="FileText" size={18}/><div><div className="bookmark-title">{d.title}</div><div className="bookmark-cat">Deleted {d.deleted_at ? new Date(d.deleted_at).toLocaleDateString() : ""}</div></div></div>
-          <button className="trash-restore-btn" data-testid={`restore-${d.id}`} onClick={() => restore(d.id)}><Icon name="Undo" size={14}/></button>
-          <button className="bookmark-remove-btn" data-testid={`perm-delete-${d.id}`} onClick={() => permDelete(d.id)}><Icon name="Trash" size={14}/></button>
+          <button className="trash-restore-btn" data-testid={`restore-${d.id}`} onClick={() => restore(d.id)}><Icon name="Undo" size={14}/> Restore</button>
         </div>
       ))}</div>}
     </div>
