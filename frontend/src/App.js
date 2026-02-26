@@ -304,29 +304,32 @@ function renderInline(text) {
 }
 
 // Keyword auto-linking wrapper
-function KeywordLinkedText({ children }) {
+function KeywordLinkedText({ children, currentDocId }) {
   const keywords = useKeywords();
   const navigate = useNavigate();
-  if (!children || typeof children === "string" && !children.trim()) return children;
+  if (!children || (typeof children === "string" && !children.trim())) return children;
   const entries = Object.entries(keywords);
   if (entries.length === 0) return children;
 
   const processText = (text) => {
-    if (typeof text !== "string" || text.length < 4) return text;
+    if (typeof text !== "string" || text.length < 6) return text;
     const lower = text.toLowerCase();
-    // Find the first keyword match
+    // Find the best (longest) keyword match
     let bestMatch = null;
     let bestIdx = text.length;
     for (const [kw, docId] of entries) {
-      if (kw.length < 4) continue;
-      const idx = lower.indexOf(kw.toLowerCase());
+      if (kw.length < 4 || kw.length > 25) continue; // Skip very short or full titles
+      if (docId === currentDocId) continue; // Don't link to current document
+      const kwLower = kw.toLowerCase();
+      const idx = lower.indexOf(kwLower);
       if (idx !== -1 && idx < bestIdx) {
-        // Check word boundary
         const before = idx > 0 ? lower[idx - 1] : " ";
         const after = idx + kw.length < lower.length ? lower[idx + kw.length] : " ";
-        if (/\W/.test(before) && /\W/.test(after)) {
-          bestMatch = { keyword: kw, docId, index: idx, length: kw.length };
-          bestIdx = idx;
+        if (/[\s,.;:!?()\-]/.test(before) || idx === 0) {
+          if (/[\s,.;:!?()\-]/.test(after) || idx + kw.length === lower.length) {
+            bestMatch = { keyword: kw, docId, index: idx, length: kw.length };
+            bestIdx = idx;
+          }
         }
       }
     }
@@ -335,7 +338,7 @@ function KeywordLinkedText({ children }) {
     const before = text.slice(0, index);
     const match = text.slice(index, index + length);
     const after = text.slice(index + length);
-    return <>{before}<a className="doc-keyword-link" onClick={(e) => { e.preventDefault(); navigate(`/doc/${docId}`); }}>{match}</a>{after}</>;
+    return <>{before}<a className="doc-keyword-link" data-testid={`keyword-link-${docId.slice(0,8)}`} onClick={(e) => { e.preventDefault(); navigate(`/doc/${docId}`); }}>{match}</a>{after}</>;
   };
 
   if (typeof children === "string") return processText(children);
