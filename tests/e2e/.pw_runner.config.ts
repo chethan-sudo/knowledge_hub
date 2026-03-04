@@ -2,13 +2,13 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: '/app/tests/e2e',
-  outputDir: '/root/.emergent/automation_output/20260304_124254/test-results',
+  outputDir: '/root/.emergent/automation_output/20260304_134321/test-results',
   timeout: 60000,
   retries: 0,
   workers: 1,
   reporter: [
     ['line'],
-    ['json', { outputFile: '/root/.emergent/automation_output/20260304_124254/results.json' }],
+    ['json', { outputFile: '/root/.emergent/automation_output/20260304_134321/results.json' }],
   ],
   use: {
     baseURL: 'https://ai-agent-hub-96.preview.emergentagent.com',

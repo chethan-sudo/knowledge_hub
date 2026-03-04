@@ -176,6 +176,7 @@ function Icon({ name, size = 18 }) {
     Eye: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>,
     Printer: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>,
     Award: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"/><circle cx="12" cy="8" r="6"/></svg>,
+    Compass: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>,
   };
   return icons[name] || icons.FileText;
 }
@@ -571,7 +572,13 @@ function DocQuiz({ docId }) {
       ))}
       <div className="quiz-footer">
         {!submitted ? (
-          <button className="editor-btn-primary" data-testid="quiz-submit" onClick={() => setSubmitted(true)} disabled={!allAnswered}>Check Answers ({Object.keys(answers).length}/{total})</button>
+          <button className="editor-btn-primary" data-testid="quiz-submit" onClick={() => {
+            setSubmitted(true);
+            const s = quiz.questions.reduce((acc, q) => acc + (answers[q.id] === q.correct ? 1 : 0), 0);
+            if (s >= Math.ceil(total * 0.7)) {
+              try { const p = JSON.parse(localStorage.getItem("aa-quizzes-passed") || "[]"); if (!p.includes(docId)) { p.push(docId); localStorage.setItem("aa-quizzes-passed", JSON.stringify(p)); } } catch {}
+            }
+          }} disabled={!allAnswered}>Check Answers ({Object.keys(answers).length}/{total})</button>
         ) : (
           <div className="quiz-result" data-testid="quiz-result">
             <span className="quiz-score">Score: {score}/{total} ({Math.round(score/total*100)}%)</span>
@@ -727,6 +734,7 @@ function Sidebar({ categories, documents, activeDocId, onSelectDoc, onNewDoc, co
             <button className={`sidebar-item ${currentPath === "/" && !activeDocId ? "active" : ""}`} data-testid="sidebar-home-btn" onClick={() => navigate("/")}><Icon name="Home" size={16}/><span>Home</span></button>
             <button className={`sidebar-item ${currentPath === "/bookmarks" ? "active" : ""}`} data-testid="sidebar-bookmarks-btn" onClick={() => navigate("/bookmarks")}><Icon name="Bookmark" size={16}/><span>Bookmarks</span>{bookmarkCount > 0 && <span className="sidebar-badge">{bookmarkCount}</span>}</button>
             <button className={`sidebar-item ${currentPath === "/learn" ? "active" : ""}`} data-testid="sidebar-learn-btn" onClick={() => navigate("/learn")}><Icon name="Rocket" size={16}/><span>Learning Paths</span></button>
+            <button className={`sidebar-item ${currentPath === "/progress" ? "active" : ""}`} data-testid="sidebar-progress-btn" onClick={() => navigate("/progress")}><Icon name="TrendingUp" size={16}/><span>My Progress</span></button>
             <button className={`sidebar-item ${currentPath === "/tools" ? "active" : ""}`} data-testid="sidebar-tools-btn" onClick={() => navigate("/tools")}><Icon name="Monitor" size={16}/><span>Tools</span></button>
             {isAdmin && <button className={`sidebar-item ${currentPath === "/trash" ? "active" : ""}`} data-testid="sidebar-trash-btn" onClick={() => navigate("/trash")}><Icon name="Trash" size={16}/><span>Trash</span></button>}
             {isAdmin && <button className={`sidebar-item ${currentPath === "/analytics" ? "active" : ""}`} data-testid="sidebar-analytics-btn" onClick={() => navigate("/analytics")}><Icon name="BarChart" size={16}/><span>Analytics</span></button>}
@@ -953,7 +961,14 @@ function DocumentViewer({ doc, category, parentCategory, isBookmarked, onToggleB
 
   // Track document view
   useEffect(() => {
-    if (doc?.id) api("post", `/documents/${doc.id}/view`).catch(() => {});
+    if (doc?.id) {
+      api("post", `/documents/${doc.id}/view`).catch(() => {});
+      // Track in localStorage for progress dashboard
+      try {
+        const read = JSON.parse(localStorage.getItem("aa-docs-read") || "[]");
+        if (!read.includes(doc.id)) { read.push(doc.id); localStorage.setItem("aa-docs-read", JSON.stringify(read)); }
+      } catch {}
+    }
   }, [doc?.id, api]);
 
   useEffect(() => { setShowVersions(false); setViewingVersion(null); setVersions([]); setShareId(doc?.share_id || null); setShowShare(false); }, [doc?.id, doc?.share_id]);
@@ -2133,6 +2148,177 @@ function AIChatbot({ docId }) {
   );
 }
 
+
+// --- Progress Ring SVG ---
+function ProgressRing({ value, max, size = 100, strokeWidth = 8, color = "#6366f1", label, sublabel }) {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const pct = max > 0 ? Math.min(value / max, 1) : 0;
+  const offset = circumference - pct * circumference;
+  return (
+    <div className="progress-ring-wrapper">
+      <svg width={size} height={size} className="progress-ring-svg">
+        <circle cx={size/2} cy={size/2} r={radius} fill="none" stroke="var(--border-clr)" strokeWidth={strokeWidth} />
+        <circle cx={size/2} cy={size/2} r={radius} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round"
+          strokeDasharray={circumference} strokeDashoffset={offset}
+          style={{transition: "stroke-dashoffset 0.8s cubic-bezier(0.4,0,0.2,1)", transform: "rotate(-90deg)", transformOrigin: "50% 50%"}} />
+        <text x="50%" y="48%" textAnchor="middle" fill="var(--text-primary)" fontSize={size * 0.22} fontWeight="700">{Math.round(pct * 100)}%</text>
+        <text x="50%" y="64%" textAnchor="middle" fill="var(--text-muted)" fontSize={size * 0.11}>{value}/{max}</text>
+      </svg>
+      <div className="progress-ring-label">{label}</div>
+      {sublabel && <div className="progress-ring-sublabel">{sublabel}</div>}
+    </div>
+  );
+}
+
+// --- Knowledge Progress Dashboard ---
+function ProgressDashboard({ documents, categories }) {
+  const [docsRead, setDocsRead] = useState([]);
+  const [quizzesPassed, setQuizzesPassed] = useState([]);
+  const [modulesPassed, setModulesPassed] = useState([]);
+  const [pathProgress, setPathProgress] = useState({});
+  const [paths, setPaths] = useState([]);
+  const { api } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    try { setDocsRead(JSON.parse(localStorage.getItem("aa-docs-read") || "[]")); } catch { setDocsRead([]); }
+    try { setQuizzesPassed(JSON.parse(localStorage.getItem("aa-quizzes-passed") || "[]")); } catch { setQuizzesPassed([]); }
+    try { setModulesPassed(JSON.parse(localStorage.getItem("aa-modules-passed") || "[]")); } catch { setModulesPassed([]); }
+    try { setPathProgress(JSON.parse(localStorage.getItem("aa-learning-progress") || "{}")); } catch { setPathProgress({}); }
+    api("get", "/learning-paths").then(r => setPaths(r.data || [])).catch(() => {});
+  }, [api]);
+
+  const totalDocs = documents.filter(d => !d.deleted).length;
+  const totalQuizzes = totalDocs; // every doc potentially has a quiz
+  const totalModules = 11; // seeded module tests
+  const totalPaths = paths.length;
+
+  // Calculate path completion
+  const pathsCompleted = paths.filter(p => {
+    const steps = p.steps || [];
+    return steps.length > 0 && steps.every(s => pathProgress[`${p.id}:${s.document_id}`]);
+  }).length;
+
+  // Overall score calculation
+  const overallItems = docsRead.length + quizzesPassed.length + modulesPassed.length + pathsCompleted;
+  const overallMax = totalDocs + totalQuizzes + totalModules + totalPaths;
+  const overallPct = overallMax > 0 ? Math.round((overallItems / overallMax) * 100) : 0;
+
+  // Level/tier based on overall %
+  const level = overallPct >= 80 ? { name: "Expert", color: "#f59e0b", icon: "Award" }
+    : overallPct >= 50 ? { name: "Practitioner", color: "#6366f1", icon: "TrendingUp" }
+    : overallPct >= 20 ? { name: "Explorer", color: "#22c55e", icon: "Compass" }
+    : { name: "Newcomer", color: "#94a3b8", icon: "User" };
+
+  // Recent activity
+  const recentDocs = docsRead.slice(-5).reverse().map(id => documents.find(d => d.id === id)).filter(Boolean);
+
+  return (
+    <div className="progress-dashboard" data-testid="progress-dashboard">
+      <div className="progress-hero" data-testid="progress-hero">
+        <div className="progress-hero-level" style={{color: level.color}}>
+          <Icon name={level.icon} size={24}/>
+          <span>{level.name}</span>
+        </div>
+        <h1>Your Learning Progress</h1>
+        <p className="progress-hero-sub">Track your journey through AI agent concepts</p>
+      </div>
+
+      {/* Main Progress Rings */}
+      <div className="progress-rings-grid" data-testid="progress-rings">
+        <ProgressRing value={docsRead.length} max={totalDocs} size={120} color="#6366f1" label="Docs Read" sublabel={`of ${totalDocs} total`} />
+        <ProgressRing value={quizzesPassed.length} max={totalQuizzes} size={120} color="#22c55e" label="Quizzes Passed" sublabel={`score >= 70%`} />
+        <ProgressRing value={modulesPassed.length} max={totalModules} size={120} color="#f59e0b" label="Modules Passed" sublabel={`of ${totalModules} modules`} />
+        <ProgressRing value={pathsCompleted} max={totalPaths} size={120} color="#ec4899" label="Paths Completed" sublabel={`of ${totalPaths} paths`} />
+      </div>
+
+      {/* Overall Progress Bar */}
+      <div className="progress-overall" data-testid="progress-overall">
+        <div className="progress-overall-header">
+          <h2>Overall Mastery</h2>
+          <span className="progress-overall-pct" style={{color: level.color}}>{overallPct}%</span>
+        </div>
+        <div className="progress-overall-bar">
+          <div className="progress-overall-fill" style={{width: `${overallPct}%`, background: `linear-gradient(90deg, ${level.color}, ${level.color}dd)`}} />
+        </div>
+        <div className="progress-overall-breakdown">
+          <span>{docsRead.length} docs</span>
+          <span>{quizzesPassed.length} quizzes</span>
+          <span>{modulesPassed.length} modules</span>
+          <span>{pathsCompleted} paths</span>
+        </div>
+      </div>
+
+      <div className="progress-grid-2col">
+        {/* Learning Paths Progress */}
+        <div className="progress-section" data-testid="progress-paths">
+          <h2><Icon name="Map" size={18}/> Learning Paths</h2>
+          {paths.map(p => {
+            const steps = p.steps || [];
+            const done = steps.filter(s => pathProgress[`${p.id}:${s.document_id}`]).length;
+            const pct = steps.length > 0 ? Math.round((done / steps.length) * 100) : 0;
+            return (
+              <button key={p.id} className="progress-path-row" data-testid={`progress-path-${p.id}`} onClick={() => navigate("/learn", { state: { resumePathId: p.id } })}>
+                <div className="progress-path-info">
+                  <span className="progress-path-title">{p.title}</span>
+                  <span className="progress-path-meta">{done}/{steps.length} steps</span>
+                </div>
+                <div className="progress-mini-bar">
+                  <div className="progress-mini-fill" style={{width: `${pct}%`}} />
+                </div>
+                <span className="progress-path-pct">{pct}%</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Recent Activity */}
+        <div className="progress-section" data-testid="progress-recent">
+          <h2><Icon name="Clock" size={18}/> Recently Read</h2>
+          {recentDocs.length === 0 ? (
+            <p className="progress-empty">Start reading documents to see your progress!</p>
+          ) : (
+            recentDocs.map(doc => (
+              <button key={doc.id} className="progress-recent-row" data-testid={`progress-recent-${doc.id}`} onClick={() => navigate(`/doc/${doc.id}`)}>
+                <Icon name="FileText" size={16}/>
+                <span className="progress-recent-title">{doc.title}</span>
+                {quizzesPassed.includes(doc.id) && <span className="progress-badge-passed">Quiz Passed</span>}
+              </button>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Achievements */}
+      <div className="progress-section progress-achievements" data-testid="progress-achievements">
+        <h2><Icon name="Award" size={18}/> Achievements</h2>
+        <div className="progress-badges-grid">
+          <div className={`progress-badge ${docsRead.length >= 1 ? "earned" : ""}`} data-testid="badge-first-doc">
+            <Icon name="FileText" size={20}/><span>First Steps</span><small>Read your first doc</small>
+          </div>
+          <div className={`progress-badge ${docsRead.length >= 10 ? "earned" : ""}`} data-testid="badge-bookworm">
+            <Icon name="Book" size={20}/><span>Bookworm</span><small>Read 10 documents</small>
+          </div>
+          <div className={`progress-badge ${quizzesPassed.length >= 5 ? "earned" : ""}`} data-testid="badge-quiz-master">
+            <Icon name="Check" size={20}/><span>Quiz Ace</span><small>Pass 5 quizzes</small>
+          </div>
+          <div className={`progress-badge ${modulesPassed.length >= 3 ? "earned" : ""}`} data-testid="badge-module-pro">
+            <Icon name="Award" size={20}/><span>Module Pro</span><small>Pass 3 module tests</small>
+          </div>
+          <div className={`progress-badge ${pathsCompleted >= 1 ? "earned" : ""}`} data-testid="badge-path-finder">
+            <Icon name="Map" size={20}/><span>Pathfinder</span><small>Complete a learning path</small>
+          </div>
+          <div className={`progress-badge ${overallPct >= 50 ? "earned" : ""}`} data-testid="badge-halfway">
+            <Icon name="TrendingUp" size={20}/><span>Halfway There</span><small>Reach 50% mastery</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 // --- Module Test Component ---
 function ModuleTest({ categoryId, categoryName }) {
   const { api } = useAuth();
@@ -2189,7 +2375,13 @@ function ModuleTest({ categoryId, categoryName }) {
       ))}
       <div className="quiz-footer">
         {!submitted ? (
-          <button className="editor-btn-primary" onClick={() => setSubmitted(true)} disabled={!allAnswered}>Check Answers ({Object.keys(answers).length}/{total})</button>
+          <button className="editor-btn-primary" onClick={() => {
+            setSubmitted(true);
+            const s = test.questions.reduce((acc, q) => acc + (answers[q.id] === q.correct ? 1 : 0), 0);
+            if (s >= Math.ceil(total * 0.7)) {
+              try { const p = JSON.parse(localStorage.getItem("aa-modules-passed") || "[]"); if (!p.includes(categoryId)) { p.push(categoryId); localStorage.setItem("aa-modules-passed", JSON.stringify(p)); } } catch {}
+            }
+          }} disabled={!allAnswered}>Check Answers ({Object.keys(answers).length}/{total})</button>
         ) : (
           <div className="quiz-result">
             <span className="quiz-score">Score: {score}/{total} ({Math.round(score/total*100)}%)</span>
@@ -2356,10 +2548,11 @@ function Dashboard() {
   const isTrashRoute = window.location.pathname === "/trash";
   const isSettingsRoute = window.location.pathname === "/settings";
   const isAnalyticsRoute = window.location.pathname === "/analytics";
+  const isProgressRoute = window.location.pathname === "/progress";
   const isCategoryRoute = currentPath.startsWith("/category/");
-  const showHome = !docId && !catId && !creating && !editing && !isBookmarksRoute && !isLearnRoute && !isToolsRoute && !isTrashRoute && !isSettingsRoute && !isAnalyticsRoute && !isCategoryRoute;
+  const showHome = !docId && !catId && !creating && !editing && !isBookmarksRoute && !isLearnRoute && !isToolsRoute && !isTrashRoute && !isSettingsRoute && !isAnalyticsRoute && !isProgressRoute && !isCategoryRoute;
 
-  const showingDocViewer = !creating && !editing && !isBookmarksRoute && !isLearnRoute && !isToolsRoute && !isTrashRoute && !isSettingsRoute && !isAnalyticsRoute && !isCategoryRoute && !showHome && activeDoc;
+  const showingDocViewer = !creating && !editing && !isBookmarksRoute && !isLearnRoute && !isToolsRoute && !isTrashRoute && !isSettingsRoute && !isAnalyticsRoute && !isProgressRoute && !isCategoryRoute && !showHome && activeDoc;
 
   return (
     <div className="dashboard" data-testid="dashboard">
@@ -2373,6 +2566,7 @@ function Dashboard() {
         : isTrashRoute && isAdmin ? <TrashPage onDocumentsChanged={refreshDocuments} />
         : isSettingsRoute && isAdmin ? <SettingsPage isAdmin={isAdmin} />
         : isAnalyticsRoute && isAdmin ? <AnalyticsPage />
+        : isProgressRoute ? <ProgressDashboard documents={documents} categories={categories} />
         : isCategoryRoute && catId ? <CategoryPage categories={categories} documents={documents} onSelectDoc={selectDoc} />
         : showHome ? <HomePage categories={categories} documents={documents} onSelectDoc={selectDoc} />
         : <DocumentViewer doc={activeDoc} category={currentCat} parentCategory={parentCat} isBookmarked={bookmarkedIds.includes(activeDoc?.id)} onToggleBookmark={() => activeDoc && toggleBookmark(activeDoc.id)} onEdit={() => setEditing(true)} onDelete={handleDelete} isAdmin={isAdmin} onNavigateHome={() => navigate("/")} categories={categories} documents={documents} onSelectDoc={selectDoc} />}
@@ -2389,6 +2583,7 @@ function AppRouter() {
       <Route path="/share/:shareId" element={<PublicDocPage />} />
       <Route path="/bookmarks" element={<Dashboard />} />
       <Route path="/learn" element={<Dashboard />} />
+      <Route path="/progress" element={<Dashboard />} />
       <Route path="/tools" element={<Dashboard />} />
       <Route path="/trash" element={<Dashboard />} />
       <Route path="/settings" element={<Dashboard />} />

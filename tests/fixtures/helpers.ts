@@ -50,3 +50,31 @@ export async function removeEmergentBadge(page: Page) {
     if (badge) badge.remove();
   });
 }
+
+export async function navigateToProgress(page: Page) {
+  await page.goto('/progress', { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('[data-testid="progress-dashboard"]', { timeout: 15000 });
+}
+
+export async function clearProgressLocalStorage(page: Page) {
+  await page.evaluate(() => {
+    localStorage.removeItem('aa-docs-read');
+    localStorage.removeItem('aa-quizzes-passed');
+    localStorage.removeItem('aa-modules-passed');
+    localStorage.removeItem('aa-learning-progress');
+  });
+}
+
+export async function setProgressLocalStorage(page: Page, data: {
+  docsRead?: string[],
+  quizzesPassed?: string[],
+  modulesPassed?: string[],
+  learningProgress?: Record<string, boolean>
+}) {
+  await page.evaluate((data) => {
+    if (data.docsRead) localStorage.setItem('aa-docs-read', JSON.stringify(data.docsRead));
+    if (data.quizzesPassed) localStorage.setItem('aa-quizzes-passed', JSON.stringify(data.quizzesPassed));
+    if (data.modulesPassed) localStorage.setItem('aa-modules-passed', JSON.stringify(data.modulesPassed));
+    if (data.learningProgress) localStorage.setItem('aa-learning-progress', JSON.stringify(data.learningProgress));
+  }, data);
+}
