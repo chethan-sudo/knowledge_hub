@@ -670,7 +670,14 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 .lp-progress-fill { height: 100%; background: var(--accent); border-radius: 4px; transition: width 0.5s ease; }
 .lp-progress-bar span { position: absolute; right: 0; top: -20px; font-size: 0.78rem; color: var(--accent); font-weight: 600; }
 .lp-steps { display: flex; flex-direction: column; gap: 0; }
-.lp-step { display: flex; gap: 16px; padding: 20px 0; border-bottom: 1px solid var(--border-clr); }
+.lp-step { display: flex; gap: 16px; padding: 20px 0; border-bottom: 1px solid var(--border-clr); animation: catDocFadeIn 0.3s ease both; }
+.lp-step:nth-child(1) { animation-delay: 0.05s; }
+.lp-step:nth-child(2) { animation-delay: 0.1s; }
+.lp-step:nth-child(3) { animation-delay: 0.15s; }
+.lp-step:nth-child(4) { animation-delay: 0.2s; }
+.lp-step:nth-child(5) { animation-delay: 0.25s; }
+.lp-step:nth-child(6) { animation-delay: 0.3s; }
+.lp-step:nth-child(7) { animation-delay: 0.35s; }
 .lp-step:last-child { border-bottom: none; }
 .lp-step-number { width: 36px; height: 36px; border-radius: 50%; background: var(--hover-bg); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); flex-shrink: 0; border: 2px solid var(--border-clr); }
 .lp-step.completed .lp-step-number { background: var(--accent); color: #fff; border-color: var(--accent); }
@@ -698,9 +705,11 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 /* Learning Path Roadmap - Winding Road */
 .lp-stats { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; font-size: 0.82rem; color: var(--text-muted); }
 .lp-stats span { display: flex; align-items: center; gap: 4px; }
-.lp-roadmap { position: relative; padding: 40px 32px 20px; margin-bottom: 32px; background: var(--card-bg); border: 1px solid var(--border-clr); border-radius: 16px; }
+.lp-roadmap { position: relative; padding: 40px 32px 20px; margin-bottom: 32px; background: var(--card-bg); border: 1px solid var(--border-clr); border-radius: 16px; overflow: hidden; }
+.lp-roadmap::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(circle at 20% 50%, rgba(99,102,241,0.04), transparent 50%), radial-gradient(circle at 80% 50%, rgba(99,102,241,0.03), transparent 50%); pointer-events: none; }
 .lp-road-nodes { display: flex; justify-content: space-between; position: relative; z-index: 2; }
-.lp-road-nodes::before { content: ''; position: absolute; top: 20px; left: 20px; right: 20px; height: 3px; background: repeating-linear-gradient(90deg, var(--border-clr) 0px, var(--border-clr) 8px, transparent 8px, transparent 14px); z-index: 0; }
+.lp-road-nodes::before { content: ''; position: absolute; top: 20px; left: 20px; right: 20px; height: 3px; background: var(--border-clr); z-index: 0; border-radius: 2px; }
+.lp-road-progress-line { position: absolute; top: 20px; left: 20px; height: 3px; background: linear-gradient(90deg, var(--accent), #818cf8); z-index: 1; border-radius: 2px; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
 .lp-road-node { display: flex; flex-direction: column; align-items: center; gap: 10px; position: relative; z-index: 2; flex: 1; animation: roadNodePop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
 .lp-road-node:nth-child(1) { animation-delay: 0.1s; }
 .lp-road-node:nth-child(2) { animation-delay: 0.2s; }
@@ -712,6 +721,8 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 @keyframes roadNodePop { from { opacity: 0; transform: scale(0.3); } to { opacity: 1; transform: scale(1); } }
 .lp-road-dot { width: 40px; height: 40px; border-radius: 50%; background: var(--content-bg); border: 3px solid var(--border-clr); display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; color: var(--text-muted); transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
 .lp-road-node.completed .lp-road-dot { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 0 0 6px rgba(99,102,241,0.2), 0 4px 12px rgba(99,102,241,0.3); transform: scale(1.1); }
+.lp-road-node.next-up .lp-road-dot { border-color: var(--accent); color: var(--accent); animation: roadPulse 2s ease-in-out infinite; }
+@keyframes roadPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(99,102,241,0.3); } 50% { box-shadow: 0 0 0 8px rgba(99,102,241,0); } }
 .lp-road-label { font-size: 0.68rem; color: var(--text-muted); text-align: center; max-width: 85px; line-height: 1.3; }
 .lp-road-node.completed .lp-road-label { color: var(--accent); font-weight: 600; }
 
@@ -750,6 +761,24 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 /* Learning path reset */
 .lp-reset-btn { display: flex; align-items: center; gap: 6px; background: none; border: 1px solid var(--border-clr); color: var(--text-muted); cursor: pointer; padding: 6px 14px; border-radius: var(--radius); font-size: 0.78rem; margin-top: 8px; transition: all 0.15s; }
 .lp-reset-btn:hover { color: var(--danger); border-color: var(--danger); }
+
+
+/* ========== Category Page ========== */
+.category-page { max-width: 900px; margin: 0 auto; padding: 40px 24px; }
+.category-hero { margin-bottom: 32px; }
+.category-hero-icon { width: 56px; height: 56px; border-radius: 14px; background: var(--accent-light); display: flex; align-items: center; justify-content: center; color: var(--accent); margin-bottom: 16px; }
+.category-hero h1 { font-size: 2rem; font-weight: 700; margin: 0 0 8px; color: var(--text-primary); }
+.category-desc { color: var(--text-secondary); font-size: 0.95rem; margin: 0; }
+.category-docs-grid { display: flex; flex-direction: column; gap: 2px; margin-bottom: 32px; }
+.category-doc-card { display: flex; align-items: center; gap: 16px; padding: 16px 20px; background: var(--card-bg); border: 1px solid var(--border-clr); border-radius: var(--radius); cursor: pointer; text-align: left; color: var(--text-primary); transition: border-color 0.15s, background-color 0.15s; animation: catDocFadeIn 0.3s ease both; }
+.category-doc-card:hover { border-color: var(--accent); background: var(--hover-bg); }
+.category-doc-num { width: 32px; height: 32px; border-radius: 50%; background: var(--accent-light); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; flex-shrink: 0; }
+.category-doc-info { flex: 1; min-width: 0; }
+.category-doc-info h3 { font-size: 0.95rem; font-weight: 600; margin: 0 0 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.category-doc-meta { display: flex; gap: 12px; font-size: 0.78rem; color: var(--text-muted); }
+.category-doc-meta span { display: flex; align-items: center; gap: 4px; }
+.quiz-passed { color: #22c55e; font-weight: 600; font-size: 0.9rem; }
+@keyframes catDocFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
 /* ========== Print Styles ========== */
 @media print {

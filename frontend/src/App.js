@@ -1263,6 +1263,7 @@ function DocumentEditor({ doc, categories, onSave, onCancel }) {
 
 // --- Home / Dashboard ---
 function HomePage({ categories, documents, onSelectDoc }) {
+  const navigate = useNavigate();
   const parentCats = categories.filter(c => !c.parent_id && !c.internal).sort((a,b) => a.order - b.order);
   const getChildCount = (catId) => { const children = categories.filter(c => c.parent_id === catId); return documents.filter(d => d.category_id === catId || children.some(c => c.id === d.category_id)).length; };
 
@@ -1270,10 +1271,7 @@ function HomePage({ categories, documents, onSelectDoc }) {
     <div className="home-page" data-testid="home-page">
       <div className="home-hero"><h1>Agent Anatomy</h1><p>The definitive guide to AI agents — architecture, orchestration, LLMs, tooling, and the infrastructure that powers them.</p></div>
       <div className="home-grid">{parentCats.map(cat => (
-        <button key={cat.id} className="home-card" data-testid={`home-card-${cat.id}`} onClick={() => {
-          const firstDoc = documents.find(d => { const children = categories.filter(c => c.parent_id === cat.id); return d.category_id === cat.id || children.some(c => c.id === d.category_id); });
-          if (firstDoc) onSelectDoc(firstDoc.id);
-        }}>
+        <button key={cat.id} className="home-card" data-testid={`home-card-${cat.id}`} onClick={() => navigate(`/category/${cat.id}`)}>
           {cat.cover_image && <div className="home-card-cover" style={{backgroundImage: `url(${cat.cover_image})`}} />}
           <div className="home-card-body"><div className="home-card-icon"><Icon name={cat.icon} size={24}/></div><h3>{cat.name}</h3><p className="home-card-count">{getChildCount(cat.id)} documents</p></div>
         </button>
@@ -1990,15 +1988,26 @@ function LearningPathsPage() {
         {/* Animated Roadmap */}
         <div className="lp-roadmap" data-testid="lp-roadmap">
           <div className="lp-road-nodes">
-            {activePath.steps.map((step, i) => {
-              const done = progress[`${activePath.id}:${step.document_id}`];
-              return (
-                <div key={i} className={`lp-road-node ${done ? "completed" : ""}`} data-testid={`lp-road-${i}`}>
-                  <div className="lp-road-dot">{done ? <Icon name="Check" size={14}/> : <span>{i + 1}</span>}</div>
-                  <span className="lp-road-label">{step.title}</span>
-                </div>
-              );
-            })}
+            {(() => {
+              const totalSteps = activePath.steps.length;
+              const completedSteps = activePath.steps.filter(s => progress[`${activePath.id}:${s.document_id}`]).length;
+              const lineWidth = totalSteps > 1 ? `calc(${(completedSteps / (totalSteps - 1)) * 100}% * (100% - 40px) / 100%)` : "0";
+              const lineWidthPct = totalSteps > 1 ? (completedSteps / (totalSteps - 1)) * 100 : 0;
+              return <>
+                <div className="lp-road-progress-line" style={{width: `calc(${Math.min(lineWidthPct, 100)}% - ${40 * (1 - Math.min(lineWidthPct, 100) / 100)}px)`}} />
+                {activePath.steps.map((step, i) => {
+                  const done = progress[`${activePath.id}:${step.document_id}`];
+                  const prevDone = i === 0 || progress[`${activePath.id}:${activePath.steps[i-1].document_id}`];
+                  const isNextUp = !done && prevDone;
+                  return (
+                    <div key={i} className={`lp-road-node ${done ? "completed" : ""} ${isNextUp ? "next-up" : ""}`} data-testid={`lp-road-${i}`}>
+                      <div className="lp-road-dot">{done ? <Icon name="Check" size={14}/> : <span>{i + 1}</span>}</div>
+                      <span className="lp-road-label">{step.title}</span>
+                    </div>
+                  );
+                })}
+              </>;
+            })()}
           </div>
         </div>
 
@@ -2124,11 +2133,118 @@ function AIChatbot({ docId }) {
   );
 }
 
+// --- Module Test Component ---
+function ModuleTest({ categoryId, categoryName }) {
+  const { api } = useAuth();
+  const [test, setTest] = useState(null);
+  const [answers, setAnswers] = useState({});
+  const [submitted, setSubmitted] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    if (categoryId) api("get", `/module-tests/${categoryId}`).then(r => { if (r.data?.questions?.length) setTest(r.data); }).catch(() => {});
+  }, [categoryId, api]);
+
+  if (!test || !test.questions.length) return null;
+
+  const score = test.questions.reduce((acc, q) => acc + (answers[q.id] === q.correct ? 1 : 0), 0);
+  const total = test.questions.length;
+  const allAnswered = Object.keys(answers).length === total;
+  const passed = submitted && score >= Math.ceil(total * 0.7);
+
+  if (!expanded) {
+    return (
+      <div className="path-test-section" data-testid="module-test">
+        <button className="doc-quiz-start" data-testid="module-test-btn" onClick={() => setExpanded(true)}>
+          <Icon name="Check" size={20}/> <span>{test.title || `${categoryName} — Module Test`}</span> <span className="doc-quiz-count">{total} questions</span>
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="doc-quiz path-test-section" data-testid="module-test-expanded">
+      <h3 className="doc-quiz-title"><Icon name="Award" size={18}/> {test.title} <button className="doc-quiz-minimize" onClick={() => setExpanded(false)}><Icon name="X" size={14}/></button></h3>
+      {test.questions.map((q, qi) => (
+        <div key={q.id} className="quiz-question">
+          <p className="quiz-question-text">{qi + 1}. {q.question}</p>
+          <div className="quiz-options">
+            {q.options.map((opt, oi) => {
+              const selected = answers[q.id] === oi;
+              const isCorrect = submitted && oi === q.correct;
+              const isWrong = submitted && selected && oi !== q.correct;
+              return (
+                <button key={oi} className={`quiz-option ${selected ? "selected" : ""} ${isCorrect ? "correct" : ""} ${isWrong ? "wrong" : ""}`} onClick={() => { if (!submitted) setAnswers(prev => ({...prev, [q.id]: oi})); }} disabled={submitted}>
+                  <span className="quiz-option-letter">{String.fromCharCode(65 + oi)}</span>{opt}
+                </button>
+              );
+            })}
+          </div>
+          {submitted && answers[q.id] !== undefined && (
+            <p className={`quiz-explanation ${answers[q.id] === q.correct ? "correct" : "wrong"}`}>
+              {answers[q.id] === q.correct ? "Correct! " : "Incorrect. "}{q.explanation}
+            </p>
+          )}
+        </div>
+      ))}
+      <div className="quiz-footer">
+        {!submitted ? (
+          <button className="editor-btn-primary" onClick={() => setSubmitted(true)} disabled={!allAnswered}>Check Answers ({Object.keys(answers).length}/{total})</button>
+        ) : (
+          <div className="quiz-result">
+            <span className="quiz-score">Score: {score}/{total} ({Math.round(score/total*100)}%)</span>
+            {passed && <span className="quiz-passed">Passed!</span>}
+            <button className="editor-btn-secondary" onClick={() => { setAnswers({}); setSubmitted(false); }}>Try Again</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// --- Category Page ---
+function CategoryPage({ categories, documents, onSelectDoc }) {
+  const { catId } = useParams();
+  const navigate = useNavigate();
+  const category = categories.find(c => c.id === catId);
+  const subcats = categories.filter(c => c.parent_id === catId);
+  const catDocs = documents.filter(d => d.category_id === catId || subcats.some(c => c.id === d.category_id)).filter(d => !d.deleted);
+
+  if (!category) return <div className="doc-empty"><Icon name="FolderOpen" size={48}/><h2>Category not found</h2><p>This category may have been removed.</p></div>;
+
+  return (
+    <div className="category-page" data-testid="category-page">
+      <button className="lp-back" onClick={() => navigate("/")} data-testid="cat-back"><Icon name="ArrowLeft" size={16}/> All Categories</button>
+      <div className="category-hero">
+        <div className="category-hero-icon"><Icon name={category.icon || "FolderOpen"} size={32}/></div>
+        <h1>{category.name}</h1>
+        <p className="category-desc">{catDocs.length} document{catDocs.length !== 1 ? "s" : ""} in this module</p>
+      </div>
+      <div className="category-docs-grid">
+        {catDocs.map((doc, i) => (
+          <button key={doc.id} className="category-doc-card" data-testid={`cat-doc-${doc.id}`} onClick={() => onSelectDoc(doc.id)} style={{animationDelay: `${i * 0.05}s`}}>
+            <div className="category-doc-num">{i + 1}</div>
+            <div className="category-doc-info">
+              <h3>{doc.title}</h3>
+              <div className="category-doc-meta">
+                <span><Icon name="Clock" size={12}/> {Math.max(1, Math.ceil((doc.content?.split(/\s+/).length || 0) / 200))} min read</span>
+                {doc.updated_at && <span>Updated {new Date(doc.updated_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>}
+              </div>
+            </div>
+            <Icon name="ChevronRight" size={16}/>
+          </button>
+        ))}
+      </div>
+      <ModuleTest categoryId={catId} categoryName={category.name} />
+    </div>
+  );
+}
+
 // --- Main Dashboard ---
 function Dashboard() {
   const { api, user } = useAuth();
   const navigate = useNavigate();
-  const { docId } = useParams();
+  const { docId, catId } = useParams();
   const [categories, setCategories] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [bookmarkedIds, setBookmarkedIds] = useState([]);
@@ -2240,9 +2356,10 @@ function Dashboard() {
   const isTrashRoute = window.location.pathname === "/trash";
   const isSettingsRoute = window.location.pathname === "/settings";
   const isAnalyticsRoute = window.location.pathname === "/analytics";
-  const showHome = !docId && !creating && !editing && !isBookmarksRoute && !isLearnRoute && !isToolsRoute && !isTrashRoute && !isSettingsRoute && !isAnalyticsRoute;
+  const isCategoryRoute = currentPath.startsWith("/category/");
+  const showHome = !docId && !catId && !creating && !editing && !isBookmarksRoute && !isLearnRoute && !isToolsRoute && !isTrashRoute && !isSettingsRoute && !isAnalyticsRoute && !isCategoryRoute;
 
-  const showingDocViewer = !creating && !editing && !isBookmarksRoute && !isLearnRoute && !isToolsRoute && !isTrashRoute && !isSettingsRoute && !isAnalyticsRoute && !showHome && activeDoc;
+  const showingDocViewer = !creating && !editing && !isBookmarksRoute && !isLearnRoute && !isToolsRoute && !isTrashRoute && !isSettingsRoute && !isAnalyticsRoute && !isCategoryRoute && !showHome && activeDoc;
 
   return (
     <div className="dashboard" data-testid="dashboard">
@@ -2256,6 +2373,7 @@ function Dashboard() {
         : isTrashRoute && isAdmin ? <TrashPage onDocumentsChanged={refreshDocuments} />
         : isSettingsRoute && isAdmin ? <SettingsPage isAdmin={isAdmin} />
         : isAnalyticsRoute && isAdmin ? <AnalyticsPage />
+        : isCategoryRoute && catId ? <CategoryPage categories={categories} documents={documents} onSelectDoc={selectDoc} />
         : showHome ? <HomePage categories={categories} documents={documents} onSelectDoc={selectDoc} />
         : <DocumentViewer doc={activeDoc} category={currentCat} parentCategory={parentCat} isBookmarked={bookmarkedIds.includes(activeDoc?.id)} onToggleBookmark={() => activeDoc && toggleBookmark(activeDoc.id)} onEdit={() => setEditing(true)} onDelete={handleDelete} isAdmin={isAdmin} onNavigateHome={() => navigate("/")} categories={categories} documents={documents} onSelectDoc={selectDoc} />}
       </main>
@@ -2275,6 +2393,7 @@ function AppRouter() {
       <Route path="/trash" element={<Dashboard />} />
       <Route path="/settings" element={<Dashboard />} />
       <Route path="/analytics" element={<Dashboard />} />
+      <Route path="/category/:catId" element={<Dashboard />} />
       <Route path="/doc/:docId" element={<Dashboard />} />
       <Route path="/" element={<Dashboard />} />
       <Route path="*" element={<NotFoundPage />} />
