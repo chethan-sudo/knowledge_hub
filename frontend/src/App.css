@@ -750,3 +750,100 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 /* Learning path reset */
 .lp-reset-btn { display: flex; align-items: center; gap: 6px; background: none; border: 1px solid var(--border-clr); color: var(--text-muted); cursor: pointer; padding: 6px 14px; border-radius: var(--radius); font-size: 0.78rem; margin-top: 8px; transition: all 0.15s; }
 .lp-reset-btn:hover { color: var(--danger); border-color: var(--danger); }
+
+/* ========== Print Styles ========== */
+@media print {
+  /* Hide everything except document content */
+  .sidebar, .sidebar-collapsed, .mobile-header, .topbar,
+  .doc-actions, .doc-breadcrumb, .doc-sidebar,
+  .doc-quiz, .doc-nav-buttons, .related-docs,
+  .comments-section, .chat-fab, .reading-progress,
+  .search-overlay, .footer-watermark, .collab-avatars,
+  .doc-tags, [class*="Made with"] { display: none !important; }
+
+  /* Reset layout to full width */
+  body, html {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    color: #111 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .app-layout, .main-content {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+  }
+  .doc-page {
+    padding: 20px 40px !important;
+  }
+
+  /* Force light theme for all doc elements */
+  .dark .doc-page, .dark .doc-content, .dark .doc-content-inner,
+  .dark .doc-title, .dark .doc-header, .dark .doc-meta,
+  .dark h1, .dark h2, .dark h3, .dark h4, .dark p, .dark li, .dark span,
+  .dark td, .dark th, .dark blockquote, .dark .doc-layout {
+    background: #fff !important;
+    color: #111 !important;
+  }
+  .dark .doc-meta-item, .dark .doc-meta {
+    color: #555 !important;
+  }
+  .dark code, .dark pre {
+    background: #f5f5f5 !important;
+    color: #111 !important;
+    border-color: #ddd !important;
+  }
+  .dark table, .dark th, .dark td {
+    border-color: #ddd !important;
+  }
+  .dark th {
+    background: #f0f0f0 !important;
+    color: #111 !important;
+  }
+  .dark blockquote {
+    border-left-color: #4f46e5 !important;
+    background: #f8f8ff !important;
+    color: #333 !important;
+  }
+
+  /* Ensure Mermaid SVGs render correctly */
+  .mermaid svg {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+  .mermaid {
+    background: #fff !important;
+    break-inside: avoid;
+  }
+
+  /* Typography for print */
+  .doc-title {
+    font-size: 24pt !important;
+    margin-bottom: 8px !important;
+  }
+  .doc-content-inner {
+    max-width: 100% !important;
+    padding: 0 !important;
+    font-size: 11pt !important;
+    line-height: 1.6 !important;
+  }
+
+  /* Page break controls */
+  h1, h2, h3, h4 { page-break-after: avoid; }
+  pre, code, table, .mermaid, img { page-break-inside: avoid; }
+  p { orphans: 3; widows: 3; }
+
+  /* Links show URL */
+  a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 9pt;
+    color: #666;
+    word-break: break-all;
+  }
+  /* But not for internal links */
+  a[href^="/"]::after, a[href^="#"]::after { content: none; }
+}

@@ -2,7 +2,6 @@ import React, { useState, useEffect, createContext, useContext, useCallback, use
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import mermaid from "mermaid";
-import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import "@/App.css";
 
@@ -175,6 +174,8 @@ function Icon({ name, size = 18 }) {
     BarChart: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/></svg>,
     TrendingUp: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>,
     Eye: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>,
+    Printer: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>,
+    Award: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"/><circle cx="12" cy="8" r="6"/></svg>,
   };
   return icons[name] || icons.FileText;
 }
@@ -944,7 +945,6 @@ function DocumentViewer({ doc, category, parentCategory, isBookmarked, onToggleB
   const [versions, setVersions] = useState([]);
   const [showVersions, setShowVersions] = useState(false);
   const [viewingVersion, setViewingVersion] = useState(null);
-  const [exporting, setExporting] = useState(false);
   const [shareId, setShareId] = useState(doc?.share_id || null);
   const [copied, setCopied] = useState(false);
   const [showShare, setShowShare] = useState(false);
@@ -963,45 +963,8 @@ function DocumentViewer({ doc, category, parentCategory, isBookmarked, onToggleB
     try { const r = await api("get", `/documents/${doc.id}/versions`); setVersions(r.data); setShowVersions(true); } catch {}
   };
 
-  const exportPDF = async () => {
-    if (!contentRef.current || exporting) return;
-    setExporting(true);
-    try {
-      // Clone the content and force light theme for PDF
-      const clone = contentRef.current.cloneNode(true);
-      clone.style.cssText = "background:#fff;color:#111;padding:20px;width:800px;font-family:Inter,sans-serif;";
-      // Force light colors on all elements
-      clone.querySelectorAll("*").forEach(el => {
-        const style = window.getComputedStyle(el);
-        if (style.color === "rgb(250, 250, 250)" || style.color === "rgb(228, 228, 231)") el.style.color = "#111";
-        if (style.color === "rgb(161, 161, 170)") el.style.color = "#555";
-        if (style.backgroundColor === "rgb(9, 9, 11)" || style.backgroundColor === "rgb(18, 18, 20)") el.style.backgroundColor = "#fff";
-        if (style.backgroundColor === "rgb(24, 24, 27)" || style.backgroundColor === "rgb(39, 39, 42)") el.style.backgroundColor = "#f5f5f5";
-        if (style.borderColor === "rgb(39, 39, 42)") el.style.borderColor = "#ddd";
-      });
-      // Convert SVGs to inline for html2canvas
-      clone.querySelectorAll("svg").forEach(svg => {
-        svg.setAttribute("width", svg.getBoundingClientRect().width);
-        svg.setAttribute("height", svg.getBoundingClientRect().height);
-      });
-      document.body.appendChild(clone);
-      const canvas = await html2canvas(clone, { scale: 2, useCORS: true, backgroundColor: "#ffffff", logging: false, allowTaint: true });
-      document.body.removeChild(clone);
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF("p", "mm", "a4");
-      const pdfW = pdf.internal.pageSize.getWidth();
-      const pdfH = pdf.internal.pageSize.getHeight();
-      const ratio = pdfW / canvas.width;
-      const scaledH = canvas.height * ratio;
-      let position = 0;
-      while (position < scaledH) {
-        if (position > 0) pdf.addPage();
-        pdf.addImage(imgData, "PNG", 0, -position, pdfW, scaledH);
-        position += pdfH;
-      }
-      pdf.save(`${doc.title}.pdf`);
-    } catch (e) { console.error("PDF export error:", e); alert("PDF export failed. Please try again."); }
-    setExporting(false);
+  const exportPDF = () => {
+    window.print();
   };
 
   const toggleShare = async () => {
@@ -1052,7 +1015,7 @@ function DocumentViewer({ doc, category, parentCategory, isBookmarked, onToggleB
         <div className="doc-actions">
           <PresenceAvatars users={users} identity={identity} />
           {viewingVersion && <button data-testid="version-back-btn" className="doc-action-btn" onClick={() => setViewingVersion(null)} title="Back to current"><Icon name="ArrowLeft" size={18}/></button>}
-          <button data-testid="export-pdf-btn" className="doc-action-btn" onClick={exportPDF} title="Export as PDF" disabled={exporting}><Icon name="Download" size={18}/></button>
+          <button data-testid="export-pdf-btn" className="doc-action-btn" onClick={exportPDF} title="Print / Save as PDF"><Icon name="Printer" size={18}/></button>
           <button data-testid="version-history-btn" className="doc-action-btn" onClick={loadVersions} title="Version history"><Icon name="Clock" size={18}/></button>
           {isAdmin && <button data-testid="share-toggle-btn" className="doc-action-btn" onClick={() => setShowShare(true)} title="Share settings"><Icon name="Share" size={18}/></button>}
           <button data-testid="bookmark-toggle-btn" className={`doc-action-btn ${isBookmarked ? "bookmarked" : ""}`} onClick={onToggleBookmark}><Icon name={isBookmarked ? "BookmarkFilled" : "Bookmark"} size={18}/></button>
@@ -1876,9 +1839,9 @@ function PathTest({ pathId, pathTitle, enabled }) {
       {showCert && (
         <div className="search-overlay" onClick={() => setShowCert(false)}>
           <div className="cert-modal" onClick={e => e.stopPropagation()} data-testid="certificate">
-            <div className="cert-border">
+            <div className="cert-border" id="certificate-content">
               <div className="cert-header">Certificate of Completion</div>
-              <div className="cert-icon"><Icon name="Check" size={40}/></div>
+              <div className="cert-icon"><Icon name="Award" size={40}/></div>
               <div className="cert-body">
                 <p className="cert-congrats">Congratulations!</p>
                 <p className="cert-text">You have successfully completed</p>
@@ -1886,7 +1849,66 @@ function PathTest({ pathId, pathTitle, enabled }) {
                 <p className="cert-score">Score: {score}/{total} ({Math.round(score/total*100)}%)</p>
                 <p className="cert-date">{new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</p>
               </div>
-              <button className="editor-btn-secondary" onClick={() => setShowCert(false)} style={{marginTop: 20}}>Close</button>
+              <div style={{display:"flex", gap: 10, justifyContent: "center", marginTop: 20}}>
+                <button className="editor-btn-primary" data-testid="download-cert-btn" onClick={() => {
+                  const pdf = new jsPDF("l", "mm", "a4");
+                  const w = pdf.internal.pageSize.getWidth();
+                  const h = pdf.internal.pageSize.getHeight();
+                  // Background
+                  pdf.setFillColor(250, 250, 252);
+                  pdf.rect(0, 0, w, h, "F");
+                  // Border
+                  pdf.setDrawColor(79, 70, 229);
+                  pdf.setLineWidth(2);
+                  pdf.rect(12, 12, w - 24, h - 24);
+                  pdf.setLineWidth(0.5);
+                  pdf.rect(15, 15, w - 30, h - 30);
+                  // Header
+                  pdf.setFont("helvetica", "normal");
+                  pdf.setFontSize(12);
+                  pdf.setTextColor(79, 70, 229);
+                  pdf.text("CERTIFICATE OF COMPLETION", w / 2, 40, { align: "center" });
+                  // Decorative line
+                  pdf.setDrawColor(79, 70, 229);
+                  pdf.setLineWidth(0.5);
+                  pdf.line(w / 2 - 40, 45, w / 2 + 40, 45);
+                  // Congrats
+                  pdf.setFont("helvetica", "bold");
+                  pdf.setFontSize(28);
+                  pdf.setTextColor(24, 24, 27);
+                  pdf.text("Congratulations!", w / 2, 65, { align: "center" });
+                  // Body text
+                  pdf.setFont("helvetica", "normal");
+                  pdf.setFontSize(14);
+                  pdf.setTextColor(100, 100, 110);
+                  pdf.text("This certifies that you have successfully completed", w / 2, 80, { align: "center" });
+                  // Path name
+                  pdf.setFont("helvetica", "bold");
+                  pdf.setFontSize(22);
+                  pdf.setTextColor(79, 70, 229);
+                  pdf.text(pathTitle, w / 2, 100, { align: "center" });
+                  // Score
+                  pdf.setFont("helvetica", "normal");
+                  pdf.setFontSize(14);
+                  pdf.setTextColor(24, 24, 27);
+                  pdf.text(`Score: ${score}/${total} (${Math.round(score/total*100)}%)`, w / 2, 118, { align: "center" });
+                  // Platform
+                  pdf.setFontSize(11);
+                  pdf.setTextColor(100, 100, 110);
+                  pdf.text("Agent Anatomy — AI Agent Knowledge Hub", w / 2, 135, { align: "center" });
+                  // Date
+                  pdf.setFontSize(11);
+                  pdf.setTextColor(140, 140, 150);
+                  pdf.text(new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }), w / 2, 148, { align: "center" });
+                  // Bottom decorative line
+                  pdf.setDrawColor(79, 70, 229);
+                  pdf.line(w / 2 - 40, 155, w / 2 + 40, 155);
+                  pdf.save(`${pathTitle} - Certificate.pdf`);
+                }}>
+                  <Icon name="Download" size={16}/> Download PDF
+                </button>
+                <button className="editor-btn-secondary" onClick={() => setShowCert(false)}>Close</button>
+              </div>
             </div>
           </div>
         </div>
