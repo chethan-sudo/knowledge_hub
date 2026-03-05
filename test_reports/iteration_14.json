@@ -1,0 +1,88 @@
+{
+  "summary": "Comprehensive testing of iteration 14 features: Related Documents, Mobile Responsiveness, Ctrl+K Search, 404 Page, and full regression testing of all CRUD operations. All backend tests passed (31/31). All UI tests passed.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration14_features.py",
+    "/app/test_reports/pytest/iteration14_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [
+    "/app/backend/tests/test_iteration14_features.py"
+  ],
+  "success_rate": {
+    "backend": "100% (31/31 tests passed)",
+    "frontend": "100% (all UI tests passed)"
+  },
+  "test_credentials": "No credentials needed - MOCKED Auth with hardcoded admin (admin@emergent.sh)",
+  "seed_data_creation": "Created TEST_ prefixed documents/users/comments during testing - all cleaned up",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "All new features working correctly. App is stable. Related Documents shows up to 5 items (siblings + cousins). Mobile responsiveness shows single column grid at 768px and below. Ctrl+K focuses search. 404 page works with Go Home button.",
+  "features_verified": {
+    "related_documents": {
+      "status": "PASS",
+      "details": "Related Documents section appears at bottom of document pages before comments. Shows siblings (same category_id) and cousins (docs from categories with same parent). Verified showing 3 related docs on 'How Transformers Work' page. Each item shows title and category name. Clicking navigates to that doc."
+    },
+    "ctrl_k_search": {
+      "status": "PASS",
+      "details": "Pressing Ctrl+K focuses the search input in sidebar. InlineSearch component has event listener for Ctrl+K that focuses input. Escape key clears and blurs."
+    },
+    "mobile_responsiveness": {
+      "status": "PASS",
+      "details": "At 390px width: sidebar becomes collapsible with hamburger button (fixed position top-left), home grid displays single column (grid-template-columns: 1fr), main content uses full width. TOC sidebar hidden via CSS (display: none)."
+    },
+    "404_page": {
+      "status": "PASS",
+      "details": "Navigating to /nonexistent-page shows NotFoundPage component with 'Page not found', 'The page you're looking for doesn't exist.' and 'Go Home' button. Clicking Go Home navigates to /."
+    },
+    "document_crud": {
+      "status": "PASS",
+      "details": "Create: POST /api/documents works. Read: GET /api/documents/{id} works. Update: PUT /api/documents/{id} creates version then updates. Delete: DELETE /api/documents/{id} soft deletes to trash."
+    },
+    "trash_operations": {
+      "status": "PASS",
+      "details": "GET /api/trash lists deleted docs. POST /api/trash/{id}/restore restores doc. DELETE /api/trash/{id} permanently deletes."
+    },
+    "version_history": {
+      "status": "PASS",
+      "details": "Clock icon button opens version panel. GET /api/documents/{id}/versions lists versions. POST /api/documents/{id}/versions/{version_id}/restore saves current state as new version then restores old version."
+    },
+    "keyword_auto_linking": {
+      "status": "PASS",
+      "details": "GET /api/keywords returns keyword-to-docId map with 50+ entries. Keywords like orchestrator, transformer, kubernetes, docker, fastapi, mongodb, rag, subagent are mapped. KeywordLinkedText component renders links with dotted underline (doc-keyword-link class). Keywords pointing to current doc are NOT highlighted."
+    },
+    "tools_page": {
+      "status": "PASS",
+      "details": "Tools page shows flat grid layout (tools-grid class, no category groupings). Add button says 'Add New Link'. Tool form has NO category dropdown - only name, url, description fields."
+    },
+    "comment_delete": {
+      "status": "PASS",
+      "details": "Delete button (data-testid='delete-comment-{id}') only appears for comments where isOwn is true (user_id matches). Non-owners cannot see delete button. Backend also verifies ownership."
+    },
+    "user_management": {
+      "status": "PASS",
+      "details": "Settings page has invite form (email + Viewer/Admin picker + Invite button). Users list shows role dropdown (Viewer/Admin) and delete button for each user. Role change updates via PUT /api/users/{id}/role."
+    }
+  },
+  "mocked_apis": {
+    "authentication": "MOCKED - hardcoded admin user (admin@emergent.sh), no real Google OAuth flow. All users treated as admin."
+  },
+  "regression_tests": {
+    "categories": "PASS - 16 categories visible, Tutorials is last",
+    "documents": "PASS - Documents load correctly with reading time and updated date",
+    "bookmarks": "PASS - Toggle bookmark works",
+    "search": "PASS - Search returns results with snippets",
+    "tools": "PASS - CRUD operations work",
+    "comments": "PASS - Add/delete comments work",
+    "versions": "PASS - Version history and restore work"
+  }
+}

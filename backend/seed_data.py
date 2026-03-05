@@ -68,6 +68,14 @@ CAT_LIMITATIONS = _id()
 CAT_UI_GUIDE = _id()
 CAT_FAQ = _id()
 
+# How Emergent Actually Works module
+CAT_HOW_EMERGENT = _id()
+SUB_AGENTS_MODELS = _id()
+SUB_AGENT_LOOP_EM = _id()
+SUB_TOOLS_DELEG = _id()
+SUB_TRAJ_DEBUG = _id()
+SUB_FAILURE_RECOVERY = _id()
+
 CATEGORIES = [
     {"id": CAT_PLATFORM, "name": "Platform Architecture", "icon": "Layers", "order": 0, "parent_id": None},
     {"id": SUB_E1, "name": "E1 Orchestrator", "icon": "Brain", "order": 0, "parent_id": CAT_PLATFORM},
@@ -129,6 +137,14 @@ CATEGORIES = [
     {"id": CAT_LIMITATIONS, "name": "Limitations & Constraints", "icon": "Lock", "order": 12, "parent_id": None},
     {"id": CAT_UI_GUIDE, "name": "UI Guide", "icon": "Monitor", "order": 13, "parent_id": None},
     {"id": CAT_FAQ, "name": "FAQ", "icon": "MessageSquare", "order": 14, "parent_id": None},
+
+    # How Emergent Actually Works
+    {"id": CAT_HOW_EMERGENT, "name": "How Emergent Actually Works", "icon": "Compass", "order": 15, "parent_id": None},
+    {"id": SUB_AGENTS_MODELS, "name": "Agents & Models", "icon": "Users", "order": 0, "parent_id": CAT_HOW_EMERGENT},
+    {"id": SUB_AGENT_LOOP_EM, "name": "The Agent Loop", "icon": "Cpu", "order": 1, "parent_id": CAT_HOW_EMERGENT},
+    {"id": SUB_TOOLS_DELEG, "name": "Tools & Delegation", "icon": "Sparkles", "order": 2, "parent_id": CAT_HOW_EMERGENT},
+    {"id": SUB_TRAJ_DEBUG, "name": "Trajectory & Debug Data", "icon": "Database", "order": 3, "parent_id": CAT_HOW_EMERGENT},
+    {"id": SUB_FAILURE_RECOVERY, "name": "Failure & Recovery", "icon": "Lock", "order": 4, "parent_id": CAT_HOW_EMERGENT},
 ]
 
 DOCUMENTS = [
@@ -2789,6 +2805,2169 @@ A **second, cheaper LLM** (GPT-4.1-mini) that post-processes certain responses. 
 2. Start a job, send a message, open Debug
 3. Search for those unique sentences in the runtime system prompt (body.system)
 4. If found → correct prompt is loaded at runtime
+"""
+    },
+
+    # ===================================================================
+    # HOW EMERGENT ACTUALLY WORKS — 12 documents from real trajectory data
+    # ===================================================================
+
+    # --- Doc 1: The Emergent Agent Ecosystem ---
+    {
+        "id": _id(), "title": "The Emergent Agent Ecosystem", "category_id": SUB_AGENTS_MODELS, "author_id": SYSTEM_AUTHOR,
+        "created_at": NOW, "updated_at": NOW, "order": 0,
+        "content": """# The Emergent Agent Ecosystem
+
+A data-driven overview of every actor in the Emergent platform — derived from real production trajectory analysis across multiple jobs.
+
+## Platform Overview
+
+Emergent is a **Go-based orchestration platform** running on Linux. It coordinates multiple AI agents across different LLM providers to build full-stack applications autonomously. The platform is NOT a single agent — it is an ecosystem of **2 agent types, 8 expertise configurations, 8+ LLM models, and 33 tools**.
+
+## The Two Agent Types
+
+Every agent in Emergent is one of two types:
+
+| Agent Type | Role | When Active |
+|-----------|------|-------------|
+| **EmergentAssistant** | Main agent — plans, writes code, manages files, orchestrates sub-agents | Always running during a job |
+| **SkilledAssistant** | Sub-agent — specialized worker delegated to by the main agent | Only during delegation (TRANSITION_MAIN_TO_SUB) |
+
+## Full Ecosystem Diagram
+
+```mermaid
+flowchart TB
+    subgraph Platform["Emergent Platform (Go + Linux)"]
+        JM["job_metadata<br/>model_name, prompt_name"]
+        APS["aps.yaml<br/>Agent Configuration"]
+    end
+
+    subgraph Main["EmergentAssistant (Main Agent)"]
+        M1["Codex 5.3 Expertise<br/>Models: galapagos-alpha, gpt-5.3-codex,<br/>macaroni-alpha, spark-preview"]
+        M2["Opus 4.5 Expertise<br/>Model: claude-opus-4-5"]
+        M3["General Agent<br/>Model: gpt-5.3-codex-spark-preview"]
+    end
+
+    subgraph Sub["SkilledAssistant (Sub-Agents)"]
+        S1["Design Agent<br/>gemini-3-pro-preview"]
+        S2["Testing Agent (Codex)<br/>gpt-5.3-codex"]
+        S3["Testing Agent v3 Fork (Opus)<br/>claude-opus-4-5"]
+        S4["Testing Agent v3 (Sonnet 4)<br/>claude-sonnet-4"]
+        S5["Auto Frontend Testing<br/>claude-sonnet-4-5"]
+        S6["Support Agent"]
+        S7["Deep Testing Backend v2"]
+    end
+
+    Platform --> Main
+    Main -->|"TRANSITION_MAIN_TO_SUB"| Sub
+    Sub -->|"TRANSITION_SUB_TO_MAIN"| Main
+```
+
+## Key Numbers from Real Data
+
+These numbers come from analyzing real production trajectories across multiple jobs:
+
+| Metric | Value |
+|--------|-------|
+| Distinct agent+expertise+model+tool combinations | **132** |
+| Agent types | **2** (EmergentAssistant, SkilledAssistant) |
+| Expertise configurations | **8** |
+| Distinct LLM models | **8+** |
+| Distinct tools/functions | **33** |
+| Execution modes | **3** (SKIP, TRANSITION_MAIN_TO_SUB, TRANSITION_SUB_TO_MAIN) |
+
+## The Three Execution Modes
+
+Every trajectory step has an `execution_mode`:
+
+| Mode | Count | Meaning |
+|------|-------|---------|
+| `SKIP` | 1,950 | Normal agent step — the main agent executes a tool |
+| `TRANSITION_MAIN_TO_SUB` | 34 | Main agent delegates to a sub-agent |
+| `TRANSITION_SUB_TO_MAIN` | 29 | Sub-agent completes and returns control |
+
+The imbalance (34 → sub, 29 ← back) means some sub-agent sessions were still active when data was captured.
+
+## How a Typical Job Flows
+
+1. **Job starts** → Platform reads `job_metadata` for model and prompt configuration
+2. **Main agent initializes** → EmergentAssistant begins with assigned model and expertise
+3. **Core loop runs** → Agent calls LLM → gets tool_use response → executes tool → feeds result back
+4. **Delegation happens** → Main agent calls a delegation tool (e.g., `testing_agent`) → TRANSITION_MAIN_TO_SUB
+5. **Sub-agent works** → SkilledAssistant runs its own loop with its own model
+6. **Sub-agent returns** → TRANSITION_SUB_TO_MAIN → main agent continues
+7. **Job completes** → Main agent calls `finish` tool
+
+## LLM Providers Used
+
+Emergent is **multi-provider** — it uses models from three different companies:
+
+| Provider | Models | Used For |
+|----------|--------|----------|
+| **OpenAI** | gpt-5.3-codex, gpt-5.3-codex-spark-preview, galapagos-alpha, macaroni-alpha | Main agent (codex expertise), testing agent (codex) |
+| **Anthropic** | claude-opus-4-5, claude-sonnet-4, claude-sonnet-4-5 | Main agent (opus expertise), testing agents (v3, auto frontend) |
+| **Google** | gemini-3-pro-preview | Design agent exclusively |
+
+> **Note:** `galapagos-alpha` and `macaroni-alpha` are experimental/internal model names that may represent pre-release or A/B test variants.
+"""
+    },
+
+    # --- Doc 2: All 8 Expertise Types & Their Models ---
+    {
+        "id": _id(), "title": "All 8 Expertise Types & Their Models", "category_id": SUB_AGENTS_MODELS, "author_id": SYSTEM_AUTHOR,
+        "created_at": NOW, "updated_at": NOW, "order": 1,
+        "content": """# All 8 Expertise Types & Their Models
+
+Every agent in Emergent has an `expertise_type` — a configuration string that determines its system prompt, available tools, and which LLM model it uses. There are **8 distinct expertise types** observed in production.
+
+## Main Agent Expertise Types (EmergentAssistant)
+
+### 1. full_stack_app_builder_cloud_v8_codex_5_3
+
+The **primary workhorse** — used for most full-stack app building jobs.
+
+| Field | Value |
+|-------|-------|
+| Agent Type | EmergentAssistant |
+| Purpose | Full-stack application building (React + FastAPI + MongoDB) |
+| Models | `galapagos-alpha`, `gpt-5.3-codex`, `gpt-5.3-codex-spark-preview`, `macaroni-alpha` |
+| Prompt | `infinite_fullstack_codex_5_3` |
+| Frequency | Most common expertise in production |
+
+**Why 4 different models for the same expertise?** The platform runs A/B experiments and canary deployments. The same expertise type can be routed to different models:
+- `gpt-5.3-codex` — the stable production model
+- `gpt-5.3-codex-spark-preview` — the Spark environment preview
+- `galapagos-alpha` — experimental variant (codename)
+- `macaroni-alpha` — experimental variant (codename)
+
+### 2. full_stack_app_builder_cloud_v8_opus_4_5
+
+Same full-stack building capability but using **Anthropic's Claude Opus**.
+
+| Field | Value |
+|-------|-------|
+| Agent Type | EmergentAssistant |
+| Purpose | Full-stack app building (alternative to Codex) |
+| Model | `claude-opus-4-5-20251101` |
+| Prompt | `infinite_fullstack_opus_4_5` |
+
+### 3. general_agent_codex_5_3
+
+A **general-purpose agent** — not specialized for full-stack building.
+
+| Field | Value |
+|-------|-------|
+| Agent Type | EmergentAssistant |
+| Purpose | General tasks, non-app-building workflows |
+| Model | `gpt-5.3-codex-spark-preview` |
+
+## Sub-Agent Expertise Types (SkilledAssistant)
+
+### 4. design_agent_full_stack_gemini_3_pro
+
+The **design specialist** — uses Google's Gemini for UI/UX decisions.
+
+| Field | Value |
+|-------|-------|
+| Agent Type | SkilledAssistant |
+| Purpose | UI design, layout, color schemes, component structure |
+| Model | `gemini-3-pro-preview` |
+| Delegation Tool | `design_agent_full_stack` |
+| Reference | Uses `design_guidelines.json` for design constraints |
+
+### 5. testing_agent_codex_5_3
+
+Testing sub-agent using **OpenAI Codex** — the original testing agent.
+
+| Field | Value |
+|-------|-------|
+| Agent Type | SkilledAssistant |
+| Purpose | Writing and running tests (Playwright, pytest) |
+| Model | `gpt-5.3-codex` |
+| Delegation Tool | `testing_agent` |
+
+### 6. testing_agent_v3_fork_opus_4_5
+
+Testing sub-agent using **Claude Opus** — a forked variant of v3.
+
+| Field | Value |
+|-------|-------|
+| Agent Type | SkilledAssistant |
+| Purpose | Advanced testing with Claude Opus capabilities |
+| Model | `claude-opus-4-5-20251101` |
+| Delegation Tool | `testing_agent_v3_fork` |
+
+### 7. testing_agent_v3_sonnet_4
+
+Testing sub-agent using **Claude Sonnet 4**.
+
+| Field | Value |
+|-------|-------|
+| Agent Type | SkilledAssistant |
+| Purpose | Testing with balanced speed/quality (Sonnet 4) |
+| Model | `claude-sonnet-4-20250514` |
+| Delegation Tool | `testing_agent_v3` |
+
+### 8. auto_frontend_testing_agent_sonnet_3_7
+
+**Automated frontend testing** agent using Claude Sonnet 4.5.
+
+| Field | Value |
+|-------|-------|
+| Agent Type | SkilledAssistant |
+| Purpose | Automated Playwright frontend tests, screenshot comparison |
+| Model | `claude-sonnet-4-5-20250929` |
+| Delegation Tool | `auto_frontend_testing_agent` |
+
+> **Note:** Despite the name containing "sonnet_3_7", this expertise actually maps to `claude-sonnet-4-5-20250929` — the naming reflects when the config was originally created, not the current model.
+
+## Multi-Model Routing Diagram
+
+```mermaid
+flowchart LR
+    subgraph Expertise["expertise_type"]
+        E1["codex_5_3"]
+        E2["opus_4_5"]
+        E3["general_agent"]
+        E4["design_gemini"]
+        E5["testing_codex"]
+        E6["testing_v3_fork_opus"]
+        E7["testing_v3_sonnet"]
+        E8["auto_frontend_sonnet"]
+    end
+
+    subgraph Models["LLM Models"]
+        GA["galapagos-alpha"]
+        GC["gpt-5.3-codex"]
+        SP["spark-preview"]
+        MA["macaroni-alpha"]
+        CO["claude-opus-4-5"]
+        CS4["claude-sonnet-4"]
+        CS45["claude-sonnet-4-5"]
+        GM["gemini-3-pro"]
+    end
+
+    E1 --> GA
+    E1 --> GC
+    E1 --> SP
+    E1 --> MA
+    E2 --> CO
+    E3 --> SP
+    E4 --> GM
+    E5 --> GC
+    E6 --> CO
+    E7 --> CS4
+    E8 --> CS45
+```
+
+## How the Platform Selects a Model
+
+The selection chain:
+
+1. **User creates a job** → selects a "Use Case" + "Model" in the UI
+2. **Platform looks up `aps.yaml`** → finds the matching `agent_id` for that combination
+3. **Agent file loaded** → contains the `expertise_type` and `prompt_id`
+4. **`job_metadata` written** → stores `model_name` and `prompt_name` for the job
+5. **Agent spawned** → uses the configured model
+
+The `job_metadata` record is critical because it's what `auto_compact` reads when spawning fork agents (see "Model Selection, Routing & auto_compact" doc).
+"""
+    },
+
+    # --- Doc 3: Model Selection, Routing & auto_compact ---
+    {
+        "id": _id(), "title": "Model Selection, Routing & auto_compact", "category_id": SUB_AGENTS_MODELS, "author_id": SYSTEM_AUTHOR,
+        "created_at": NOW, "updated_at": NOW, "order": 2,
+        "content": """# Model Selection, Routing & auto_compact
+
+How models are assigned, how they can change mid-job, and the auto_compact mechanism that caused a real production model switch.
+
+## The Configuration Chain
+
+```mermaid
+flowchart TD
+    UI["User selects Use Case + Model"] --> APS["aps.yaml lookup"]
+    APS --> AgentFile["Agent file loaded<br/>expertise_type + prompt_id"]
+    AgentFile --> JM["job_metadata written<br/>model_name, prompt_name"]
+    JM --> Spawn["Agent spawned with model"]
+    Spawn --> Loop["Agent loop runs"]
+    Loop -->|"context too large"| AC["auto_compact triggered"]
+    AC --> Fork["Fork agent spawned"]
+    Fork -->|"reads job_metadata"| JM
+```
+
+## What is auto_compact?
+
+When the conversation history grows too large for the model's context window, the platform triggers **auto_compact** — an automatic context compaction:
+
+1. The current conversation is **summarized** into a shorter version
+2. The current agent **stops**
+3. A new **fork agent** is spawned to continue the job
+4. The fork agent reads its configuration from **job_metadata** (not from the previous agent)
+
+This is where model changes can happen.
+
+## Real Example: Job 2abc6159 (budget-insights-io)
+
+This is a real production incident where the model changed mid-job:
+
+### Timeline
+
+| Step | Time (UTC) | Event | Model |
+|------|-----------|-------|-------|
+| 0–186 | 11:46–14:35 | Normal execution — building the app | **galapagos-alpha** |
+| 187 | 14:35:31 | `auto_compact` triggered — context summarized | (system event) |
+| 188 | 14:36:43 | Transition step (default_tool, empty) | galapagos-alpha |
+| 189 | 14:37:03 | Fork agent starts — calls `ask_human` with plan | **gpt-5.3-codex** |
+| 190–335 | 14:37–16:00 | Continues building with new model | **gpt-5.3-codex** |
+
+### Root Cause
+
+The original agent was assigned `galapagos-alpha` (likely via experiment routing). But `job_metadata` had:
+
+```
+model_name = "gpt-5.3-codex?reasoning_effort=high"
+prompt_name = "infinite_fullstack_codex_5_3"
+```
+
+When `auto_compact` spawned the fork agent, it read from `job_metadata` → got `gpt-5.3-codex` instead of the runtime model `galapagos-alpha`.
+
+**Key insight:** The fork agent always uses the **configured** model from `job_metadata`, not the **runtime** model of the previous agent.
+
+## Testing Agent Model Routing
+
+The main agent can invoke different testing sub-agents, each with its own model. In the same job (2abc6159), three different testing rounds used three different models:
+
+| Round | Steps | Expertise Type | Model |
+|-------|-------|---------------|-------|
+| 1st | 35–61 | testing_agent_codex_5_3 | gpt-5.3-codex |
+| 2nd | 275–290 | testing_agent_v3_fork_opus_4_5 | claude-opus-4-5 |
+| 3rd | 293–321 | auto_frontend_testing_agent_sonnet_3_7 | claude-sonnet-4-5 |
+
+This is **by design** — the platform intentionally routes different testing expertise types to different models.
+
+## Other Events That Affect Models
+
+| Event | Effect on Model |
+|-------|----------------|
+| `exit_cost_credit_limit_reached` | Model set to `None` — agent paused until credits added |
+| `pause` | Model set to `None` — agent paused by user |
+| Resume after pause | Model restored from `job_metadata` (may differ from pre-pause model) |
+| `auto_compact` | Fork agent reads `job_metadata` — may get different model |
+| A/B experiment | Same expertise_type routed to experimental model (galapagos-alpha, macaroni-alpha) |
+
+## How to Trace a Model Change
+
+To investigate whether a model changed during a job, query the trajectories table:
+
+```sql
+SELECT step_id, created_at, model_name, function_name, execution_mode
+FROM trajectories
+WHERE job_id = 'your-job-id'
+ORDER BY step_id;
+```
+
+Look for:
+- A step where `function_name = 'auto_compact'`
+- The step immediately after where `model_name` changes
+- Any steps where `model_name IS NULL` (credit limit or pause)
+"""
+    },
+
+    # --- Doc 4: The Agent Loop Step by Step ---
+    {
+        "id": _id(), "title": "The Agent Loop Step by Step", "category_id": SUB_AGENT_LOOP_EM, "author_id": SYSTEM_AUTHOR,
+        "created_at": NOW, "updated_at": NOW, "order": 0,
+        "content": """# The Agent Loop Step by Step
+
+The core execution loop that powers every Emergent agent — how the platform turns a user message into working code, one LLM call at a time.
+
+## The Loop in 6 Steps
+
+```mermaid
+flowchart TD
+    A["1. Build Context<br/>system prompt + message history + tool definitions"] --> B["2. POST to LLM<br/>Send context to model API"]
+    B --> C["3. Parse Response<br/>Extract thinking + tool_use blocks"]
+    C --> D{"4. Check stop_reason"}
+    D -->|"tool_use"| E["5. Execute Tool(s)<br/>Run the tool, capture output"]
+    D -->|"end_turn"| G["Agent done for this turn"]
+    D -->|"max_tokens"| H["Context too long — may trigger auto_compact"]
+    E --> F["6. Append Result<br/>Add tool result to message history"]
+    F --> A
+```
+
+## Step-by-Step Breakdown
+
+### Step 1: Build Context
+
+Every LLM call sends three things:
+- **`system`** — The system prompt (~15,000 tokens). Same every call.
+- **`messages`** — The full conversation history. **Grows every iteration.**
+- **`tools`** — JSON schemas for all available tools. Same every call.
+
+```json
+{
+  "model": "gpt-5.3-codex",
+  "system": [{"type": "text", "text": "You are an AI assistant..."}],
+  "messages": [
+    {"role": "user", "content": "Build a todo app"},
+    {"role": "assistant", "content": [{"type": "tool_use", "name": "execute_bash", ...}]},
+    {"role": "user", "content": [{"type": "tool_result", "content": "..."}]}
+  ],
+  "tools": [{"name": "execute_bash", "description": "...", "input_schema": {...}}, ...],
+  "max_tokens": 64000,
+  "temperature": 1,
+  "stream": true
+}
+```
+
+### Step 2: POST to LLM
+
+The platform sends an HTTP POST to the model provider's API. The response streams back token-by-token.
+
+### Step 3: Parse Response
+
+The LLM response contains one or more **content blocks**:
+
+- **`thinking`** — Internal reasoning (visible in debug logs)
+- **`text`** — Plain text output
+- **`tool_use`** — A tool call with name + input JSON
+
+Example response:
+```json
+{
+  "content": [
+    {"type": "thinking", "text": "I need to create the React component..."},
+    {"type": "tool_use", "id": "tool_abc", "name": "create_file", "input": {"file_path": "/app/src/App.js", "content": "..."}}
+  ],
+  "stop_reason": "tool_use"
+}
+```
+
+### Step 4: Check stop_reason
+
+| stop_reason | Meaning | What Happens Next |
+|------------|---------|-------------------|
+| `tool_use` | The model wants to execute a tool | Execute the tool, feed result back, loop again |
+| `end_turn` | The model is done (no more tool calls) | Agent turn ends, await next user message |
+| `max_tokens` | Response was truncated — hit output limit | May trigger `auto_compact` to free context space |
+
+### Step 5: Execute Tool(s)
+
+The platform executes the requested tool and captures its output. If the response contains **multiple** `tool_use` blocks, they may be wrapped in `PARALLEL_TOOLS` for concurrent execution.
+
+### Step 6: Append Result
+
+The tool result is appended to the message history as a `tool_result` message:
+
+```json
+{"role": "user", "content": [{"type": "tool_result", "tool_use_id": "tool_abc", "content": "File created successfully"}]}
+```
+
+Then the loop returns to Step 1 with the expanded context.
+
+## Message Accumulation
+
+Each iteration adds **2 messages** to the history:
+1. The assistant's response (with thinking + tool_use)
+2. The tool result
+
+After 100 iterations, the context can reach **200+ messages**. This is why `auto_compact` exists — to summarize and compress the history when it grows too large.
+
+## PARALLEL_TOOLS
+
+When the LLM returns multiple tool calls in a single response, the platform wraps them in a `PARALLEL_TOOLS` pseudo-function:
+
+```json
+{
+  "function_name": "PARALLEL_TOOLS",
+  "traj_payload": {
+    "tool_calls": [
+      {"name": "view_file", "input": {"file_path": "/app/src/App.js"}},
+      {"name": "view_file", "input": {"file_path": "/app/src/index.js"}}
+    ]
+  }
+}
+```
+
+In the trajectory database, `PARALLEL_TOOLS` shows up as a single step, but it contains multiple underlying tool executions.
+
+## How Many Iterations Per Job?
+
+From real data:
+- **Small apps:** 50–100 steps
+- **Medium apps:** 150–250 steps
+- **Large apps (like budget-insights-io):** 300–400+ steps
+
+The number of steps depends on app complexity, testing thoroughness, and how many sub-agent delegations occur.
+"""
+    },
+
+    # --- Doc 5: Inside One LLM Call ---
+    {
+        "id": _id(), "title": "Inside One LLM Call", "category_id": SUB_AGENT_LOOP_EM, "author_id": SYSTEM_AUTHOR,
+        "created_at": NOW, "updated_at": NOW, "order": 1,
+        "content": """# Inside One LLM Call
+
+What happens during a single LLM API call — the debug log fields, request/response structure, token economics, and caching.
+
+## The Debug Log Structure
+
+Each LLM call produces a debug log with **14 key fields**:
+
+| # | Field | Type | Description |
+|---|-------|------|-------------|
+| 1 | `llm_call_id` | string | Unique ID for this specific LLM call |
+| 2 | `model` | string | Model used (e.g., "gpt-5.3-codex") |
+| 3 | `created_at` | timestamp | When the call was made |
+| 4 | `duration_ms` | number | How long the call took in milliseconds |
+| 5 | `status` | string | "success" or "error" |
+| 6 | `body` | object | The full request body sent to the LLM |
+| 7 | `response` | object | The full response from the LLM |
+| 8 | `usage` | object | Token counts (input, output, cache) |
+| 9 | `stop_reason` | string | Why the model stopped generating |
+| 10 | `thinking` | string | The model's internal reasoning (if available) |
+| 11 | `tool_calls` | array | Tool calls extracted from the response |
+| 12 | `error` | object | Error details (if status is "error") |
+| 13 | `context_management` | object | Context window stats and compaction info |
+| 14 | `cache_performance` | object | Cache hit/miss rates |
+
+## The Request Body (`body`)
+
+```json
+{
+  "model": "gpt-5.3-codex",
+  "system": [
+    {
+      "type": "text",
+      "text": "You are an AI assistant that builds full-stack applications...",
+      "cache_control": {"type": "ephemeral"}
+    }
+  ],
+  "messages": [
+    {"role": "user", "content": "Build a budget tracking app"},
+    {"role": "assistant", "content": [{"type": "thinking", "text": "..."}, {"type": "tool_use", ...}]},
+    {"role": "user", "content": [{"type": "tool_result", ...}]}
+  ],
+  "tools": [
+    {
+      "name": "execute_bash",
+      "description": "Execute a shell command in the container",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "command": {"type": "string", "description": "The bash command to execute"}
+        },
+        "required": ["command"]
+      }
+    }
+  ],
+  "max_tokens": 64000,
+  "temperature": 1,
+  "top_p": 1,
+  "top_k": 0,
+  "stream": true,
+  "metadata": {"user_id": "usr_abc123"}
+}
+```
+
+## Token Economics
+
+A typical LLM call's token breakdown:
+
+| Component | Tokens | Notes |
+|-----------|--------|-------|
+| System prompt | ~15,000 | Cached after first call |
+| Tool definitions | ~8,000 | Cached after first call |
+| Message history | 5,000–200,000+ | Grows each iteration |
+| Output | 1,000–16,000 | Varies per response |
+
+## Caching — The 88% Hit Rate
+
+The system prompt and tool definitions are the same every call. The platform uses **prompt caching** to avoid re-processing them:
+
+```json
+{
+  "usage": {
+    "input_tokens": 45000,
+    "output_tokens": 3500,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 39600
+  }
+}
+```
+
+In this example:
+- Total input: 45,000 tokens
+- Cached (reused): 39,600 tokens → **88% cache hit rate**
+- Fresh (new content): 5,400 tokens (only the new messages)
+
+Cache hits are significantly cheaper — typically **90% discount** on input token costs.
+
+## The Response
+
+```json
+{
+  "id": "msg_abc123",
+  "type": "message",
+  "role": "assistant",
+  "content": [
+    {
+      "type": "thinking",
+      "text": "The user wants a budget tracker. I'll start by creating the React frontend..."
+    },
+    {
+      "type": "tool_use",
+      "id": "toolu_xyz789",
+      "name": "create_file",
+      "input": {
+        "file_path": "/app/frontend/src/App.js",
+        "content": "import React from 'react';\\n..."
+      }
+    }
+  ],
+  "model": "gpt-5.3-codex",
+  "stop_reason": "tool_use",
+  "usage": {
+    "input_tokens": 45000,
+    "output_tokens": 3500
+  }
+}
+```
+
+## Context Management
+
+As the conversation grows, the platform tracks context utilization:
+
+```json
+{
+  "context_management": {
+    "total_context_window": 200000,
+    "used_tokens": 156000,
+    "utilization_percent": 78,
+    "compaction_threshold": 85,
+    "will_compact_next": false
+  }
+}
+```
+
+When `utilization_percent` exceeds the `compaction_threshold` (typically 85%), `auto_compact` triggers on the next iteration.
+
+## Streaming
+
+Responses stream token-by-token. In Chrome DevTools, you can see this as Server-Sent Events (SSE):
+
+```
+data: {"type": "content_block_delta", "delta": {"type": "thinking_delta", "thinking": "I need to"}}
+data: {"type": "content_block_delta", "delta": {"type": "thinking_delta", "thinking": " create the"}}
+data: {"type": "content_block_delta", "delta": {"type": "thinking_delta", "thinking": " React app"}}
+...
+data: {"type": "message_stop"}
+```
+
+Each `content_block_delta` contains a small chunk of the response. The frontend reconstructs the full response by concatenating these deltas.
+"""
+    },
+
+    # --- Doc 6: The Complete 33-Tool Catalog ---
+    {
+        "id": _id(), "title": "The Complete 33-Tool Catalog", "category_id": SUB_TOOLS_DELEG, "author_id": SYSTEM_AUTHOR,
+        "created_at": NOW, "updated_at": NOW, "order": 0,
+        "content": """# The Complete 33-Tool Catalog
+
+Every tool and function observed in real Emergent production trajectories — categorized, with frequency data and payload examples.
+
+## Tool Categories Overview
+
+```mermaid
+pie title Tool Usage Distribution (Top 10)
+    "execute_bash" : 480
+    "apply_patch" : 445
+    "view_file" : 313
+    "PARALLEL_TOOLS" : 204
+    "create_file" : 77
+    "screenshot_tool" : 74
+    "browser_automation" : 70
+    "view_bulk" : 67
+    "search_replace" : 63
+    "finish" : 46
+```
+
+## Core Tools (High Frequency)
+
+| Tool | Count | Description |
+|------|-------|-------------|
+| `execute_bash` | 480 | Execute shell commands in the Linux container |
+| `apply_patch` | 445 | Apply unified diff patches to existing files |
+| `view_file` | 313 | Read file contents (supports line ranges) |
+| `PARALLEL_TOOLS` | 204 | Wrapper for concurrent tool execution |
+| `create_file` | 77 | Create a new file with specified content |
+| `screenshot_tool` | 74 | Capture browser screenshots for visual inspection |
+| `browser_automation` | 70 | Control Playwright browser (click, type, navigate) |
+| `view_bulk` | 67 | Read multiple files in one call |
+| `search_replace` | 63 | Find and replace text in files |
+| `finish` | 46 | Signal job completion with summary message |
+| `ask_human` | 26 | Ask the user a question and wait for response |
+| `glob_files` | 23 | Search for files matching a glob pattern |
+
+### execute_bash Example
+```json
+{
+  "name": "execute_bash",
+  "input": {
+    "command": "cd /app && npm install react-router-dom"
+  }
+}
+```
+
+### apply_patch Example
+```json
+{
+  "name": "apply_patch",
+  "input": {
+    "patch": "--- a/src/App.js\\n+++ b/src/App.js\\n@@ -10,3 +10,5 @@\\n import React from 'react';\\n+import { BrowserRouter } from 'react-router-dom';\\n"
+  }
+}
+```
+
+### create_file Example
+```json
+{
+  "name": "create_file",
+  "input": {
+    "file_path": "/app/frontend/src/components/Header.jsx",
+    "content": "import React from 'react';\\n\\nexport default function Header() {\\n  return <header>My App</header>;\\n}"
+  }
+}
+```
+
+## Linting Tools
+
+| Tool | Count | Description |
+|------|-------|-------------|
+| `lint_javascript` | 19 | Run ESLint on JavaScript/React files |
+| `lint_python` | 17 | Run flake8/pylint on Python files |
+
+These are triggered automatically after code changes to catch syntax errors early.
+
+## Reasoning Tool
+
+| Tool | Count | Description |
+|------|-------|-------------|
+| `think` | 16 | Internal reasoning step — no external action |
+
+The `think` tool allows the agent to reason through complex decisions without executing any action. It's recorded in the trajectory but produces no side effects.
+
+## Sub-Agent Delegation Tools (7 tools)
+
+These tools trigger `TRANSITION_MAIN_TO_SUB` — spawning a specialized sub-agent:
+
+| Tool | Count | Purpose | Sub-Agent Model |
+|------|-------|---------|-----------------|
+| `design_agent_full_stack` | 12 | UI/UX design decisions | gemini-3-pro-preview |
+| `testing_agent` | 12 | Run tests (original, Codex-based) | gpt-5.3-codex |
+| `testing_agent_v3` | 3 | Run tests (v3, Sonnet 4) | claude-sonnet-4 |
+| `testing_agent_v3_fork` | 2 | Run tests (v3 fork, Opus) | claude-opus-4-5 |
+| `auto_frontend_testing_agent` | 2 | Automated Playwright frontend tests | claude-sonnet-4-5 |
+| `deep_testing_backend_v2` | 1 | Deep backend testing (rare) | varies |
+| `support_agent` | 2 | User support/communication (rare) | varies |
+
+### Delegation Flow
+```json
+{
+  "name": "testing_agent",
+  "input": {
+    "instructions": "Run all unit tests for the budget tracking module and fix any failures"
+  }
+}
+```
+
+When this tool is called:
+1. The trajectory records `execution_mode = TRANSITION_MAIN_TO_SUB`
+2. A SkilledAssistant is spawned with the appropriate expertise type
+3. The sub-agent runs its own agent loop (multiple steps)
+4. When done, `TRANSITION_SUB_TO_MAIN` returns control
+
+## Specialized Tools
+
+| Tool | Count | Description |
+|------|-------|-------------|
+| `integration_playbook_expert_v2` | 7 | Integration testing playbook execution |
+| `image_selector_tool` | 8 | Select and process images for the app |
+| `web_search_tool_v2` | 2 | Search the web for information |
+| `image_generation_tool` | 1 | Generate images using AI |
+| `insert_text` | 1 | Insert text at a specific position in a file |
+
+## System Events (Not User-Callable)
+
+These appear in trajectories but are platform events, not agent-initiated tools:
+
+| Function | Count | Description |
+|----------|-------|-------------|
+| `initial-llm` | 16 | First LLM call of an agent session |
+| `default_tool` | 8 | Transition/placeholder step |
+| `exit_cost_credit_limit_reached` | 7 | Job paused — user ran out of credits |
+| `auto_compact` | 5 | Context compaction triggered |
+| `ENV_CREATION_FAILED` | 2 | Container environment failed to start |
+| `pause` | 1 | Job manually paused by user |
+
+### exit_cost_credit_limit_reached
+When credits run out, the agent records this event and sets `model_name = None`. The job resumes when the user adds more credits.
+
+### ENV_CREATION_FAILED
+The Linux container failed to start. This is an infrastructure error — the agent cannot proceed until the environment is recreated.
+
+## PARALLEL_TOOLS Deep Dive
+
+When the LLM returns multiple tool calls, they are batched:
+
+```json
+{
+  "function_name": "PARALLEL_TOOLS",
+  "traj_payload": {
+    "parallel_tool_calls": [
+      {"id": "tool_1", "name": "view_file", "input": {"file_path": "/app/src/App.js"}},
+      {"id": "tool_2", "name": "view_file", "input": {"file_path": "/app/src/index.js"}},
+      {"id": "tool_3", "name": "view_file", "input": {"file_path": "/app/src/styles.css"}}
+    ]
+  }
+}
+```
+
+The platform executes all three `view_file` calls concurrently, then returns all results to the LLM in the next iteration.
+"""
+    },
+
+    # --- Doc 7: Sub-Agent Delegation — 7 Delegation Paths ---
+    {
+        "id": _id(), "title": "Sub-Agent Delegation — 7 Delegation Paths", "category_id": SUB_TOOLS_DELEG, "author_id": SYSTEM_AUTHOR,
+        "created_at": NOW, "updated_at": NOW, "order": 1,
+        "content": """# Sub-Agent Delegation — 7 Delegation Paths
+
+How the main agent delegates to specialized sub-agents, the transition mechanism, and details of all 7 delegation paths observed in production.
+
+## The Delegation Mechanism
+
+```mermaid
+sequenceDiagram
+    participant Main as EmergentAssistant<br/>(Main Agent)
+    participant Platform as Emergent Platform
+    participant Sub as SkilledAssistant<br/>(Sub-Agent)
+
+    Main->>Platform: Call delegation tool<br/>(e.g., testing_agent)
+    Note over Platform: TRANSITION_MAIN_TO_SUB
+    Platform->>Sub: Spawn sub-agent<br/>with expertise_type & model
+    loop Sub-Agent Loop
+        Sub->>Sub: LLM call → tool execution → result
+    end
+    Sub->>Platform: Sub-agent calls finish
+    Note over Platform: TRANSITION_SUB_TO_MAIN
+    Platform->>Main: Return sub-agent results
+    Main->>Main: Continue with results
+```
+
+## The 7 Delegation Paths
+
+### 1. design_agent_full_stack (12 invocations)
+
+**Purpose:** UI/UX design decisions — layout, color schemes, component structure, responsive design.
+
+| Field | Value |
+|-------|-------|
+| Sub-Agent Expertise | `design_agent_full_stack_gemini_3_pro` |
+| Model | `gemini-3-pro-preview` |
+| Trigger | Main agent needs design guidance |
+| Reference File | `design_guidelines.json` |
+
+**Why Gemini?** The design agent uses Google's Gemini for its strong multimodal capabilities — it can reason about visual layouts and design patterns effectively.
+
+**Typical invocation:**
+```json
+{
+  "name": "design_agent_full_stack",
+  "input": {
+    "instructions": "Design the dashboard layout for the budget tracking app. Include a sidebar navigation, header with user info, and main content area with charts."
+  }
+}
+```
+
+### 2. testing_agent (12 invocations)
+
+**Purpose:** Write and execute tests using the original Codex-based testing agent.
+
+| Field | Value |
+|-------|-------|
+| Sub-Agent Expertise | `testing_agent_codex_5_3` |
+| Model | `gpt-5.3-codex` |
+| Tools Available | execute_bash, view_file, apply_patch, screenshot_tool, browser_automation |
+
+### 3. testing_agent_v3 (3 invocations)
+
+**Purpose:** Next-generation testing with Claude Sonnet 4.
+
+| Field | Value |
+|-------|-------|
+| Sub-Agent Expertise | `testing_agent_v3_sonnet_4` |
+| Model | `claude-sonnet-4-20250514` |
+| Improvements | Better test planning, more thorough coverage |
+
+### 4. testing_agent_v3_fork (2 invocations)
+
+**Purpose:** Advanced testing with Claude Opus — the most capable testing agent.
+
+| Field | Value |
+|-------|-------|
+| Sub-Agent Expertise | `testing_agent_v3_fork_opus_4_5` |
+| Model | `claude-opus-4-5-20251101` |
+| Use Case | Complex test scenarios requiring deep reasoning |
+
+### 5. auto_frontend_testing_agent (2 invocations)
+
+**Purpose:** Automated Playwright frontend testing with screenshot comparison.
+
+| Field | Value |
+|-------|-------|
+| Sub-Agent Expertise | `auto_frontend_testing_agent_sonnet_3_7` |
+| Model | `claude-sonnet-4-5-20250929` |
+| Tools | browser_automation, screenshot_tool, execute_bash |
+| Specialty | Visual regression testing, automated UI interaction |
+
+### 6. deep_testing_backend_v2 (1 invocation)
+
+**Purpose:** Deep backend testing — rare but intensive.
+
+| Field | Value |
+|-------|-------|
+| Frequency | Very rare (1 observed) |
+| Focus | Backend API testing, database integrity, edge cases |
+
+### 7. support_agent (2 invocations)
+
+**Purpose:** User support and communication.
+
+| Field | Value |
+|-------|-------|
+| Frequency | Rare (2 observed) |
+| Focus | Formatting user-facing messages, clarifying requirements |
+
+## How Many Testing Agents Can Run in One Job?
+
+In the budget-insights-io job (2abc6159), **three different testing agents** ran in sequence:
+
+```mermaid
+gantt
+    title Testing Agent Sequence in Job 2abc6159
+    dateFormat HH:mm
+    axisFormat %H:%M
+    section Testing
+    testing_agent (Codex)        :t1, 12:00, 30min
+    testing_agent_v3_fork (Opus) :t2, 15:00, 15min
+    auto_frontend (Sonnet 4.5)   :t3, 15:20, 30min
+```
+
+The platform selects different testing agents based on what type of testing is needed at that point in the job.
+
+## Transition Tracking in the Database
+
+Every delegation creates trajectory entries with specific execution modes:
+
+```sql
+-- Find all delegation events for a job
+SELECT step_id, function_name, execution_mode, model_name, created_at
+FROM trajectories
+WHERE job_id = 'your-job-id'
+  AND execution_mode IN ('TRANSITION_MAIN_TO_SUB', 'TRANSITION_SUB_TO_MAIN')
+ORDER BY step_id;
+```
+
+Expected output pattern:
+```
+step  | function_name            | execution_mode           | model
+------+--------------------------+--------------------------+------------------
+35    | testing_agent            | TRANSITION_MAIN_TO_SUB   | gpt-5.3-codex
+61    | finish                   | TRANSITION_SUB_TO_MAIN   | gpt-5.3-codex
+275   | testing_agent_v3_fork    | TRANSITION_MAIN_TO_SUB   | claude-opus-4-5
+290   | finish                   | TRANSITION_SUB_TO_MAIN   | claude-opus-4-5
+```
+"""
+    },
+
+    # --- Doc 8: Predefined vs Agent-Created Files ---
+    {
+        "id": _id(), "title": "Predefined vs Agent-Created Files", "category_id": SUB_TOOLS_DELEG, "author_id": SYSTEM_AUTHOR,
+        "created_at": NOW, "updated_at": NOW, "order": 2,
+        "content": """# Predefined vs Agent-Created Files
+
+The Emergent container comes with a base image containing predefined files. The agent then creates, modifies, and extends these files during a job.
+
+## The Base Image
+
+Every job starts in a **Linux container** with a predefined file structure:
+
+```
+/app/
+├── frontend/
+│   ├── src/
+│   │   ├── App.js          (React 19 entry point)
+│   │   ├── index.js         (ReactDOM render)
+│   │   └── index.css        (Global styles)
+│   ├── package.json         (React 19 + dependencies)
+│   ├── tailwind.config.js   (Tailwind CSS configuration)
+│   └── postcss.config.js    (PostCSS configuration)
+├── backend/
+│   ├── server.py            (FastAPI server)
+│   └── requirements.txt     (Python dependencies)
+├── package.json             (Root package.json for monorepo)
+├── .env                     (Environment variables)
+└── start.sh                 (Startup script)
+```
+
+## Predefined Files — What's Already There
+
+### Frontend Stack
+- **React 19** with functional components and hooks
+- **Tailwind CSS** for styling
+- **ShadCN UI** components (pre-installed)
+- **Lucide React** icons
+- **Vite** as the build tool
+
+### Backend Stack
+- **FastAPI** (Python) with CORS, static file serving
+- **MongoDB** (motor async driver)
+- **Uvicorn** as the ASGI server
+
+### Key Configuration
+- The frontend proxies API calls to the backend via Vite's proxy config
+- The backend serves the frontend build as static files in production
+- MongoDB runs locally in the container
+
+## What the Agent Creates
+
+During a typical job, the agent creates **50–200+ new files**:
+
+| Category | Examples |
+|----------|---------|
+| React components | `Header.jsx`, `Dashboard.jsx`, `Sidebar.jsx` |
+| API routes | New endpoints in `server.py` or separate route files |
+| Database models | MongoDB collection schemas, seed data |
+| Styles | Additional CSS files, component-specific styles |
+| Tests | `test_api.py`, `test_frontend.spec.js` |
+| Config | `.prettierrc`, `jest.config.js` |
+| Assets | Downloaded images via `image_selector_tool` |
+
+## The System Prompt Template
+
+The agent's system prompt includes instructions about the predefined environment:
+
+```
+You are building a full-stack web application.
+The project structure is already set up at /app/ with:
+- Frontend: React 19 + Tailwind + ShadCN at /app/frontend/
+- Backend: FastAPI + MongoDB at /app/backend/
+- The app is running and accessible in the browser.
+
+IMPORTANT:
+- Do NOT delete or recreate the base files — extend them.
+- Use the existing package.json dependencies before installing new ones.
+- The ShadCN components are already available — import them directly.
+```
+
+## How the Agent Extends vs Replaces
+
+The agent follows a pattern of **extending** predefined files rather than replacing them:
+
+1. **App.js** — The agent adds new routes, components, and state management to the existing React app structure
+2. **server.py** — New API endpoints are added alongside the existing FastAPI routes
+3. **package.json** — New dependencies are `npm install`ed, adding to the existing list
+
+However, the agent **may rewrite** files entirely when:
+- The predefined content doesn't match the requirements
+- A complete restructuring is needed
+- The file is simple enough to regenerate (e.g., `index.css`)
+
+## Tool Usage for File Operations
+
+| Operation | Primary Tool | Fallback |
+|-----------|-------------|----------|
+| Create new file | `create_file` | `execute_bash` (echo/cat) |
+| Modify existing file | `apply_patch` | `search_replace` |
+| Read file | `view_file` | `view_bulk` (multiple files) |
+| Delete file | `execute_bash` (rm) | — |
+| Rename/move | `execute_bash` (mv) | — |
+| Find files | `glob_files` | `execute_bash` (find) |
+"""
+    },
+
+    # --- Doc 9: Trajectory Database Schema ---
+    {
+        "id": _id(), "title": "Trajectory Database Schema", "category_id": SUB_TRAJ_DEBUG, "author_id": SYSTEM_AUTHOR,
+        "created_at": NOW, "updated_at": NOW, "order": 0,
+        "content": """# Trajectory Database Schema
+
+The complete database schema for Emergent's trajectory system — the tables, columns, and JSONB payloads that store every agent action.
+
+## Core Tables
+
+### trajectories (15 columns)
+
+The main table — one row per agent step.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | UUID | Primary key |
+| `job_id` | UUID | Which job this belongs to |
+| `step_id` | INTEGER | Sequential step number (0, 1, 2, ...) |
+| `agent_name` | VARCHAR | "EmergentAssistant" or "SkilledAssistant" |
+| `expertise_type` | VARCHAR | e.g., "full_stack_app_builder_cloud_v8_codex_5_3" |
+| `model_name` | VARCHAR | e.g., "gpt-5.3-codex" (NULL during pause/credit limit) |
+| `function_name` | VARCHAR | Tool called (e.g., "execute_bash", "apply_patch") |
+| `execution_mode` | VARCHAR | "SKIP", "TRANSITION_MAIN_TO_SUB", "TRANSITION_SUB_TO_MAIN" |
+| `traj_payload` | JSONB | Full payload — tool input, output, metadata |
+| `created_at` | TIMESTAMP | When this step was recorded |
+| `updated_at` | TIMESTAMP | Last update time |
+| `duration_ms` | INTEGER | How long this step took |
+| `token_usage` | JSONB | Token counts for the LLM call |
+| `error` | JSONB | Error details (NULL if successful) |
+| `metadata` | JSONB | Additional metadata |
+
+### actions_observations (23 columns)
+
+Detailed action-observation pairs with more granular data.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | UUID | Primary key |
+| `trajectory_id` | UUID | FK to trajectories |
+| `job_id` | UUID | Which job |
+| `step_id` | INTEGER | Step number |
+| `action_type` | VARCHAR | "tool_call" or "tool_result" |
+| `tool_name` | VARCHAR | Tool name |
+| `tool_input` | JSONB | Input parameters sent to the tool |
+| `tool_output` | JSONB | Output returned by the tool |
+| `tool_is_error` | BOOLEAN | Whether the tool execution errored |
+| `thinking` | TEXT | LLM's internal reasoning |
+| `text_output` | TEXT | Any text response from the LLM |
+| `model_name` | VARCHAR | Model used |
+| `input_tokens` | INTEGER | Input token count |
+| `output_tokens` | INTEGER | Output token count |
+| `cache_creation_tokens` | INTEGER | Tokens used for cache creation |
+| `cache_read_tokens` | INTEGER | Tokens read from cache |
+| `total_cost` | DECIMAL | Cost of this LLM call |
+| `duration_ms` | INTEGER | Duration in milliseconds |
+| `stop_reason` | VARCHAR | "tool_use", "end_turn", "max_tokens" |
+| `created_at` | TIMESTAMP | When recorded |
+| `updated_at` | TIMESTAMP | Last update |
+| `error` | JSONB | Error details |
+| `metadata` | JSONB | Additional metadata |
+
+### job_metadata
+
+Job-level configuration — critical for understanding model routing.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | UUID | Job ID (primary key) |
+| `model_name` | VARCHAR | Configured model (e.g., "gpt-5.3-codex?reasoning_effort=high") |
+| `prompt_name` | VARCHAR | Prompt configuration (e.g., "infinite_fullstack_codex_5_3") |
+| `parent_job_id` | UUID | Parent job (for forked jobs) |
+| `root_job_id` | UUID | Root of the job chain |
+| `status` | VARCHAR | "IN_PROGRESS", "COMPLETED", "FAILED" |
+| `created_at` | TIMESTAMP | When the job started |
+| `updated_at` | TIMESTAMP | Last update |
+| `title` | VARCHAR | User-given job title |
+| `metadata` | JSONB | Additional job metadata |
+
+## The traj_payload JSONB
+
+The `traj_payload` column contains the full context of each step. Structure varies by `function_name`:
+
+### For tool calls (e.g., execute_bash)
+```json
+{
+  "tool_call_id": "toolu_abc123",
+  "name": "execute_bash",
+  "input": {
+    "command": "cd /app && npm test"
+  },
+  "output": {
+    "stdout": "PASS src/App.test.js\\n  4 tests passed",
+    "stderr": "",
+    "exit_code": 0
+  },
+  "thinking": "I need to run the tests to verify my changes work correctly..."
+}
+```
+
+### For PARALLEL_TOOLS
+```json
+{
+  "parallel_tool_calls": [
+    {"id": "tool_1", "name": "view_file", "input": {"file_path": "/app/src/App.js"}},
+    {"id": "tool_2", "name": "view_file", "input": {"file_path": "/app/src/index.js"}}
+  ],
+  "parallel_results": [
+    {"id": "tool_1", "output": "...file contents..."},
+    {"id": "tool_2", "output": "...file contents..."}
+  ]
+}
+```
+
+### For auto_compact
+```json
+{
+  "summary": "Compacted conversation from 186 steps. The agent was building a budget tracking app with React frontend and FastAPI backend...",
+  "original_step_count": 186,
+  "compressed_token_count": 4500
+}
+```
+
+## Useful SQL Queries for QA
+
+### Job overview — all steps with models
+```sql
+SELECT step_id, function_name, model_name, execution_mode,
+       duration_ms, created_at
+FROM trajectories
+WHERE job_id = 'your-job-id'
+ORDER BY step_id;
+```
+
+### Find all sub-agent delegations
+```sql
+SELECT step_id, function_name, execution_mode, model_name
+FROM trajectories
+WHERE job_id = 'your-job-id'
+  AND execution_mode != 'SKIP'
+ORDER BY step_id;
+```
+
+### Token usage per step
+```sql
+SELECT step_id, function_name, model_name,
+       token_usage->>'input_tokens' AS input,
+       token_usage->>'output_tokens' AS output,
+       token_usage->>'cache_read_input_tokens' AS cached
+FROM trajectories
+WHERE job_id = 'your-job-id'
+ORDER BY step_id;
+```
+
+### Find errors
+```sql
+SELECT step_id, function_name, error, model_name
+FROM trajectories
+WHERE job_id = 'your-job-id'
+  AND error IS NOT NULL
+ORDER BY step_id;
+```
+
+### Count tool usage per job
+```sql
+SELECT function_name, COUNT(*) as usage_count
+FROM trajectories
+WHERE job_id = 'your-job-id'
+GROUP BY function_name
+ORDER BY usage_count DESC;
+```
+"""
+    },
+
+    # --- Doc 10: Reading Debug Logs ---
+    {
+        "id": _id(), "title": "Reading Debug Logs", "category_id": SUB_TRAJ_DEBUG, "author_id": SYSTEM_AUTHOR,
+        "created_at": NOW, "updated_at": NOW, "order": 1,
+        "content": """# Reading Debug Logs
+
+How to use Chrome DevTools to inspect Emergent's real-time trajectory streaming, debug JSON logs, and token analysis.
+
+## Where Debug Data Lives
+
+Debug data is accessible in two places:
+
+1. **Browser Debug Panel** — Real-time view in the Emergent UI (click "Debug" button)
+2. **Chrome DevTools** — Network tab shows raw SSE streams and API calls
+
+## Chrome DevTools — Network Tab
+
+### Trajectory Streaming (SSE)
+
+Open DevTools → Network → Filter by "EventStream".
+
+You'll see a long-lived connection that streams trajectory events:
+
+```
+Request URL: https://app.emergent.sh/api/v1/jobs/{job_id}/trajectories/stream
+Request Method: GET
+Status: 200
+Type: eventsource
+```
+
+Each event in the stream:
+```
+data: {"type": "trajectory", "step_id": 42, "function_name": "execute_bash", "model_name": "gpt-5.3-codex", ...}
+
+data: {"type": "trajectory", "step_id": 43, "function_name": "apply_patch", "model_name": "gpt-5.3-codex", ...}
+```
+
+### Debug JSON Log
+
+The debug panel shows the full LLM call details. Each entry contains:
+
+```json
+{
+  "llm_call_id": "call_abc123",
+  "model": "gpt-5.3-codex",
+  "step_id": 42,
+  "duration_ms": 8500,
+  "status": "success",
+  "body": {
+    "model": "gpt-5.3-codex",
+    "system": [{"type": "text", "text": "You are an AI assistant...", "cache_control": {"type": "ephemeral"}}],
+    "messages": ["... full conversation history ..."],
+    "tools": ["... tool definitions ..."],
+    "max_tokens": 64000,
+    "temperature": 1,
+    "stream": true
+  },
+  "response": {
+    "content": [
+      {"type": "thinking", "text": "I need to fix the CSS layout..."},
+      {"type": "tool_use", "name": "apply_patch", "input": {"patch": "..."}}
+    ],
+    "stop_reason": "tool_use",
+    "usage": {
+      "input_tokens": 45000,
+      "output_tokens": 3500,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 39600
+    }
+  }
+}
+```
+
+## How to Trace a Request End-to-End
+
+### Step 1: Find the trajectory step
+In the Emergent UI, note the step number you want to investigate.
+
+### Step 2: Open DevTools Network tab
+Filter for XHR or Fetch requests. Look for calls to:
+- `/api/v1/jobs/{job_id}/trajectories` — full trajectory list
+- `/api/v1/jobs/{job_id}/debug` — debug log for a specific step
+
+### Step 3: Check the request body
+In the debug log, expand `body.messages` to see the full conversation context sent to the LLM. The **last message** is what triggered this response.
+
+### Step 4: Check the response
+Expand `response.content` to see:
+- `thinking` blocks — the model's reasoning
+- `tool_use` blocks — what tool was called and with what input
+
+### Step 5: Check token usage
+```
+input_tokens: 45,000  (total input)
+cache_read:   39,600  (from cache — 88%)
+fresh input:   5,400  (new content — 12%)
+output_tokens: 3,500  (model's response)
+```
+
+## Chrome DevTools — Application Tab
+
+### localStorage
+Emergent stores some client-side data:
+- Session preferences
+- UI state (sidebar collapsed, dark mode)
+- Debug panel settings
+
+### Cookies
+- Authentication tokens
+- Session IDs
+
+## Chrome DevTools — Console Tab
+
+Watch for:
+- SSE connection errors (lost trajectory stream)
+- WebSocket reconnection messages
+- API error responses (4xx, 5xx)
+
+## Token Analysis Techniques
+
+### Calculate cache hit rate
+```
+cache_hit_rate = cache_read_input_tokens / input_tokens * 100
+```
+
+### Estimate cost per step
+```
+cost = (fresh_input_tokens * input_price) + (cached_tokens * cached_price) + (output_tokens * output_price)
+```
+
+Where cached_price is typically ~10% of input_price.
+
+### Track context growth
+Plot `input_tokens` over step_id — you'll see a growing curve as the conversation accumulates. When `auto_compact` fires, the token count drops sharply.
+
+```
+Step 0:   input_tokens = 23,000  (system + tools + first message)
+Step 50:  input_tokens = 85,000  (growing conversation)
+Step 100: input_tokens = 156,000 (approaching limit)
+Step 101: auto_compact! input_tokens drops to 28,000
+Step 102: input_tokens = 29,000  (fresh start with summary)
+```
+"""
+    },
+
+    # --- Doc 13: SQL Query Cookbook for Trajectory Analysis ---
+    {
+        "id": _id(), "title": "SQL Query Cookbook for Trajectory Analysis", "category_id": SUB_TRAJ_DEBUG, "author_id": SYSTEM_AUTHOR,
+        "created_at": NOW, "updated_at": NOW, "order": 2,
+        "content": """# SQL Query Cookbook for Trajectory Analysis
+
+Battle-tested SQL queries used during real production investigations against the Emergent postgres-spark database. Each query includes what it reveals and when to use it.
+
+---
+
+## 1. Full Agent & Model Taxonomy
+
+**When to use:** You need to understand the complete universe of agents, models, and tools available on the platform — not just for one job, but across all jobs.
+
+```sql
+SELECT
+    agent_name,
+    expertise_type,
+    model_name,
+    function_name,
+    COUNT(*) AS invocation_count
+FROM trajectories
+GROUP BY agent_name, expertise_type, model_name, function_name
+ORDER BY agent_name, expertise_type, model_name, invocation_count DESC;
+```
+
+**What it reveals:**
+- Every distinct agent + expertise + model + tool combination ever used
+- How frequently each tool is invoked per agent configuration
+- Experimental model names (galapagos-alpha, macaroni-alpha) tied to their expertise types
+- Real data returned 132 distinct combinations across the platform
+
+---
+
+## 2. Trace Model Changes Across a Job
+
+**When to use:** You suspect the model changed mid-job (e.g., after auto_compact) and need to find exactly where.
+
+```sql
+SELECT
+    step_id,
+    created_at,
+    model_name,
+    function_name,
+    execution_mode
+FROM trajectories
+WHERE job_id = 'your-job-id'
+ORDER BY step_id;
+```
+
+**What to look for:**
+- A row where `model_name` changes from one value to another
+- The step right before the change often has `function_name = 'auto_compact'`
+- Steps where `model_name IS NULL` indicate a credit limit hit or pause
+
+**Pro tip:** Wrap this in a window function to auto-detect changes:
+
+```sql
+SELECT step_id, model_name, function_name, created_at,
+       LAG(model_name) OVER (ORDER BY step_id) AS prev_model
+FROM trajectories
+WHERE job_id = 'your-job-id'
+ORDER BY step_id;
+```
+
+Then filter for rows where `model_name != prev_model`.
+
+---
+
+## 3. Distinct Models Used in a Specific Job
+
+**When to use:** Quick check — how many and which models were involved in a single job.
+
+```sql
+SELECT DISTINCT model_name,
+       MIN(step_id) AS first_step,
+       MAX(step_id) AS last_step,
+       COUNT(*) AS step_count
+FROM trajectories
+WHERE job_id = 'your-job-id'
+GROUP BY model_name
+ORDER BY first_step;
+```
+
+**What it reveals:**
+- Every model that touched the job
+- The step range where each model was active
+- How many steps each model handled
+- NULL model_name rows indicate paused/credit-limited periods
+
+---
+
+## 4. All Sub-Agent Delegations in a Job
+
+**When to use:** You want to see every time the main agent handed off to a sub-agent, which sub-agent ran, and when control returned.
+
+```sql
+SELECT
+    step_id,
+    function_name,
+    execution_mode,
+    agent_name,
+    expertise_type,
+    model_name,
+    created_at
+FROM trajectories
+WHERE job_id = 'your-job-id'
+  AND execution_mode IN ('TRANSITION_MAIN_TO_SUB', 'TRANSITION_SUB_TO_MAIN')
+ORDER BY step_id;
+```
+
+**Expected output pattern:**
+```
+step | function_name            | execution_mode           | agent_name       | model
+-----+--------------------------+--------------------------+------------------+------------------
+35   | testing_agent            | TRANSITION_MAIN_TO_SUB   | SkilledAssistant | gpt-5.3-codex
+61   | finish                   | TRANSITION_SUB_TO_MAIN   | SkilledAssistant | gpt-5.3-codex
+275  | testing_agent_v3_fork    | TRANSITION_MAIN_TO_SUB   | SkilledAssistant | claude-opus-4-5
+290  | finish                   | TRANSITION_SUB_TO_MAIN   | SkilledAssistant | claude-opus-4-5
+```
+
+**What it reveals:**
+- Which delegation tool was used (testing_agent, design_agent_full_stack, etc.)
+- Which model the sub-agent ran with
+- How many steps the sub-agent took (gap between MAIN_TO_SUB and SUB_TO_MAIN)
+- Imbalances (more MAIN_TO_SUB than SUB_TO_MAIN means a sub-agent was still active)
+
+---
+
+## 5. Tool Usage Frequency Per Job
+
+**When to use:** You want a breakdown of which tools the agent used most heavily in a specific job.
+
+```sql
+SELECT
+    function_name,
+    COUNT(*) AS usage_count,
+    ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER (), 1) AS pct
+FROM trajectories
+WHERE job_id = 'your-job-id'
+GROUP BY function_name
+ORDER BY usage_count DESC;
+```
+
+**What it reveals:**
+- The agent's tool usage pattern for this specific app
+- Whether the job was code-heavy (lots of apply_patch, create_file) vs debug-heavy (lots of execute_bash, view_file)
+- How many PARALLEL_TOOLS batches occurred
+- Whether sub-agent delegation tools were invoked
+
+---
+
+## 6. Job Metadata & Configuration Lookup
+
+**When to use:** You need to find the configured model and prompt for a job — especially to understand auto_compact behavior.
+
+```sql
+SELECT
+    id AS job_id,
+    title,
+    model_name,
+    prompt_name,
+    status,
+    parent_job_id,
+    root_job_id,
+    created_at
+FROM job_metadata
+WHERE id = 'your-job-id';
+```
+
+**Critical insight:** The `model_name` here is what auto_compact fork agents use. If this differs from the runtime model (e.g., job_metadata says `gpt-5.3-codex` but the agent was running `galapagos-alpha`), a model change WILL occur after auto_compact.
+
+---
+
+## 7. Find All Errors in a Job
+
+**When to use:** Something went wrong and you need to find every error event.
+
+```sql
+SELECT
+    step_id,
+    function_name,
+    model_name,
+    error::text AS error_detail,
+    created_at
+FROM trajectories
+WHERE job_id = 'your-job-id'
+  AND (error IS NOT NULL OR function_name IN (
+    'exit_cost_credit_limit_reached',
+    'ENV_CREATION_FAILED',
+    'auto_compact'
+  ))
+ORDER BY step_id;
+```
+
+**What it reveals:**
+- All explicit errors (LLM timeouts, tool failures)
+- Credit limit events (even though they may not have error field set)
+- Environment creation failures
+- auto_compact events (not errors per se, but often significant)
+
+---
+
+## 8. Timeline of All Events for a Job
+
+**When to use:** You want a complete chronological view of a job — ideal for building a timeline or Gantt chart.
+
+```sql
+SELECT
+    step_id,
+    created_at,
+    function_name,
+    agent_name,
+    model_name,
+    execution_mode,
+    duration_ms,
+    CASE
+        WHEN function_name = 'auto_compact' THEN 'COMPACTION'
+        WHEN function_name = 'exit_cost_credit_limit_reached' THEN 'CREDIT_LIMIT'
+        WHEN function_name = 'ENV_CREATION_FAILED' THEN 'ENV_FAILURE'
+        WHEN function_name = 'pause' THEN 'PAUSED'
+        WHEN execution_mode = 'TRANSITION_MAIN_TO_SUB' THEN 'DELEGATION_START'
+        WHEN execution_mode = 'TRANSITION_SUB_TO_MAIN' THEN 'DELEGATION_END'
+        WHEN function_name = 'finish' THEN 'FINISHED'
+        WHEN function_name = 'ask_human' THEN 'WAITING_FOR_USER'
+        ELSE 'NORMAL'
+    END AS event_type
+FROM trajectories
+WHERE job_id = 'your-job-id'
+ORDER BY step_id;
+```
+
+**What it reveals:**
+- Full chronological timeline with human-readable event types
+- Duration of each step (useful for finding slow LLM calls)
+- Clear markers for delegation boundaries, pauses, and failures
+
+---
+
+## 9. All Distinct Expertise Types & Their Models (Platform-Wide)
+
+**When to use:** You need to document which expertise types exist and what models they map to.
+
+```sql
+SELECT
+    agent_name,
+    expertise_type,
+    ARRAY_AGG(DISTINCT model_name) AS models,
+    COUNT(*) AS total_steps
+FROM trajectories
+WHERE model_name IS NOT NULL
+GROUP BY agent_name, expertise_type
+ORDER BY agent_name, total_steps DESC;
+```
+
+**What it reveals:**
+- Every expertise type in the platform
+- Which models each expertise type has been routed to (including experimental ones)
+- Relative frequency (how often each expertise is used)
+- Multi-model routing: same expertise → multiple models (A/B testing)
+
+---
+
+## 10. Count Trajectories Per Job (Find Large/Problematic Jobs)
+
+**When to use:** You want to identify the longest or most complex jobs.
+
+```sql
+SELECT
+    t.job_id,
+    jm.title,
+    jm.model_name AS configured_model,
+    COUNT(*) AS step_count,
+    COUNT(DISTINCT t.model_name) AS models_used,
+    MIN(t.created_at) AS started_at,
+    MAX(t.created_at) AS last_activity,
+    EXTRACT(EPOCH FROM (MAX(t.created_at) - MIN(t.created_at))) / 3600 AS duration_hours
+FROM trajectories t
+LEFT JOIN job_metadata jm ON t.job_id::text = jm.id::text
+GROUP BY t.job_id, jm.title, jm.model_name
+ORDER BY step_count DESC
+LIMIT 20;
+```
+
+**What it reveals:**
+- The largest jobs by step count
+- Which jobs used multiple models
+- Job duration in hours
+- Configured model vs actual models used
+
+---
+
+## 11. All Delegation Tool Usage (Platform-Wide)
+
+**When to use:** You want to see how often each sub-agent delegation tool is invoked across the platform.
+
+```sql
+SELECT
+    function_name AS delegation_tool,
+    COUNT(*) AS invocations,
+    COUNT(DISTINCT job_id) AS distinct_jobs,
+    ARRAY_AGG(DISTINCT model_name) AS models_used
+FROM trajectories
+WHERE function_name IN (
+    'testing_agent', 'testing_agent_v3', 'testing_agent_v3_fork',
+    'auto_frontend_testing_agent', 'deep_testing_backend_v2',
+    'support_agent', 'design_agent_full_stack'
+)
+GROUP BY function_name
+ORDER BY invocations DESC;
+```
+
+**What it reveals:**
+- Which sub-agent delegation tools are used most
+- How many distinct jobs use each delegation tool
+- Which models the sub-agents run on
+
+---
+
+## 12. Detect auto_compact Model Switches
+
+**When to use:** You want to find ALL jobs where auto_compact caused a model change — not just one job, but platform-wide.
+
+```sql
+WITH model_changes AS (
+    SELECT
+        job_id,
+        step_id,
+        model_name,
+        LAG(model_name) OVER (PARTITION BY job_id ORDER BY step_id) AS prev_model,
+        function_name
+    FROM trajectories
+    WHERE model_name IS NOT NULL
+)
+SELECT
+    mc.job_id,
+    jm.title,
+    mc.step_id,
+    mc.prev_model,
+    mc.model_name AS new_model,
+    mc.function_name
+FROM model_changes mc
+LEFT JOIN job_metadata jm ON mc.job_id::text = jm.id::text
+WHERE mc.prev_model IS NOT NULL
+  AND mc.model_name != mc.prev_model
+ORDER BY mc.job_id, mc.step_id;
+```
+
+**What it reveals:**
+- Every model switch across all jobs
+- The exact step where the switch happened
+- What the previous and new models were
+- Which function triggered the switch (usually auto_compact or a delegation)
+
+---
+
+## 13. Token Usage Analysis Per Job
+
+**When to use:** You want to analyze token consumption, cache efficiency, and cost indicators for a job.
+
+```sql
+SELECT
+    step_id,
+    function_name,
+    model_name,
+    (token_usage->>'input_tokens')::int AS input_tokens,
+    (token_usage->>'output_tokens')::int AS output_tokens,
+    (token_usage->>'cache_read_input_tokens')::int AS cached_tokens,
+    CASE
+        WHEN (token_usage->>'input_tokens')::int > 0 THEN
+            ROUND((token_usage->>'cache_read_input_tokens')::numeric /
+                  (token_usage->>'input_tokens')::numeric * 100, 1)
+        ELSE 0
+    END AS cache_hit_pct
+FROM trajectories
+WHERE job_id = 'your-job-id'
+  AND token_usage IS NOT NULL
+ORDER BY step_id;
+```
+
+**What it reveals:**
+- Per-step token consumption
+- Cache hit rate trend (should be 80-90% after the first few steps)
+- Context growth over time (input_tokens increases each step)
+- When auto_compact fires (input_tokens drops dramatically)
+
+---
+
+## Quick Reference: Connection Details
+
+```
+Host: 10.0.2.3
+Port: 6544
+Database: postgres-spark
+User: postgres
+
+# Python (psycopg2)
+import psycopg2
+conn = psycopg2.connect(
+    host='10.0.2.3', port=6544,
+    dbname='postgres-spark', user='postgres',
+    password='<your-password>'
+)
+```
+
+> **Note:** Replace `'your-job-id'` in all queries with the actual UUID of the job you're investigating.
+"""
+    },
+
+    # --- Doc 11: When Things Go Wrong ---
+    {
+        "id": _id(), "title": "When Things Go Wrong", "category_id": SUB_FAILURE_RECOVERY, "author_id": SYSTEM_AUTHOR,
+        "created_at": NOW, "updated_at": NOW, "order": 0,
+        "content": """# When Things Go Wrong
+
+Six failure patterns observed in real Emergent production jobs — what causes them, how the platform recovers, and how to identify them in trajectory data.
+
+## Failure Pattern Overview
+
+```mermaid
+flowchart TD
+    subgraph Failures["6 Failure Patterns"]
+        F1["HTTP 500/429<br/>LLM API errors"]
+        F2["tool_is_error<br/>Tool execution failures"]
+        F3["max_tokens<br/>Response truncation"]
+        F4["auto_compact<br/>Model change"]
+        F5["Credit limit<br/>exit_cost_credit_limit_reached"]
+        F6["ENV_CREATION_FAILED<br/>Container start failure"]
+    end
+
+    subgraph Recovery["Recovery Mechanisms"]
+        R1["Automatic retry<br/>(with backoff)"]
+        R2["Agent self-corrects<br/>(reads error, tries again)"]
+        R3["auto_compact<br/>(compress context)"]
+        R4["Fork agent<br/>(new agent instance)"]
+        R5["User adds credits<br/>(manual resume)"]
+        R6["Environment recreated<br/>(platform retry)"]
+    end
+
+    F1 --> R1
+    F2 --> R2
+    F3 --> R3
+    F4 --> R4
+    F5 --> R5
+    F6 --> R6
+```
+
+## 1. HTTP 500/429 — LLM API Errors
+
+**What:** The LLM provider returns an error — usually rate limiting (429) or server error (500).
+
+**Example from real data:**
+```
+Step -1 (13:37 UTC): CallLLM StartToClose timeout
+Error: "The LLM call timed out after 120 seconds"
+```
+
+**Recovery:** The platform automatically retries with exponential backoff. Most 429 errors resolve within 30–60 seconds.
+
+**How to spot in trajectories:**
+```sql
+SELECT step_id, error, created_at
+FROM trajectories
+WHERE job_id = 'your-job-id'
+  AND error IS NOT NULL
+  AND error::text LIKE '%timeout%' OR error::text LIKE '%429%' OR error::text LIKE '%500%';
+```
+
+## 2. tool_is_error — Tool Execution Failures
+
+**What:** A tool was called but failed to execute properly.
+
+**Common causes:**
+- `execute_bash` command failed (non-zero exit code)
+- `apply_patch` couldn't apply the diff (context mismatch)
+- `create_file` path doesn't exist
+- `browser_automation` element not found
+
+**Recovery:** The agent reads the error output and self-corrects. This is a key capability — the agent treats tool errors as feedback and adjusts its approach.
+
+**Example:**
+```json
+{
+  "function_name": "execute_bash",
+  "tool_is_error": true,
+  "output": {
+    "stderr": "ERROR: Module not found: 'react-charts'. Did you mean 'recharts'?",
+    "exit_code": 1
+  }
+}
+```
+The agent's next step: `execute_bash` with `npm install recharts`.
+
+## 3. max_tokens — Response Truncation
+
+**What:** The LLM's response was cut off because it hit the `max_tokens` limit (typically 64,000).
+
+**Impact:** The response may contain an incomplete tool call — JSON cut off mid-string. This means the tool cannot execute.
+
+**Recovery:**
+- For minor truncation: the agent retries with a more concise prompt
+- For severe cases: `auto_compact` triggers to free context space
+
+**How to spot:**
+```sql
+SELECT step_id, function_name
+FROM trajectories
+WHERE job_id = 'your-job-id'
+  AND traj_payload->>'stop_reason' = 'max_tokens';
+```
+
+## 4. auto_compact — Model Change
+
+**What:** Context compaction triggered, spawning a fork agent that may use a different model.
+
+**Impact:** The model changes mid-job. Code style and approach may subtly shift.
+
+**Real example (job 2abc6159):**
+- Steps 0–186: `galapagos-alpha`
+- Step 187: `auto_compact`
+- Steps 189–335: `gpt-5.3-codex`
+
+**Recovery:** The fork agent continues the job with a summarized context. It reads the summary and picks up where the previous agent left off.
+
+**How to spot:**
+```sql
+SELECT step_id, function_name, model_name
+FROM trajectories
+WHERE job_id = 'your-job-id'
+  AND function_name = 'auto_compact';
+```
+
+## 5. Credit Limit — exit_cost_credit_limit_reached
+
+**What:** The user ran out of credits. The agent is paused.
+
+**Impact:** `model_name` is set to `None`. The agent cannot make LLM calls.
+
+**Real example (job 2abc6159):**
+```
+Step 15 (11:46 UTC): exit_cost_credit_limit_reached
+Model: None
+--- User adds credits ---
+Step 16: Agent resumes with gpt-5.3-codex
+```
+
+**Recovery:** User adds more credits → agent resumes. The model used after resume comes from `job_metadata`.
+
+**How to spot:**
+```sql
+SELECT step_id, function_name, model_name, created_at
+FROM trajectories
+WHERE job_id = 'your-job-id'
+  AND function_name = 'exit_cost_credit_limit_reached';
+```
+
+## 6. ENV_CREATION_FAILED — Container Start Failure
+
+**What:** The Linux container environment failed to start.
+
+**Impact:** The agent cannot execute any tools — no bash, no file creation, nothing.
+
+**Causes:**
+- Docker/Kubernetes resource limits
+- Base image pull failure
+- Network connectivity issues
+
+**Recovery:** The platform retries container creation. If it fails repeatedly, the job may need manual intervention.
+
+**How to spot:**
+```sql
+SELECT step_id, function_name, error, created_at
+FROM trajectories
+WHERE job_id = 'your-job-id'
+  AND function_name = 'ENV_CREATION_FAILED';
+```
+
+## 7. Image MIME Type Mismatch (Bonus)
+
+**What:** The agent tried to process an image but the MIME type didn't match the actual file format.
+
+**Real example (job 2abc6159, 14:58 UTC):**
+```
+400 Bad Request: PNG MIME type declared but JPEG data received
+```
+
+**Impact:** SkilledAssistant error during image processing. The agent retries with the correct format or skips the image.
+
+## QA Checklist for Failure Analysis
+
+When investigating a failed or problematic job:
+
+1. **Count errors:** `SELECT COUNT(*) FROM trajectories WHERE job_id = ? AND error IS NOT NULL`
+2. **Check for auto_compact:** Did the model change? How many compactions occurred?
+3. **Check for credit limits:** Was the job paused? How long?
+4. **Check for ENV failures:** Did the container start successfully?
+5. **Check tool_is_error rate:** What percentage of tool calls failed?
+6. **Check final step:** Did the job finish with `finish` tool, or did it stall?
+"""
+    },
+
+    # --- Doc 12: Real Job Walkthrough — Budget Insights ---
+    {
+        "id": _id(), "title": "Real Job Walkthrough — Budget Insights", "category_id": SUB_FAILURE_RECOVERY, "author_id": SYSTEM_AUTHOR,
+        "created_at": NOW, "updated_at": NOW, "order": 1,
+        "content": """# Real Job Walkthrough — Budget Insights
+
+An end-to-end walkthrough of a real Emergent job (2abc6159, "budget-insights-io") — 335 steps, multiple models, sub-agent delegations, and failure recovery. This maps everything from the other documents to actual trajectory data.
+
+## Job Overview
+
+| Field | Value |
+|-------|-------|
+| Job ID | `2abc6159-8d76-44f4-924e-12e5d9ec981f` |
+| Title | budget-insights-io |
+| Total Steps | 335 |
+| Duration | ~4.5 hours (11:46 – 16:00 UTC) |
+| Status | IN_PROGRESS (at time of analysis) |
+| Models Used | galapagos-alpha → gpt-5.3-codex (+ testing sub-agent models) |
+
+## Phase 1: Initialization (Steps 0–15)
+
+```mermaid
+flowchart LR
+    S0["Step 0<br/>initial-llm<br/>galapagos-alpha"] --> S1["Steps 1–14<br/>Building starts<br/>create_file, execute_bash"]
+    S1 --> S15["Step 15<br/>CREDIT LIMIT HIT<br/>model = None"]
+    S15 -->|"User adds credits"| S16["Step 16<br/>Resume<br/>galapagos-alpha"]
+```
+
+- **Step 0:** Agent initializes with `galapagos-alpha` model
+- **Steps 1–14:** Initial project setup — creating files, installing dependencies
+- **Step 15 (11:46 UTC):** `exit_cost_credit_limit_reached` — credits ran out
+- **Step 16:** User adds credits, agent resumes
+
+## Phase 2: Main Development (Steps 16–186)
+
+The longest phase — the main agent builds the budget tracking application:
+
+| Activity | Steps | Tools Used |
+|----------|-------|-----------|
+| Frontend setup | 16–40 | create_file, execute_bash |
+| Testing round 1 | 35–61 | testing_agent (Codex) → TRANSITION_MAIN_TO_SUB |
+| Backend API | 62–100 | create_file, apply_patch, execute_bash |
+| UI components | 100–150 | create_file, apply_patch, screenshot_tool |
+| Integration | 150–186 | apply_patch, execute_bash, browser_automation |
+
+**Model throughout:** `galapagos-alpha`
+
+### First Testing Delegation (Steps 35–61)
+
+The main agent delegates to the testing sub-agent:
+1. Step 35: `testing_agent` called → `TRANSITION_MAIN_TO_SUB`
+2. Steps 36–60: SkilledAssistant (testing_agent_codex_5_3) runs tests
+3. Step 61: Sub-agent calls `finish` → `TRANSITION_SUB_TO_MAIN`
+4. Main agent receives test results and continues
+
+## Phase 3: auto_compact & Model Change (Steps 187–189)
+
+The critical event:
+
+| Step | Time | Event | Model |
+|------|------|-------|-------|
+| 186 | 14:35:30 | Last normal step — applying patches | galapagos-alpha |
+| 187 | 14:35:31 | `auto_compact` triggered | (system) |
+| 188 | 14:36:43 | Transition step (default_tool) | galapagos-alpha |
+| 189 | 14:37:03 | Fork agent starts — calls `ask_human` | **gpt-5.3-codex** |
+
+**Root cause:** `job_metadata.model_name = "gpt-5.3-codex"`. The fork agent read this instead of inheriting `galapagos-alpha`.
+
+## Phase 4: Continued Development (Steps 189–274)
+
+The fork agent continues building with `gpt-5.3-codex`:
+
+| Activity | Steps | Notes |
+|----------|-------|-------|
+| Plan presentation | 189 | ask_human — shows user what was done and next steps |
+| Continued development | 190–274 | More features, bug fixes, styling |
+
+**LLM Timeout (13:37 UTC):** A `CallLLM StartToClose timeout` error occurred but the job auto-recovered.
+
+**Image MIME Error (14:58 UTC):** A 400 Bad Request for PNG/JPEG mismatch during image processing. SkilledAssistant error — non-fatal.
+
+## Phase 5: Advanced Testing (Steps 275–321)
+
+Two more testing delegations with different models:
+
+### Testing Round 2: Opus (Steps 275–290)
+```
+Step 275: testing_agent_v3_fork → TRANSITION_MAIN_TO_SUB
+Model: claude-opus-4-5-20251101
+Steps 276–289: Sub-agent runs tests
+Step 290: finish → TRANSITION_SUB_TO_MAIN
+```
+
+### Testing Round 3: Sonnet 4.5 (Steps 293–321)
+```
+Step 293: auto_frontend_testing_agent → TRANSITION_MAIN_TO_SUB
+Model: claude-sonnet-4-5-20250929
+Steps 294–320: Automated frontend tests with screenshots
+Step 321: finish → TRANSITION_SUB_TO_MAIN
+```
+
+## Phase 6: Final Steps (Steps 322–335)
+
+| Step | Time | Event |
+|------|------|-------|
+| 322–325 | 15:30 | Final bug fixes and polish |
+| 326 | 15:36 | `pause` — model set to None |
+| 327 | — | Resume — continues as gpt-5.3-codex |
+| 328–335 | — | Finishing up |
+
+## Complete Model Timeline
+
+```mermaid
+gantt
+    title Model Usage Across Job 2abc6159
+    dateFormat HH:mm
+    axisFormat %H:%M
+    section Main Agent
+    galapagos-alpha (steps 0-186)     :m1, 11:46, 170min
+    gpt-5.3-codex (steps 189-335)     :m2, 14:37, 85min
+    section Sub-Agents
+    testing_agent Codex (35-61)       :s1, 12:15, 25min
+    testing_v3_fork Opus (275-290)    :s2, 15:00, 15min
+    auto_frontend Sonnet (293-321)    :s3, 15:20, 25min
+    section Events
+    Credit limit (step 15)            :milestone, e1, 11:46, 0min
+    auto_compact (step 187)           :milestone, e2, 14:35, 0min
+    Pause (step 326)                  :milestone, e3, 15:36, 0min
+```
+
+## Summary Statistics
+
+| Metric | Value |
+|--------|-------|
+| Total steps | 335 |
+| Main agent steps | ~280 |
+| Sub-agent steps | ~55 |
+| Models used | 5 (galapagos-alpha, gpt-5.3-codex, claude-opus-4-5, claude-sonnet-4-5, gpt-5.3-codex) |
+| auto_compact events | 1 |
+| Credit limit events | 1 |
+| Errors | 3 (timeout, MIME mismatch, one tool error) |
+| Testing delegations | 3 rounds with 3 different models |
+
+## Key Takeaways
+
+1. **Multi-model is real** — a single job can use 5+ different LLM models
+2. **auto_compact changes models** — the fork agent reads from `job_metadata`, not the runtime model
+3. **Sub-agents are specialized** — each testing round may use a different model/expertise
+4. **Self-recovery works** — the agent recovered from timeout, credit limit, and image errors without human intervention
+5. **Jobs are long** — 335 steps over 4.5 hours is typical for complex applications
 """
     },
 ]

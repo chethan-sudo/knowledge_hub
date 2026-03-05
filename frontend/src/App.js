@@ -1,8 +1,7 @@
-import { useState, useEffect, createContext, useContext, useCallback, useRef, useMemo } from "react";
+import React, { useState, useEffect, createContext, useContext, useCallback, useRef, useMemo } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import mermaid from "mermaid";
-import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import "@/App.css";
 
@@ -80,8 +79,10 @@ function useCollaboration(docId, enabled = true) {
 // --- Contexts ---
 const AuthContext = createContext(null);
 const ThemeContext = createContext(null);
+const KeywordContext = createContext({});
 export const useAuth = () => useContext(AuthContext);
 export const useTheme = () => useContext(ThemeContext);
+export const useKeywords = () => useContext(KeywordContext);
 
 function ThemeProvider({ children }) {
   const [dark, setDark] = useState(() => {
@@ -100,6 +101,19 @@ function AuthProvider({ children }) {
   const [loading] = useState(false);
 
   const api = useCallback(async (method, url, data) => {
+    // Use fetch for DELETE/PUT to handle 307 cross-origin redirects
+    if (method === 'delete' || method === 'put') {
+      const opts = { method: method.toUpperCase(), redirect: 'follow', headers: {} };
+      if (data) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(data); }
+      const resp = await fetch(`${API}${url}`, opts);
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({ detail: resp.statusText }));
+        const error = new Error(err.detail || 'Request failed');
+        error.response = { status: resp.status, data: err };
+        throw error;
+      }
+      return { data: await resp.json() };
+    }
     return axios({ method, url: `${API}${url}`, data });
   }, []);
 
@@ -160,6 +174,9 @@ function Icon({ name, size = 18 }) {
     BarChart: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/></svg>,
     TrendingUp: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>,
     Eye: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>,
+    Printer: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>,
+    Award: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"/><circle cx="12" cy="8" r="6"/></svg>,
+    Compass: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>,
   };
   return icons[name] || icons.FileText;
 }
@@ -179,7 +196,7 @@ function CollapsibleH2({ text, id, children }) {
   );
 }
 
-function MarkdownContent({ content }) {
+function MarkdownContent({ content, currentDocId }) {
   if (!content) return null;
   const lines = content.split("\n");
   // First pass: parse all elements
@@ -235,18 +252,18 @@ function MarkdownContent({ content }) {
       while (idx < parsed.length && parsed[idx].type !== "h2") { sectionItems.push(parsed[idx]); idx++; }
       elements.push(
         <CollapsibleH2 key={elements.length} text={item.text} id={item.id}>
-          {sectionItems.map((si, j) => renderParsedItem(si, `${elements.length}-${j}`))}
+          {sectionItems.map((si, j) => renderParsedItem(si, `${elements.length}-${j}`, currentDocId))}
         </CollapsibleH2>
       );
     } else {
-      elements.push(renderParsedItem(item, elements.length));
+      elements.push(renderParsedItem(item, elements.length, currentDocId));
       idx++;
     }
   }
   return <>{elements}</>;
 }
 
-function renderParsedItem(item, key) {
+function renderParsedItem(item, key, currentDocId) {
   switch (item.type) {
     case "mermaid": return <MermaidDiagram key={key} chart={item.content} />;
     case "code": return <CodeBlock key={key} code={item.content} lang={item.lang} />;
@@ -257,9 +274,9 @@ function renderParsedItem(item, key) {
         <tbody>{item.rows.map((r,j) => <tr key={j}>{r.map((c,k) => <td key={k} dangerouslySetInnerHTML={{__html: renderInlineHtml(c)}} />)}</tr>)}</tbody></table>
       </div>
     );
-    case "ul": return <ul key={key} className="doc-ul">{item.items.map((it, j) => <li key={j}>{renderInline(it)}</li>)}</ul>;
-    case "ol": return <ol key={key} className="doc-ol">{item.items.map((it, j) => <li key={j}>{renderInline(it)}</li>)}</ol>;
-    case "p": return <p key={key} className="doc-p">{renderInline(item.text)}</p>;
+    case "ul": return <ul key={key} className="doc-ul">{item.items.map((it, j) => <li key={j}><KeywordLinkedText currentDocId={currentDocId}>{renderInline(it)}</KeywordLinkedText></li>)}</ul>;
+    case "ol": return <ol key={key} className="doc-ol">{item.items.map((it, j) => <li key={j}><KeywordLinkedText currentDocId={currentDocId}>{renderInline(it)}</KeywordLinkedText></li>)}</ol>;
+    case "p": return <p key={key} className="doc-p"><KeywordLinkedText currentDocId={currentDocId}>{renderInline(item.text)}</KeywordLinkedText></p>;
     default: return null;
   }
 }
@@ -298,6 +315,49 @@ function renderInline(text) {
     else if (earliest === "italic") { parts.push(<em key={key++}>{italicMatch[1]}</em>); remaining = remaining.slice(earliestIdx + italicMatch[0].length); }
   }
   return parts;
+}
+
+// Keyword auto-linking wrapper
+function KeywordLinkedText({ children, currentDocId }) {
+  const keywords = useKeywords();
+  const navigate = useNavigate();
+  if (!children || (typeof children === "string" && !children.trim())) return children;
+  const entries = Object.entries(keywords);
+  if (entries.length === 0) return children;
+
+  const processText = (text) => {
+    if (typeof text !== "string" || text.length < 6) return text;
+    const lower = text.toLowerCase();
+    // Find the best (longest) keyword match
+    let bestMatch = null;
+    let bestIdx = text.length;
+    for (const [kw, docId] of entries) {
+      if (kw.length < 4 || kw.length > 25) continue; // Skip very short or full titles
+      if (docId === currentDocId) continue; // Don't link to current document
+      const kwLower = kw.toLowerCase();
+      const idx = lower.indexOf(kwLower);
+      if (idx !== -1 && idx < bestIdx) {
+        const before = idx > 0 ? lower[idx - 1] : " ";
+        const after = idx + kw.length < lower.length ? lower[idx + kw.length] : " ";
+        if (/[\s,.;:!?()\-]/.test(before) || idx === 0) {
+          if (/[\s,.;:!?()\-]/.test(after) || idx + kw.length === lower.length) {
+            bestMatch = { keyword: kw, docId, index: idx, length: kw.length };
+            bestIdx = idx;
+          }
+        }
+      }
+    }
+    if (!bestMatch) return text;
+    const { index, length, docId } = bestMatch;
+    const before = text.slice(0, index);
+    const match = text.slice(index, index + length);
+    const after = text.slice(index + length);
+    return <>{before}<a className="doc-keyword-link" data-testid={`keyword-link-${docId.slice(0,8)}`} onClick={(e) => { e.preventDefault(); navigate(`/doc/${docId}`); }}>{match}</a>{after}</>;
+  };
+
+  if (typeof children === "string") return processText(children);
+  if (Array.isArray(children)) return children.map((c, i) => typeof c === "string" ? <React.Fragment key={i}>{processText(c)}</React.Fragment> : c);
+  return children;
 }
 
 function MermaidDiagram({ chart }) {
@@ -455,6 +515,81 @@ function InlineSearch({ categories, documents, onSelect }) {
   );
 }
 
+
+// --- Document Quiz ---
+function DocQuiz({ docId }) {
+  const { api } = useAuth();
+  const [quiz, setQuiz] = useState(null);
+  const [answers, setAnswers] = useState({});
+  const [submitted, setSubmitted] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    setQuiz(null); setAnswers({}); setSubmitted(false); setExpanded(false);
+    if (docId) api("get", `/documents/${docId}/quiz`).then(r => { if (r.data?.questions?.length > 0) setQuiz(r.data); }).catch(() => {});
+  }, [docId, api]);
+
+  if (!quiz || quiz.questions.length === 0) return null;
+
+  const score = quiz.questions.reduce((acc, q) => acc + (answers[q.id] === q.correct ? 1 : 0), 0);
+  const total = quiz.questions.length;
+  const allAnswered = Object.keys(answers).length === total;
+
+  if (!expanded) {
+    return (
+      <div className="doc-quiz doc-quiz-collapsed" data-testid="doc-quiz">
+        <button className="doc-quiz-start" data-testid="quiz-start-btn" onClick={() => setExpanded(true)}>
+          <Icon name="Check" size={20}/> <span>Take Quiz</span> <span className="doc-quiz-count">{total} questions</span>
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="doc-quiz" data-testid="doc-quiz">
+      <h3 className="doc-quiz-title"><Icon name="Check" size={18}/> Test Your Understanding <button className="doc-quiz-minimize" data-testid="quiz-minimize" onClick={() => setExpanded(false)}><Icon name="X" size={14}/></button></h3>
+      {quiz.questions.map((q, qi) => (
+        <div key={q.id} className="quiz-question" data-testid={`quiz-q-${qi}`}>
+          <p className="quiz-question-text">{qi + 1}. {q.question}</p>
+          <div className="quiz-options">
+            {q.options.map((opt, oi) => {
+              const selected = answers[q.id] === oi;
+              const isCorrect = submitted && oi === q.correct;
+              const isWrong = submitted && selected && oi !== q.correct;
+              return (
+                <button key={oi} className={`quiz-option ${selected ? "selected" : ""} ${isCorrect ? "correct" : ""} ${isWrong ? "wrong" : ""}`} data-testid={`quiz-opt-${qi}-${oi}`} onClick={() => { if (!submitted) setAnswers(prev => ({...prev, [q.id]: oi})); }} disabled={submitted}>
+                  <span className="quiz-option-letter">{String.fromCharCode(65 + oi)}</span>{opt}
+                </button>
+              );
+            })}
+          </div>
+          {submitted && answers[q.id] !== undefined && (
+            <p className={`quiz-explanation ${answers[q.id] === q.correct ? "correct" : "wrong"}`} data-testid={`quiz-explain-${qi}`}>
+              {answers[q.id] === q.correct ? "Correct! " : "Incorrect. "}{q.explanation}
+            </p>
+          )}
+        </div>
+      ))}
+      <div className="quiz-footer">
+        {!submitted ? (
+          <button className="editor-btn-primary" data-testid="quiz-submit" onClick={() => {
+            setSubmitted(true);
+            const s = quiz.questions.reduce((acc, q) => acc + (answers[q.id] === q.correct ? 1 : 0), 0);
+            if (s >= Math.ceil(total * 0.7)) {
+              try { const p = JSON.parse(localStorage.getItem("aa-quizzes-passed") || "[]"); if (!p.includes(docId)) { p.push(docId); localStorage.setItem("aa-quizzes-passed", JSON.stringify(p)); } } catch {}
+            }
+          }} disabled={!allAnswered}>Check Answers ({Object.keys(answers).length}/{total})</button>
+        ) : (
+          <div className="quiz-result" data-testid="quiz-result">
+            <span className="quiz-score">Score: {score}/{total} ({Math.round(score/total*100)}%)</span>
+            <button className="editor-btn-secondary" onClick={() => { setAnswers({}); setSubmitted(false); }}>Try Again</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // --- Comments Section ---
 function CommentsSection({ docId }) {
   const { api, user } = useAuth();
@@ -513,7 +648,7 @@ function CommentsSection({ docId }) {
           <button className="comment-action" data-testid={`reply-btn-${comment.id}`} onClick={() => setReplyTo(replyTo === comment.id ? null : comment.id)}>
             <Icon name="Reply" size={13}/> Reply
           </button>
-          {(isOwn || user?.role === "admin") && (
+          {isOwn && (
             <button className="comment-action comment-delete" data-testid={`delete-comment-${comment.id}`} onClick={() => deleteComment(comment.id)}>
               <Icon name="Trash" size={13}/>
             </button>
@@ -590,7 +725,7 @@ function Sidebar({ categories, documents, activeDocId, onSelectDoc, onNewDoc, co
     <aside className={`sidebar ${collapsed ? "sidebar-collapsed" : ""}`} data-testid="sidebar" style={!collapsed ? {width: sidebarWidth} : undefined}>
       <div className="sidebar-header">
         {!collapsed && <div className="sidebar-brand" data-testid="sidebar-brand"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="M8 7h6"/><path d="M8 11h4"/></svg><span>Agent Anatomy</span></div>}
-        <button className="sidebar-collapse-btn" data-testid="sidebar-collapse-btn" onClick={() => setCollapsed(!collapsed)}><Icon name="PanelLeft" size={18}/></button>
+        <button className="sidebar-collapse-btn" data-testid="sidebar-collapse-btn" onClick={() => setCollapsed(!collapsed)}><Icon name={collapsed ? "Menu" : "PanelLeft"} size={18}/></button>
       </div>
       {!collapsed && (
         <>
@@ -598,14 +733,16 @@ function Sidebar({ categories, documents, activeDocId, onSelectDoc, onNewDoc, co
           <nav className="sidebar-nav" ref={navRef} data-testid="sidebar-nav">
             <button className={`sidebar-item ${currentPath === "/" && !activeDocId ? "active" : ""}`} data-testid="sidebar-home-btn" onClick={() => navigate("/")}><Icon name="Home" size={16}/><span>Home</span></button>
             <button className={`sidebar-item ${currentPath === "/bookmarks" ? "active" : ""}`} data-testid="sidebar-bookmarks-btn" onClick={() => navigate("/bookmarks")}><Icon name="Bookmark" size={16}/><span>Bookmarks</span>{bookmarkCount > 0 && <span className="sidebar-badge">{bookmarkCount}</span>}</button>
-            <button className={`sidebar-item ${currentPath === "/tools" ? "active" : ""}`} data-testid="sidebar-tools-btn" onClick={() => navigate("/tools")}><Icon name="Link" size={16}/><span>Tools</span></button>
+            <button className={`sidebar-item ${currentPath === "/learn" ? "active" : ""}`} data-testid="sidebar-learn-btn" onClick={() => navigate("/learn")}><Icon name="Rocket" size={16}/><span>Learning Paths</span></button>
+            <button className={`sidebar-item ${currentPath === "/progress" ? "active" : ""}`} data-testid="sidebar-progress-btn" onClick={() => navigate("/progress")}><Icon name="TrendingUp" size={16}/><span>My Progress</span></button>
+            <button className={`sidebar-item ${currentPath === "/tools" ? "active" : ""}`} data-testid="sidebar-tools-btn" onClick={() => navigate("/tools")}><Icon name="Monitor" size={16}/><span>Tools</span></button>
             {isAdmin && <button className={`sidebar-item ${currentPath === "/trash" ? "active" : ""}`} data-testid="sidebar-trash-btn" onClick={() => navigate("/trash")}><Icon name="Trash" size={16}/><span>Trash</span></button>}
-            {isAdmin && <button className={`sidebar-item ${currentPath === "/settings" ? "active" : ""}`} data-testid="sidebar-settings-btn" onClick={() => navigate("/settings")}><Icon name="Sparkles" size={16}/><span>Settings</span></button>}
             {isAdmin && <button className={`sidebar-item ${currentPath === "/analytics" ? "active" : ""}`} data-testid="sidebar-analytics-btn" onClick={() => navigate("/analytics")}><Icon name="BarChart" size={16}/><span>Analytics</span></button>}
+            {isAdmin && <button className={`sidebar-item ${currentPath === "/settings" ? "active" : ""}`} data-testid="sidebar-settings-btn" onClick={() => navigate("/settings")}><Icon name="Sparkles" size={16}/><span>Settings</span></button>}
             <div className="sidebar-divider"/>
             {parentCats.map(cat => {
               const children = getChildren(cat.id);
-              const isExpanded = expanded[cat.id] !== false;
+              const isExpanded = expanded[cat.id] === true;
               const catDocs = getDocsForCat(cat.id);
               return (
                 <div key={cat.id} className="sidebar-category" data-testid={`sidebar-cat-${cat.id}`}>
@@ -617,7 +754,7 @@ function Sidebar({ categories, documents, activeDocId, onSelectDoc, onNewDoc, co
                       {catDocs.map(d => <button key={d.id} className={`sidebar-doc ${activeDocId === d.id ? "active" : ""}`} data-testid={`sidebar-doc-${d.id}`} onClick={() => onSelectDoc(d.id)}><span>{d.title}</span></button>)}
                       {children.map(sub => {
                         const subDocs = getDocsForCat(sub.id);
-                        const subExpanded = expanded[sub.id] !== false;
+                        const subExpanded = expanded[sub.id] === true;
                         if (subDocs.length === 1) return <button key={sub.id} className={`sidebar-doc ${activeDocId === subDocs[0].id ? "active" : ""}`} data-testid={`sidebar-doc-${subDocs[0].id}`} onClick={() => onSelectDoc(subDocs[0].id)}><span>{subDocs[0].title}</span></button>;
                         return (
                           <div key={sub.id} className="sidebar-subcategory">
@@ -697,13 +834,125 @@ function PresenceAvatars({ users, identity }) {
   );
 }
 
-// --- Document Viewer ---
-function DocumentViewer({ doc, category, parentCategory, isBookmarked, onToggleBookmark, onEdit, onDelete, isAdmin, onNavigateHome }) {
+
+function DocNavigation({ currentDoc, documents, categories, onSelect }) {
   const { api } = useAuth();
+  const [pathSteps, setPathSteps] = useState(null);
+
+  // Load learning path steps if user came from a path
+  useEffect(() => {
+    const pathId = localStorage.getItem("aa-from-path");
+    if (pathId && pathId !== "true") {
+      api("get", `/learning-paths/${pathId}`).then(r => {
+        if (r.data?.steps) setPathSteps(r.data.steps);
+      }).catch(() => {});
+    }
+  }, [api, currentDoc?.id]);
+
+  if (!currentDoc || !documents?.length) return null;
+
+  let prevFinal = null;
+  let nextFinal = null;
+
+  // If in a learning path, use path order
+  if (pathSteps) {
+    const stepIdx = pathSteps.findIndex(s => s.document_id === currentDoc.id);
+    if (stepIdx !== -1) {
+      if (stepIdx > 0) {
+        const prevStep = pathSteps[stepIdx - 1];
+        prevFinal = documents.find(d => d.id === prevStep.document_id) || { id: prevStep.document_id, title: prevStep.title };
+      }
+      if (stepIdx < pathSteps.length - 1) {
+        const nextStep = pathSteps[stepIdx + 1];
+        nextFinal = documents.find(d => d.id === nextStep.document_id) || { id: nextStep.document_id, title: nextStep.title };
+      }
+    }
+  }
+
+  // Fallback to category order if not in a path or doc not found in path
+  if (!prevFinal && !nextFinal && !pathSteps) {
+    const sameCat = documents.filter(d => d.category_id === currentDoc.category_id).sort((a,b) => (a.order || 0) - (b.order || 0));
+    const idx = sameCat.findIndex(d => d.id === currentDoc.id);
+    prevFinal = idx > 0 ? sameCat[idx - 1] : null;
+    nextFinal = idx < sameCat.length - 1 ? sameCat[idx + 1] : null;
+    if (!prevFinal || !nextFinal) {
+      const parentCats = categories.filter(c => !c.parent_id && !c.internal).sort((a,b) => a.order - b.order);
+      const allCatIds = [];
+      parentCats.forEach(pc => { allCatIds.push(pc.id); categories.filter(c => c.parent_id === pc.id).sort((a,b) => a.order - b.order).forEach(sc => allCatIds.push(sc.id)); });
+      const catIdx = allCatIds.indexOf(currentDoc.category_id);
+      if (!prevFinal && catIdx > 0) {
+        for (let i = catIdx - 1; i >= 0; i--) {
+          const prevCatDocs = documents.filter(d => d.category_id === allCatIds[i]).sort((a,b) => (a.order || 0) - (b.order || 0));
+          if (prevCatDocs.length > 0) { prevFinal = prevCatDocs[prevCatDocs.length - 1]; break; }
+        }
+      }
+      if (!nextFinal && catIdx < allCatIds.length - 1) {
+        for (let i = catIdx + 1; i < allCatIds.length; i++) {
+          const nextCatDocs = documents.filter(d => d.category_id === allCatIds[i]).sort((a,b) => (a.order || 0) - (b.order || 0));
+          if (nextCatDocs.length > 0) { nextFinal = nextCatDocs[0]; break; }
+        }
+      }
+    }
+  }
+
+  if (!prevFinal && !nextFinal) return null;
+
+  const trackAndNavigate = (targetId) => {
+    try {
+      const progress = JSON.parse(localStorage.getItem("aa-learning-progress") || "{}");
+      const pathId = localStorage.getItem("aa-from-path");
+      if (pathId) {
+        progress[`${pathId}:${currentDoc.id}`] = true;
+        localStorage.setItem("aa-learning-progress", JSON.stringify(progress));
+      }
+    } catch {}
+    onSelect(targetId);
+  };
+
+  return (
+    <div className="doc-nav" data-testid="doc-navigation">
+      {prevFinal ? <button className="doc-nav-btn doc-nav-prev" data-testid="nav-prev" onClick={() => trackAndNavigate(prevFinal.id)}><Icon name="ArrowLeft" size={14}/><div><span className="doc-nav-label">Previous</span><span className="doc-nav-title">{prevFinal.title}</span></div></button> : <div/>}
+      {nextFinal ? <button className="doc-nav-btn doc-nav-next" data-testid="nav-next" onClick={() => trackAndNavigate(nextFinal.id)}><div><span className="doc-nav-label">Next</span><span className="doc-nav-title">{nextFinal.title}</span></div><Icon name="ChevronRight" size={14}/></button> : <div/>}
+    </div>
+  );
+}
+
+
+function RelatedDocs({ currentDoc, categories, documents, onSelect }) {
+  if (!currentDoc || !documents?.length) return null;
+  const siblings = documents.filter(d => d.category_id === currentDoc.category_id && d.id !== currentDoc.id);
+  // Also find docs from parent category
+  const currentCat = categories?.find(c => c.id === currentDoc.category_id);
+  const parentId = currentCat?.parent_id;
+  const cousins = parentId ? documents.filter(d => {
+    if (d.id === currentDoc.id) return false;
+    const dCat = categories?.find(c => c.id === d.category_id);
+    return dCat?.parent_id === parentId && d.category_id !== currentDoc.category_id;
+  }) : [];
+  const related = [...siblings, ...cousins.slice(0, 3)].slice(0, 5);
+  if (related.length === 0) return null;
+  const getCatName = (id) => categories?.find(c => c.id === id)?.name || "";
+  return (
+    <div className="related-docs" data-testid="related-docs">
+      <h3 className="related-docs-title">Related Documents</h3>
+      <div className="related-docs-list">
+        {related.map(d => (
+          <button key={d.id} className="related-doc-item" data-testid={`related-${d.id}`} onClick={() => onSelect(d.id)}>
+            <Icon name="FileText" size={15}/><div><span className="related-doc-name">{d.title}</span><span className="related-doc-cat">{getCatName(d.category_id)}</span></div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// --- Document Viewer ---
+function DocumentViewer({ doc, category, parentCategory, isBookmarked, onToggleBookmark, onEdit, onDelete, isAdmin, onNavigateHome, categories, documents, onSelectDoc }) {
+  const { api } = useAuth();
+  const navigate = useNavigate();
   const [versions, setVersions] = useState([]);
   const [showVersions, setShowVersions] = useState(false);
   const [viewingVersion, setViewingVersion] = useState(null);
-  const [exporting, setExporting] = useState(false);
   const [shareId, setShareId] = useState(doc?.share_id || null);
   const [copied, setCopied] = useState(false);
   const [showShare, setShowShare] = useState(false);
@@ -712,7 +961,14 @@ function DocumentViewer({ doc, category, parentCategory, isBookmarked, onToggleB
 
   // Track document view
   useEffect(() => {
-    if (doc?.id) api("post", `/documents/${doc.id}/view`).catch(() => {});
+    if (doc?.id) {
+      api("post", `/documents/${doc.id}/view`).catch(() => {});
+      // Track in localStorage for progress dashboard
+      try {
+        const read = JSON.parse(localStorage.getItem("aa-docs-read") || "[]");
+        if (!read.includes(doc.id)) { read.push(doc.id); localStorage.setItem("aa-docs-read", JSON.stringify(read)); }
+      } catch {}
+    }
   }, [doc?.id, api]);
 
   useEffect(() => { setShowVersions(false); setViewingVersion(null); setVersions([]); setShareId(doc?.share_id || null); setShowShare(false); }, [doc?.id, doc?.share_id]);
@@ -722,29 +978,8 @@ function DocumentViewer({ doc, category, parentCategory, isBookmarked, onToggleB
     try { const r = await api("get", `/documents/${doc.id}/versions`); setVersions(r.data); setShowVersions(true); } catch {}
   };
 
-  const exportPDF = async () => {
-    if (!contentRef.current || exporting) return;
-    setExporting(true);
-    try {
-      const canvas = await html2canvas(contentRef.current, { scale: 2, useCORS: true, backgroundColor: "#ffffff", logging: false });
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF("p", "mm", "a4");
-      const pdfW = pdf.internal.pageSize.getWidth();
-      const pdfH = pdf.internal.pageSize.getHeight();
-      const imgW = canvas.width;
-      const imgH = canvas.height;
-      const ratio = pdfW / imgW;
-      const scaledH = imgH * ratio;
-      let position = 0;
-      while (position < scaledH) {
-        if (position > 0) pdf.addPage();
-        pdf.addImage(imgData, "PNG", 0, -position, pdfW, scaledH);
-        position += pdfH;
-      }
-      pdf.save(`${doc.title}.pdf`);
-      alert("PDF exported successfully!");
-    } catch (e) { console.error("PDF export error:", e); alert("PDF export failed. Please try again."); }
-    setExporting(false);
+  const exportPDF = () => {
+    window.print();
   };
 
   const toggleShare = async () => {
@@ -775,6 +1010,9 @@ function DocumentViewer({ doc, category, parentCategory, isBookmarked, onToggleB
 
   return (
     <div className="doc-viewer" data-testid="doc-viewer">
+      {localStorage.getItem("aa-from-path") && (
+        <button className="lp-back" data-testid="back-to-path" onClick={() => { const pathData = localStorage.getItem("aa-from-path"); localStorage.removeItem("aa-from-path"); navigate("/learn", { state: { resumePathId: pathData } }); }} style={{marginBottom: 8}}><Icon name="ArrowLeft" size={14}/> Back to Learning Path</button>
+      )}
       <div className="doc-breadcrumb" data-testid="doc-breadcrumb">
         {parentCategory && <><button className="doc-breadcrumb-link" onClick={onNavigateHome}>{parentCategory.name}</button><Icon name="ChevronRight" size={14}/></>}
         {category && <><button className="doc-breadcrumb-link" onClick={onNavigateHome}>{category.name}</button><Icon name="ChevronRight" size={14}/></>}
@@ -783,12 +1021,16 @@ function DocumentViewer({ doc, category, parentCategory, isBookmarked, onToggleB
       <div className="doc-header">
         <div>
           <h1 className="doc-title" data-testid="doc-title">{viewingVersion ? `${doc.title} (version)` : doc.title}</h1>
+          <div className="doc-meta" data-testid="doc-meta">
+            <span className="doc-meta-item"><Icon name="Clock" size={12}/> {Math.max(1, Math.ceil((doc.content?.split(/\s+/).length || 0) / 200))} min read</span>
+            {doc.updated_at && <span className="doc-meta-item">Updated {new Date(doc.updated_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>}
+          </div>
           {tags.length > 0 && <div className="doc-tags" data-testid="doc-tags">{tags.map((t, i) => <span key={i} className="doc-tag"><Icon name="Tag" size={11}/>{t}</span>)}</div>}
         </div>
         <div className="doc-actions">
           <PresenceAvatars users={users} identity={identity} />
           {viewingVersion && <button data-testid="version-back-btn" className="doc-action-btn" onClick={() => setViewingVersion(null)} title="Back to current"><Icon name="ArrowLeft" size={18}/></button>}
-          <button data-testid="export-pdf-btn" className="doc-action-btn" onClick={exportPDF} title="Export as PDF" disabled={exporting}><Icon name="Download" size={18}/></button>
+          <button data-testid="export-pdf-btn" className="doc-action-btn" onClick={exportPDF} title="Print / Save as PDF"><Icon name="Printer" size={18}/></button>
           <button data-testid="version-history-btn" className="doc-action-btn" onClick={loadVersions} title="Version history"><Icon name="Clock" size={18}/></button>
           {isAdmin && <button data-testid="share-toggle-btn" className="doc-action-btn" onClick={() => setShowShare(true)} title="Share settings"><Icon name="Share" size={18}/></button>}
           <button data-testid="bookmark-toggle-btn" className={`doc-action-btn ${isBookmarked ? "bookmarked" : ""}`} onClick={onToggleBookmark}><Icon name={isBookmarked ? "BookmarkFilled" : "Bookmark"} size={18}/></button>
@@ -800,8 +1042,11 @@ function DocumentViewer({ doc, category, parentCategory, isBookmarked, onToggleB
         <article className="doc-content" data-testid="doc-content">
           <div ref={contentRef} className="doc-content-inner">
             {doc.cover_image && <div className="doc-cover-image" data-testid="doc-cover"><img src={doc.cover_image} alt="" /></div>}
-            <MarkdownContent content={displayContent} />
+            <MarkdownContent content={displayContent} currentDocId={doc?.id} />
           </div>
+          <RelatedDocs currentDoc={doc} categories={categories} documents={documents} onSelect={onSelectDoc} />
+          <DocQuiz docId={doc.id} />
+          <DocNavigation currentDoc={doc} documents={documents} categories={categories} onSelect={onSelectDoc} />
           <CommentsSection docId={doc.id} />
         </article>
         <aside className="doc-sidebar-right">
@@ -813,6 +1058,7 @@ function DocumentViewer({ doc, category, parentCategory, isBookmarked, onToggleB
                   <span className="doc-version-date">{new Date(v.created_at).toLocaleString()}</span><span className="doc-version-title">{v.title}</span>
                 </button>
               ))}
+              {viewingVersion && <button className="editor-btn-primary" data-testid="restore-version-btn" style={{width:"100%",marginTop:8}} onClick={async () => { try { const r = await api("post", `/documents/${doc.id}/versions/${viewingVersion.id}/restore`); window.location.reload(); } catch { alert("Failed to restore version"); } }}>Restore this version</button>}
               <button className="doc-version-close" data-testid="version-close-btn" onClick={() => { setShowVersions(false); setViewingVersion(null); }}>Close</button>
             </div>
           )}
@@ -853,8 +1099,10 @@ function DocumentViewer({ doc, category, parentCategory, isBookmarked, onToggleB
 // --- Document Editor (Collaborative) ---
 function DocumentEditor({ doc, categories, onSave, onCancel }) {
   const { api } = useAuth();
-  const [title, setTitle] = useState(doc?.title || "");
-  const [content, setContent] = useState(doc?.content || "");
+  // Load draft if creating new doc
+  const draft = !doc ? (() => { try { const d = JSON.parse(localStorage.getItem("aa-draft") || "null"); if (d && Date.now() - d.timestamp < 3600000) return d; } catch {} return null; })() : null;
+  const [title, setTitle] = useState(doc?.title || draft?.title || "");
+  const [content, setContent] = useState(doc?.content || draft?.content || "");
   const [categoryId, setCategoryId] = useState(doc?.category_id || "");
   const [saving, setSaving] = useState(false);
   const [showPreview, setShowPreview] = useState(true);
@@ -1030,43 +1278,15 @@ function DocumentEditor({ doc, categories, onSave, onCancel }) {
 
 // --- Home / Dashboard ---
 function HomePage({ categories, documents, onSelectDoc }) {
-  const { api } = useAuth();
-  const [allTags, setAllTags] = useState([]);
-  const [selectedTag, setSelectedTag] = useState(null);
-
-  useEffect(() => { api("get", "/tags").then(r => setAllTags(r.data)).catch(() => {}); }, [api]);
-
+  const navigate = useNavigate();
   const parentCats = categories.filter(c => !c.parent_id && !c.internal).sort((a,b) => a.order - b.order);
   const getChildCount = (catId) => { const children = categories.filter(c => c.parent_id === catId); return documents.filter(d => d.category_id === catId || children.some(c => c.id === d.category_id)).length; };
-  const filteredDocs = selectedTag ? documents.filter(d => (d.tags || []).includes(selectedTag)) : [];
 
   return (
     <div className="home-page" data-testid="home-page">
       <div className="home-hero"><h1>Agent Anatomy</h1><p>The definitive guide to AI agents — architecture, orchestration, LLMs, tooling, and the infrastructure that powers them.</p></div>
-      {allTags.length > 0 && (
-        <div className="tag-cloud" data-testid="tag-cloud">
-          <span className="tag-cloud-label">Filter by tag:</span>
-          {allTags.map(t => (
-            <button key={t} className={`tag-cloud-item ${selectedTag === t ? "active" : ""}`} data-testid={`tag-filter-${t}`} onClick={() => setSelectedTag(selectedTag === t ? null : t)}>{t}</button>
-          ))}
-          {selectedTag && <button className="tag-cloud-clear" onClick={() => setSelectedTag(null)}>Clear</button>}
-        </div>
-      )}
-      {selectedTag && filteredDocs.length > 0 && (
-        <div className="tag-results" data-testid="tag-results">
-          <h3>Documents tagged "{selectedTag}"</h3>
-          <div className="bookmarks-list">{filteredDocs.map(d => (
-            <button key={d.id} className="bookmark-item-content" onClick={() => onSelectDoc(d.id)} style={{border:"1px solid var(--border-clr)",borderRadius:"var(--radius)",marginBottom:4}}>
-              <Icon name="FileText" size={16}/><div><div className="bookmark-title">{d.title}</div></div>
-            </button>
-          ))}</div>
-        </div>
-      )}
       <div className="home-grid">{parentCats.map(cat => (
-        <button key={cat.id} className="home-card" data-testid={`home-card-${cat.id}`} onClick={() => {
-          const firstDoc = documents.find(d => { const children = categories.filter(c => c.parent_id === cat.id); return d.category_id === cat.id || children.some(c => c.id === d.category_id); });
-          if (firstDoc) onSelectDoc(firstDoc.id);
-        }}>
+        <button key={cat.id} className="home-card" data-testid={`home-card-${cat.id}`} onClick={() => navigate(`/category/${cat.id}`)}>
           {cat.cover_image && <div className="home-card-cover" style={{backgroundImage: `url(${cat.cover_image})`}} />}
           <div className="home-card-body"><div className="home-card-icon"><Icon name={cat.icon} size={24}/></div><h3>{cat.name}</h3><p className="home-card-count">{getChildCount(cat.id)} documents</p></div>
         </button>
@@ -1108,8 +1328,7 @@ function TrashPage({ onDocumentsChanged }) {
       : <div className="bookmarks-list">{docs.map(d => (
         <div key={d.id} className="bookmark-item" data-testid={`trash-item-${d.id}`}>
           <div className="bookmark-item-content"><Icon name="FileText" size={18}/><div><div className="bookmark-title">{d.title}</div><div className="bookmark-cat">Deleted {d.deleted_at ? new Date(d.deleted_at).toLocaleDateString() : ""}</div></div></div>
-          <button className="trash-restore-btn" data-testid={`restore-${d.id}`} onClick={() => restore(d.id)}><Icon name="Undo" size={14}/></button>
-          <button className="bookmark-remove-btn" data-testid={`perm-delete-${d.id}`} onClick={() => permDelete(d.id)}><Icon name="Trash" size={14}/></button>
+          <button className="trash-restore-btn" data-testid={`restore-${d.id}`} onClick={() => restore(d.id)}><Icon name="Undo" size={14}/> Restore</button>
         </div>
       ))}</div>}
     </div>
@@ -1136,7 +1355,7 @@ function ToolsPage({ isAdmin }) {
     } catch {}
   };
 
-  const del = async (id) => { if (!window.confirm("Delete this resource?")) return; try { await api("delete", `/tools/${id}`); setTools(prev => prev.filter(t => t.id !== id)); } catch {} };
+  const del = async (id) => { if (!window.confirm("Are you sure you want to delete this resource? This cannot be undone.")) return; try { await api("delete", `/tools/${id}`); setTools(prev => prev.filter(t => t.id !== id)); } catch (e) { console.error("Delete tool error:", e); alert("Failed to delete. Please try again."); } };
 
   const categories = [...new Set(tools.map(t => t.category))].sort();
   const getDomain = (url) => { try { return new URL(url).hostname.replace("www.", ""); } catch { return ""; } };
@@ -1150,7 +1369,7 @@ function ToolsPage({ isAdmin }) {
           <h1><Icon name="Link" size={28}/> Tools & Resources</h1>
           <p className="tools-subtitle">Useful links, documentation, and resources for the team</p>
         </div>
-        {isAdmin && <button className="editor-btn-primary" data-testid="add-tool-btn" onClick={() => { setAdding(true); setEditId(null); setForm({ name: "", url: "", description: "", category: "General" }); }}><Icon name="Plus" size={14}/> Add Resource</button>}
+        {isAdmin && <button className="editor-btn-primary" data-testid="add-tool-btn" onClick={() => { setAdding(true); setEditId(null); setForm({ name: "", url: "", description: "", category: "General" }); }}><Icon name="Plus" size={14}/> Add New Link</button>}
       </div>
       {(adding || editId) && (
         <div className="tools-form-card" data-testid="tool-form">
@@ -1159,29 +1378,23 @@ function ToolsPage({ isAdmin }) {
             <div className="tools-form-field"><label>Name</label><input data-testid="tool-name" placeholder="e.g., FastAPI Documentation" value={form.name} onChange={e => setForm({...form, name: e.target.value})} /></div>
             <div className="tools-form-field"><label>URL</label><input data-testid="tool-url" placeholder="https://fastapi.tiangolo.com" value={form.url} onChange={e => setForm({...form, url: e.target.value})} /></div>
             <div className="tools-form-field"><label>Description</label><input data-testid="tool-desc" placeholder="Brief description" value={form.description} onChange={e => setForm({...form, description: e.target.value})} /></div>
-            <div className="tools-form-field"><label>Category</label><input data-testid="tool-category" placeholder="e.g., Documentation, Video, API" value={form.category} onChange={e => setForm({...form, category: e.target.value})} /></div>
           </div>
           {form.url && <div className="tools-form-preview"><img src={getFavicon(form.url)} alt="" width="16" height="16" onError={e => e.target.style.display='none'} /><span>{getDomain(form.url)}</span></div>}
           <div className="tools-form-actions"><button className="editor-btn-primary" data-testid="tool-save-btn" onClick={save} disabled={!form.name.trim() || !form.url.trim()}>Save</button><button className="editor-btn-secondary" onClick={() => { setAdding(false); setEditId(null); }}>Cancel</button></div>
         </div>
       )}
-      {categories.map(cat => (
-        <div key={cat} className="tools-category">
-          <h2 className="tools-category-title">{cat}</h2>
-          <div className="tools-grid">
-            {tools.filter(t => t.category === cat).map(t => (
-              <div key={t.id} className="tools-card" data-testid={`tool-${t.id}`}>
-                <div className="tools-card-header"><img src={getFavicon(t.url)} alt="" width="20" height="20" className="tools-card-favicon" onError={e => e.target.style.display='none'} /><a href={t.url} target="_blank" rel="noreferrer" className="tools-card-name">{t.name}</a></div>
-                {t.description && <p className="tools-card-desc">{t.description}</p>}
-                <div className="tools-card-footer">
-                  <span className="tools-card-domain"><Icon name="Link" size={12}/> {getDomain(t.url)}</span>
-                  {isAdmin && <div className="tools-card-actions"><button data-testid={`edit-tool-${t.id}`} onClick={() => { setEditId(t.id); setAdding(false); setForm({ name: t.name, url: t.url, description: t.description, category: t.category }); }}><Icon name="Edit" size={13}/></button><button data-testid={`delete-tool-${t.id}`} onClick={() => del(t.id)}><Icon name="Trash" size={13}/></button></div>}
-                </div>
-              </div>
-            ))}
+      <div className="tools-grid">
+        {tools.map(t => (
+          <div key={t.id} className="tools-card" data-testid={`tool-${t.id}`}>
+            <div className="tools-card-header"><img src={getFavicon(t.url)} alt="" width="20" height="20" className="tools-card-favicon" onError={e => e.target.style.display='none'} /><a href={t.url} target="_blank" rel="noreferrer" className="tools-card-name">{t.name}</a></div>
+            {t.description && <p className="tools-card-desc">{t.description}</p>}
+            <div className="tools-card-footer">
+              <span className="tools-card-domain"><Icon name="Link" size={12}/> {getDomain(t.url)}</span>
+              {isAdmin && <div className="tools-card-actions"><button data-testid={`edit-tool-${t.id}`} onClick={() => { setEditId(t.id); setAdding(false); setForm({ name: t.name, url: t.url, description: t.description, category: t.category }); }}><Icon name="Edit" size={13}/></button><button data-testid={`delete-tool-${t.id}`} onClick={() => del(t.id)}><Icon name="Trash" size={13}/></button></div>}
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
       {tools.length === 0 && !adding && <div className="doc-empty"><Icon name="Link" size={48}/><h2>No resources yet</h2><p>{isAdmin ? "Add useful links and resources using the button above." : "Resources will appear here when added."}</p></div>}
     </div>
   );
@@ -1360,6 +1573,7 @@ function SettingsPage({ isAdmin }) {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("viewer");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -1373,63 +1587,69 @@ function SettingsPage({ isAdmin }) {
       const r = await api("post", "/invite", { email: inviteEmail.trim(), role: inviteRole });
       setUsers(prev => [...prev, r.data]);
       setInviteEmail(""); setInviteRole("viewer");
+      setSuccess("Invitation sent!");
+      setTimeout(() => setSuccess(""), 3000);
     } catch (e) { setError(e.response?.data?.detail || "Failed to invite"); }
   };
 
   const changeRole = async (userId, newRole) => {
+    setError("");
     try {
       await api("put", `/users/${userId}/role`, { role: newRole });
       setUsers(prev => prev.map(u => u.user_id === userId ? { ...u, role: newRole } : u));
-      alert(`Role updated to ${newRole}`);
-    } catch {}
+      setSuccess(`Role updated to ${newRole}`);
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (e) { setError(e.response?.data?.detail || "Failed"); }
   };
 
   const removeUser = async (userId) => {
     if (!window.confirm("Remove this user?")) return;
+    setError("");
     try {
       await api("delete", `/users/${userId}`);
       setUsers(prev => prev.filter(u => u.user_id !== userId));
+      setSuccess("User removed");
+      setTimeout(() => setSuccess(""), 3000);
     } catch (e) { setError(e.response?.data?.detail || "Cannot remove"); }
   };
 
-  if (!isAdmin) return <div className="doc-empty"><Icon name="Lock" size={48}/><h2>Admin Only</h2><p>Only admins can access settings.</p></div>;
+  if (!isAdmin) return <div className="doc-empty"><Icon name="Lock" size={48}/><h2>Admin Only</h2></div>;
   if (loading) return <div className="edh-loading"><div className="edh-spinner"/></div>;
+
+  const roleDesc = { viewer: "Can view documents only", commenter: "Can view and comment", editor: "Can view, comment, and edit documents", admin: "Full access" };
 
   return (
     <div className="bookmarks-page" data-testid="settings-page">
-      <h1>Settings</h1>
+      <h1>Team Settings</h1>
       <div className="settings-section">
         <h2 className="settings-section-title">Invite People</h2>
         {error && <div className="auth-error">{error}</div>}
+        {success && <div className="auth-error" style={{background: "var(--accent-light)", color: "var(--accent)", borderColor: "var(--accent)"}}>{success}</div>}
         <div className="invite-row" data-testid="invite-row">
-          <input data-testid="invite-email" type="email" placeholder="Email address" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} />
-          <div className="invite-role-picker" data-testid="invite-role-picker">
-            <label className={`role-option ${inviteRole === "viewer" ? "selected" : ""}`}>
-              <input type="radio" name="role" value="viewer" checked={inviteRole === "viewer"} onChange={() => setInviteRole("viewer")} />
-              <Icon name="FileText" size={14}/> Viewer
-            </label>
-            <label className={`role-option ${inviteRole === "admin" ? "selected" : ""}`}>
-              <input type="radio" name="role" value="admin" checked={inviteRole === "admin"} onChange={() => setInviteRole("admin")} />
-              <Icon name="Lock" size={14}/> Admin
-            </label>
-          </div>
-          <button className="editor-btn-primary" data-testid="invite-btn" onClick={invite} disabled={!inviteEmail.trim()}>Invite</button>
+          <input data-testid="invite-email" type="email" placeholder="Email address" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} onKeyDown={e => { if (e.key === "Enter") invite(); }} />
+          <select className="user-role-select" data-testid="invite-role-select" value={inviteRole} onChange={e => setInviteRole(e.target.value)}>
+            <option value="viewer">Viewer</option>
+            <option value="commenter">Commenter</option>
+            <option value="editor">Editor</option>
+          </select>
+          <button className="editor-btn-primary" data-testid="invite-btn" onClick={invite} disabled={!inviteEmail.trim()}>Send Invite</button>
         </div>
+        <p className="invite-role-desc">{roleDesc[inviteRole]}</p>
       </div>
       <div className="settings-section">
-        <h2 className="settings-section-title">Team Members ({users.length})</h2>
+        <h2 className="settings-section-title">Members ({users.length})</h2>
         <div className="users-list" data-testid="users-list">
-          <div className="users-header">
-            <span>User</span><span>Role</span><span>Actions</span>
-          </div>
+          <div className="users-header"><span>User</span><span>Role</span><span>Actions</span></div>
           {users.map(u => (
-            <div key={u.user_id} className="user-row" data-testid={`user-${u.user_id}`}>
+            <div key={u.user_id || u.email} className="user-row" data-testid={`user-${u.user_id || u.email}`}>
               <div className="user-info">
                 <div className="sidebar-user-avatar">{u.name?.[0]?.toUpperCase() || "?"}</div>
                 <div><div className="user-name">{u.name || u.email}</div><div className="user-email">{u.email}</div></div>
               </div>
               <select className="user-role-select" data-testid={`role-select-${u.user_id}`} value={u.role || "viewer"} onChange={e => changeRole(u.user_id, e.target.value)}>
                 <option value="viewer">Viewer</option>
+                <option value="commenter">Commenter</option>
+                <option value="editor">Editor</option>
                 <option value="admin">Admin</option>
               </select>
               <button className="catmgr-action-btn catmgr-danger" data-testid={`remove-user-${u.user_id}`} onClick={() => removeUser(u.user_id)}><Icon name="Trash" size={14}/></button>
@@ -1561,6 +1781,314 @@ function ReadingProgress() {
   );
 }
 
+
+
+// --- Path Final Test + Certificate ---
+function PathTest({ pathId, pathTitle, enabled }) {
+  const { api } = useAuth();
+  const [test, setTest] = useState(null);
+  const [answers, setAnswers] = useState({});
+  const [submitted, setSubmitted] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [showCert, setShowCert] = useState(false);
+
+  useEffect(() => {
+    if (pathId) api("get", `/path-tests/${pathId}`).then(r => { if (r.data?.questions?.length) setTest(r.data); }).catch(() => {});
+  }, [pathId, api]);
+
+  if (!test || !test.questions.length) return null;
+
+  const score = test.questions.reduce((acc, q) => acc + (answers[q.id] === q.correct ? 1 : 0), 0);
+  const total = test.questions.length;
+  const allAnswered = Object.keys(answers).length === total;
+  const passed = submitted && score >= Math.ceil(total * 0.7);
+
+  if (!expanded) {
+    return (
+      <div className="path-test-section" data-testid="path-test">
+        <button className={`doc-quiz-start ${!enabled ? "disabled" : ""}`} data-testid="path-test-btn" onClick={() => enabled && setExpanded(true)} disabled={!enabled}>
+          <Icon name="Check" size={20}/> <span>Final Assessment</span> <span className="doc-quiz-count">{total} questions{!enabled ? " — complete all lessons first" : ""}</span>
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="doc-quiz path-test-section" data-testid="path-test-expanded">
+      <h3 className="doc-quiz-title"><Icon name="Check" size={18}/> {pathTitle} — Final Assessment <button className="doc-quiz-minimize" onClick={() => setExpanded(false)}><Icon name="X" size={14}/></button></h3>
+      {test.questions.map((q, qi) => (
+        <div key={q.id} className="quiz-question">
+          <p className="quiz-question-text">{qi + 1}. {q.question}</p>
+          <div className="quiz-options">
+            {q.options.map((opt, oi) => {
+              const selected = answers[q.id] === oi;
+              const isCorrect = submitted && oi === q.correct;
+              const isWrong = submitted && selected && oi !== q.correct;
+              return (
+                <button key={oi} className={`quiz-option ${selected ? "selected" : ""} ${isCorrect ? "correct" : ""} ${isWrong ? "wrong" : ""}`} onClick={() => { if (!submitted) setAnswers(prev => ({...prev, [q.id]: oi})); }} disabled={submitted}>
+                  <span className="quiz-option-letter">{String.fromCharCode(65 + oi)}</span>{opt}
+                </button>
+              );
+            })}
+          </div>
+          {submitted && answers[q.id] !== undefined && (
+            <p className={`quiz-explanation ${answers[q.id] === q.correct ? "correct" : "wrong"}`}>
+              {answers[q.id] === q.correct ? "Correct! " : "Incorrect. "}{q.explanation}
+            </p>
+          )}
+        </div>
+      ))}
+      <div className="quiz-footer">
+        {!submitted ? (
+          <button className="editor-btn-primary" onClick={() => setSubmitted(true)} disabled={!allAnswered}>Submit Assessment ({Object.keys(answers).length}/{total})</button>
+        ) : (
+          <div className="quiz-result">
+            <span className="quiz-score">Score: {score}/{total} ({Math.round(score/total*100)}%)</span>
+            {passed && <button className="editor-btn-primary" onClick={() => setShowCert(true)}>View Certificate</button>}
+            <button className="editor-btn-secondary" onClick={() => { setAnswers({}); setSubmitted(false); }}>Try Again</button>
+          </div>
+        )}
+      </div>
+      {showCert && (
+        <div className="search-overlay" onClick={() => setShowCert(false)}>
+          <div className="cert-modal" onClick={e => e.stopPropagation()} data-testid="certificate">
+            <div className="cert-border" id="certificate-content">
+              <div className="cert-header">Certificate of Completion</div>
+              <div className="cert-icon"><Icon name="Award" size={40}/></div>
+              <div className="cert-body">
+                <p className="cert-congrats">Congratulations!</p>
+                <p className="cert-text">You have successfully completed</p>
+                <h2 className="cert-path">{pathTitle}</h2>
+                <p className="cert-score">Score: {score}/{total} ({Math.round(score/total*100)}%)</p>
+                <p className="cert-date">{new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</p>
+              </div>
+              <div style={{display:"flex", gap: 10, justifyContent: "center", marginTop: 20}}>
+                <button className="editor-btn-primary" data-testid="download-cert-btn" onClick={() => {
+                  const pdf = new jsPDF("l", "mm", "a4");
+                  const w = pdf.internal.pageSize.getWidth();
+                  const h = pdf.internal.pageSize.getHeight();
+                  // Background
+                  pdf.setFillColor(250, 250, 252);
+                  pdf.rect(0, 0, w, h, "F");
+                  // Border
+                  pdf.setDrawColor(79, 70, 229);
+                  pdf.setLineWidth(2);
+                  pdf.rect(12, 12, w - 24, h - 24);
+                  pdf.setLineWidth(0.5);
+                  pdf.rect(15, 15, w - 30, h - 30);
+                  // Header
+                  pdf.setFont("helvetica", "normal");
+                  pdf.setFontSize(12);
+                  pdf.setTextColor(79, 70, 229);
+                  pdf.text("CERTIFICATE OF COMPLETION", w / 2, 40, { align: "center" });
+                  // Decorative line
+                  pdf.setDrawColor(79, 70, 229);
+                  pdf.setLineWidth(0.5);
+                  pdf.line(w / 2 - 40, 45, w / 2 + 40, 45);
+                  // Congrats
+                  pdf.setFont("helvetica", "bold");
+                  pdf.setFontSize(28);
+                  pdf.setTextColor(24, 24, 27);
+                  pdf.text("Congratulations!", w / 2, 65, { align: "center" });
+                  // Body text
+                  pdf.setFont("helvetica", "normal");
+                  pdf.setFontSize(14);
+                  pdf.setTextColor(100, 100, 110);
+                  pdf.text("This certifies that you have successfully completed", w / 2, 80, { align: "center" });
+                  // Path name
+                  pdf.setFont("helvetica", "bold");
+                  pdf.setFontSize(22);
+                  pdf.setTextColor(79, 70, 229);
+                  pdf.text(pathTitle, w / 2, 100, { align: "center" });
+                  // Score
+                  pdf.setFont("helvetica", "normal");
+                  pdf.setFontSize(14);
+                  pdf.setTextColor(24, 24, 27);
+                  pdf.text(`Score: ${score}/${total} (${Math.round(score/total*100)}%)`, w / 2, 118, { align: "center" });
+                  // Platform
+                  pdf.setFontSize(11);
+                  pdf.setTextColor(100, 100, 110);
+                  pdf.text("Agent Anatomy — AI Agent Knowledge Hub", w / 2, 135, { align: "center" });
+                  // Date
+                  pdf.setFontSize(11);
+                  pdf.setTextColor(140, 140, 150);
+                  pdf.text(new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }), w / 2, 148, { align: "center" });
+                  // Bottom decorative line
+                  pdf.setDrawColor(79, 70, 229);
+                  pdf.line(w / 2 - 40, 155, w / 2 + 40, 155);
+                  pdf.save(`${pathTitle} - Certificate.pdf`);
+                }}>
+                  <Icon name="Download" size={16}/> Download PDF
+                </button>
+                <button className="editor-btn-secondary" onClick={() => setShowCert(false)}>Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// --- Learning Paths Page ---
+function LearningPathsPage() {
+  const { api } = useAuth();
+  const navigate = useNavigate();
+  const [paths, setPaths] = useState([]);
+  const [activePath, setActivePath] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [progress, setProgress] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("aa-learning-progress") || "{}"); } catch { return {}; }
+  });
+
+  useEffect(() => { 
+    api("get", "/learning-paths").then(r => { 
+      setPaths(r.data);
+      // Auto-open path if returning from a document
+      const resumeId = window.history.state?.usr?.resumePathId;
+      if (resumeId && r.data) {
+        const found = r.data.find(p => p.id === resumeId);
+        if (found) setActivePath(found);
+      }
+    }).catch(() => {}).finally(() => setLoading(false)); 
+  }, [api]);
+
+  const markComplete = (pathId, docId) => {
+    const key = `${pathId}:${docId}`;
+    const updated = { ...progress, [key]: true };
+    setProgress(updated);
+    localStorage.setItem("aa-learning-progress", JSON.stringify(updated));
+  };
+
+  const markIncomplete = (pathId, docId) => {
+    const key = `${pathId}:${docId}`;
+    const updated = { ...progress };
+    delete updated[key];
+    setProgress(updated);
+    localStorage.setItem("aa-learning-progress", JSON.stringify(updated));
+  };
+
+  const resetPath = (pathId) => {
+    if (!window.confirm("Reset all progress for this path? This will mark all lessons as incomplete.")) return;
+    const updated = { ...progress };
+    Object.keys(updated).forEach(k => { if (k.startsWith(`${pathId}:`)) delete updated[k]; });
+    setProgress(updated);
+    localStorage.setItem("aa-learning-progress", JSON.stringify(updated));
+  };
+
+  const getPathProgress = (path) => {
+    if (!path?.steps) return 0;
+    const completed = path.steps.filter(s => progress[`${path.id}:${s.document_id}`]).length;
+    return Math.round((completed / path.steps.length) * 100);
+  };
+
+  if (loading) return <div className="edh-loading"><div className="edh-spinner"/></div>;
+
+  if (activePath) {
+    const pct = getPathProgress(activePath);
+    const completedCount = activePath.steps.filter(s => progress[`${activePath.id}:${s.document_id}`]).length;
+    return (
+      <div className="lp-detail" data-testid="learning-path-detail">
+        <button className="lp-back" data-testid="lp-back" onClick={() => setActivePath(null)}><Icon name="ArrowLeft" size={16}/> All Paths</button>
+        <h1>{activePath.title}</h1>
+        <p className="lp-desc">{activePath.description}</p>
+        <div className="lp-stats">
+          <span className={`lp-badge lp-badge-${activePath.difficulty}`}>{activePath.difficulty}</span>
+          <span><Icon name="Clock" size={13}/> {activePath.estimated_time}</span>
+          <span>{completedCount}/{activePath.steps.length} completed</span>
+        </div>
+        <div className="lp-progress-bar"><div className="lp-progress-fill" style={{width: `${pct}%`}} /><span>{pct}% — {completedCount}/{activePath.steps.length} completed</span></div>
+        {pct === 100 && <button className="lp-reset-btn" data-testid="lp-reset" onClick={() => resetPath(activePath.id)}><Icon name="Undo" size={13}/> Start Again</button>}
+
+        {/* Animated Roadmap */}
+        <div className="lp-roadmap" data-testid="lp-roadmap">
+          <div className="lp-road-nodes">
+            {(() => {
+              const totalSteps = activePath.steps.length;
+              const completedSteps = activePath.steps.filter(s => progress[`${activePath.id}:${s.document_id}`]).length;
+              const lineWidth = totalSteps > 1 ? `calc(${(completedSteps / (totalSteps - 1)) * 100}% * (100% - 40px) / 100%)` : "0";
+              const lineWidthPct = totalSteps > 1 ? (completedSteps / (totalSteps - 1)) * 100 : 0;
+              return <>
+                <div className="lp-road-progress-line" style={{width: `calc(${Math.min(lineWidthPct, 100)}% - ${40 * (1 - Math.min(lineWidthPct, 100) / 100)}px)`}} />
+                {activePath.steps.map((step, i) => {
+                  const done = progress[`${activePath.id}:${step.document_id}`];
+                  const prevDone = i === 0 || progress[`${activePath.id}:${activePath.steps[i-1].document_id}`];
+                  const isNextUp = !done && prevDone;
+                  return (
+                    <div key={i} className={`lp-road-node ${done ? "completed" : ""} ${isNextUp ? "next-up" : ""}`} data-testid={`lp-road-${i}`}>
+                      <div className="lp-road-dot">{done ? <Icon name="Check" size={14}/> : <span>{i + 1}</span>}</div>
+                      <span className="lp-road-label">{step.title}</span>
+                    </div>
+                  );
+                })}
+              </>;
+            })()}
+          </div>
+        </div>
+
+        {/* Step Cards */}
+        <div className="lp-steps">
+          {activePath.steps.map((step, i) => {
+            const done = progress[`${activePath.id}:${step.document_id}`];
+            const isLast = i === activePath.steps.length - 1;
+            const nextStep = !isLast ? activePath.steps[i + 1] : null;
+            return (
+              <div key={i} className={`lp-step ${done ? "completed" : ""}`} data-testid={`lp-step-${i}`}>
+                <div className="lp-step-number">{done ? <Icon name="Check" size={16}/> : i + 1}</div>
+                <div className="lp-step-content">
+                  <h3>{step.title}</h3>
+                  <p>{step.description}</p>
+                  <div className="lp-step-actions">
+                    <button className="editor-btn-primary" onClick={() => { markComplete(activePath.id, step.document_id); localStorage.setItem("aa-from-path", activePath.id); navigate(`/doc/${step.document_id}`); }}>
+                      {done ? (pct < 100 ? "Continue" : "Review") : "Start Reading"}
+                    </button>
+                    {!done && <button className="editor-btn-secondary" onClick={() => markComplete(activePath.id, step.document_id)}>Mark Complete</button>}
+                    {done && <button className="editor-btn-secondary" onClick={() => markIncomplete(activePath.id, step.document_id)}>Mark Incomplete</button>}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        {pct === 100 && (
+          <div className="lp-complete-banner" data-testid="lp-complete">
+            <Icon name="Check" size={24}/> <span>Path Complete! You've finished all {activePath.steps.length} lessons.</span>
+          </div>
+        )}
+        <PathTest pathId={activePath.id} pathTitle={activePath.title} enabled={pct === 100} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="lp-page" data-testid="learning-paths-page">
+      <div className="lp-hero">
+        <h1>Learning Paths</h1>
+        <p>Guided sequences to master AI agent concepts — from beginner to advanced.</p>
+      </div>
+      <div className="lp-grid">
+        {paths.map(path => {
+          const pct = getPathProgress(path);
+          const completedCount = path.steps?.filter(s => progress[`${path.id}:${s.document_id}`]).length || 0;
+          return (
+            <button key={path.id} className="lp-card" data-testid={`lp-card-${path.id}`} onClick={() => setActivePath(path)}>
+              <div className="lp-card-icon"><Icon name={path.icon} size={28}/></div>
+              <h2>{path.title}</h2>
+              <p className="lp-card-desc">{path.description}</p>
+              <div className="lp-card-meta">
+                <span className={`lp-badge lp-badge-${path.difficulty}`}>{path.difficulty}</span>
+                <span><Icon name="Clock" size={13}/> {path.estimated_time}</span>
+                <span>{path.steps?.length} lessons</span>
+              </div>
+              {pct > 0 && <div className="lp-card-progress"><div className="lp-card-progress-fill" style={{width: `${pct}%`}} /></div>}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // --- AI Chatbot ---
 function AIChatbot({ docId }) {
   const { api, user } = useAuth();
@@ -1620,22 +2148,326 @@ function AIChatbot({ docId }) {
   );
 }
 
+
+// --- Progress Ring SVG ---
+function ProgressRing({ value, max, size = 100, strokeWidth = 8, color = "#6366f1", label, sublabel }) {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const pct = max > 0 ? Math.min(value / max, 1) : 0;
+  const offset = circumference - pct * circumference;
+  return (
+    <div className="progress-ring-wrapper">
+      <svg width={size} height={size} className="progress-ring-svg">
+        <circle cx={size/2} cy={size/2} r={radius} fill="none" stroke="var(--border-clr)" strokeWidth={strokeWidth} />
+        <circle cx={size/2} cy={size/2} r={radius} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round"
+          strokeDasharray={circumference} strokeDashoffset={offset}
+          style={{transition: "stroke-dashoffset 0.8s cubic-bezier(0.4,0,0.2,1)", transform: "rotate(-90deg)", transformOrigin: "50% 50%"}} />
+        <text x="50%" y="48%" textAnchor="middle" fill="var(--text-primary)" fontSize={size * 0.22} fontWeight="700">{Math.round(pct * 100)}%</text>
+        <text x="50%" y="64%" textAnchor="middle" fill="var(--text-muted)" fontSize={size * 0.11}>{value}/{max}</text>
+      </svg>
+      <div className="progress-ring-label">{label}</div>
+      {sublabel && <div className="progress-ring-sublabel">{sublabel}</div>}
+    </div>
+  );
+}
+
+// --- Knowledge Progress Dashboard ---
+function ProgressDashboard({ documents, categories }) {
+  const [docsRead, setDocsRead] = useState([]);
+  const [quizzesPassed, setQuizzesPassed] = useState([]);
+  const [modulesPassed, setModulesPassed] = useState([]);
+  const [pathProgress, setPathProgress] = useState({});
+  const [paths, setPaths] = useState([]);
+  const { api } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    try { setDocsRead(JSON.parse(localStorage.getItem("aa-docs-read") || "[]")); } catch { setDocsRead([]); }
+    try { setQuizzesPassed(JSON.parse(localStorage.getItem("aa-quizzes-passed") || "[]")); } catch { setQuizzesPassed([]); }
+    try { setModulesPassed(JSON.parse(localStorage.getItem("aa-modules-passed") || "[]")); } catch { setModulesPassed([]); }
+    try { setPathProgress(JSON.parse(localStorage.getItem("aa-learning-progress") || "{}")); } catch { setPathProgress({}); }
+    api("get", "/learning-paths").then(r => setPaths(r.data || [])).catch(() => {});
+  }, [api]);
+
+  const totalDocs = documents.filter(d => !d.deleted).length;
+  const totalQuizzes = totalDocs; // every doc potentially has a quiz
+  const totalModules = 11; // seeded module tests
+  const totalPaths = paths.length;
+
+  // Calculate path completion
+  const pathsCompleted = paths.filter(p => {
+    const steps = p.steps || [];
+    return steps.length > 0 && steps.every(s => pathProgress[`${p.id}:${s.document_id}`]);
+  }).length;
+
+  // Overall score calculation
+  const overallItems = docsRead.length + quizzesPassed.length + modulesPassed.length + pathsCompleted;
+  const overallMax = totalDocs + totalQuizzes + totalModules + totalPaths;
+  const overallPct = overallMax > 0 ? Math.round((overallItems / overallMax) * 100) : 0;
+
+  // Level/tier based on overall %
+  const level = overallPct >= 80 ? { name: "Expert", color: "#f59e0b", icon: "Award" }
+    : overallPct >= 50 ? { name: "Practitioner", color: "#6366f1", icon: "TrendingUp" }
+    : overallPct >= 20 ? { name: "Explorer", color: "#22c55e", icon: "Compass" }
+    : { name: "Newcomer", color: "#94a3b8", icon: "User" };
+
+  // Recent activity
+  const recentDocs = docsRead.slice(-5).reverse().map(id => documents.find(d => d.id === id)).filter(Boolean);
+
+  return (
+    <div className="progress-dashboard" data-testid="progress-dashboard">
+      <div className="progress-hero" data-testid="progress-hero">
+        <div className="progress-hero-level" style={{color: level.color}}>
+          <Icon name={level.icon} size={24}/>
+          <span>{level.name}</span>
+        </div>
+        <h1>Your Learning Progress</h1>
+        <p className="progress-hero-sub">Track your journey through AI agent concepts</p>
+      </div>
+
+      {/* Main Progress Rings */}
+      <div className="progress-rings-grid" data-testid="progress-rings">
+        <ProgressRing value={docsRead.length} max={totalDocs} size={120} color="#6366f1" label="Docs Read" sublabel={`of ${totalDocs} total`} />
+        <ProgressRing value={quizzesPassed.length} max={totalQuizzes} size={120} color="#22c55e" label="Quizzes Passed" sublabel={`score >= 70%`} />
+        <ProgressRing value={modulesPassed.length} max={totalModules} size={120} color="#f59e0b" label="Modules Passed" sublabel={`of ${totalModules} modules`} />
+        <ProgressRing value={pathsCompleted} max={totalPaths} size={120} color="#ec4899" label="Paths Completed" sublabel={`of ${totalPaths} paths`} />
+      </div>
+
+      {/* Overall Progress Bar */}
+      <div className="progress-overall" data-testid="progress-overall">
+        <div className="progress-overall-header">
+          <h2>Overall Mastery</h2>
+          <span className="progress-overall-pct" style={{color: level.color}}>{overallPct}%</span>
+        </div>
+        <div className="progress-overall-bar">
+          <div className="progress-overall-fill" style={{width: `${overallPct}%`, background: `linear-gradient(90deg, ${level.color}, ${level.color}dd)`}} />
+        </div>
+        <div className="progress-overall-breakdown">
+          <span>{docsRead.length} docs</span>
+          <span>{quizzesPassed.length} quizzes</span>
+          <span>{modulesPassed.length} modules</span>
+          <span>{pathsCompleted} paths</span>
+        </div>
+      </div>
+
+      <div className="progress-grid-2col">
+        {/* Learning Paths Progress */}
+        <div className="progress-section" data-testid="progress-paths">
+          <h2><Icon name="Map" size={18}/> Learning Paths</h2>
+          {paths.map(p => {
+            const steps = p.steps || [];
+            const done = steps.filter(s => pathProgress[`${p.id}:${s.document_id}`]).length;
+            const pct = steps.length > 0 ? Math.round((done / steps.length) * 100) : 0;
+            return (
+              <button key={p.id} className="progress-path-row" data-testid={`progress-path-${p.id}`} onClick={() => navigate("/learn", { state: { resumePathId: p.id } })}>
+                <div className="progress-path-info">
+                  <span className="progress-path-title">{p.title}</span>
+                  <span className="progress-path-meta">{done}/{steps.length} steps</span>
+                </div>
+                <div className="progress-mini-bar">
+                  <div className="progress-mini-fill" style={{width: `${pct}%`}} />
+                </div>
+                <span className="progress-path-pct">{pct}%</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Recent Activity */}
+        <div className="progress-section" data-testid="progress-recent">
+          <h2><Icon name="Clock" size={18}/> Recently Read</h2>
+          {recentDocs.length === 0 ? (
+            <p className="progress-empty">Start reading documents to see your progress!</p>
+          ) : (
+            recentDocs.map(doc => (
+              <button key={doc.id} className="progress-recent-row" data-testid={`progress-recent-${doc.id}`} onClick={() => navigate(`/doc/${doc.id}`)}>
+                <Icon name="FileText" size={16}/>
+                <span className="progress-recent-title">{doc.title}</span>
+                {quizzesPassed.includes(doc.id) && <span className="progress-badge-passed">Quiz Passed</span>}
+              </button>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Achievements */}
+      <div className="progress-section progress-achievements" data-testid="progress-achievements">
+        <h2><Icon name="Award" size={18}/> Achievements</h2>
+        <div className="progress-badges-grid">
+          <div className={`progress-badge ${docsRead.length >= 1 ? "earned" : ""}`} data-testid="badge-first-doc">
+            <Icon name="FileText" size={20}/><span>First Steps</span><small>Read your first doc</small>
+          </div>
+          <div className={`progress-badge ${docsRead.length >= 10 ? "earned" : ""}`} data-testid="badge-bookworm">
+            <Icon name="Book" size={20}/><span>Bookworm</span><small>Read 10 documents</small>
+          </div>
+          <div className={`progress-badge ${quizzesPassed.length >= 5 ? "earned" : ""}`} data-testid="badge-quiz-master">
+            <Icon name="Check" size={20}/><span>Quiz Ace</span><small>Pass 5 quizzes</small>
+          </div>
+          <div className={`progress-badge ${modulesPassed.length >= 3 ? "earned" : ""}`} data-testid="badge-module-pro">
+            <Icon name="Award" size={20}/><span>Module Pro</span><small>Pass 3 module tests</small>
+          </div>
+          <div className={`progress-badge ${pathsCompleted >= 1 ? "earned" : ""}`} data-testid="badge-path-finder">
+            <Icon name="Map" size={20}/><span>Pathfinder</span><small>Complete a learning path</small>
+          </div>
+          <div className={`progress-badge ${overallPct >= 50 ? "earned" : ""}`} data-testid="badge-halfway">
+            <Icon name="TrendingUp" size={20}/><span>Halfway There</span><small>Reach 50% mastery</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+// --- Module Test Component ---
+function ModuleTest({ categoryId, categoryName }) {
+  const { api } = useAuth();
+  const [test, setTest] = useState(null);
+  const [answers, setAnswers] = useState({});
+  const [submitted, setSubmitted] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    if (categoryId) api("get", `/module-tests/${categoryId}`).then(r => { if (r.data?.questions?.length) setTest(r.data); }).catch(() => {});
+  }, [categoryId, api]);
+
+  if (!test || !test.questions.length) return null;
+
+  const score = test.questions.reduce((acc, q) => acc + (answers[q.id] === q.correct ? 1 : 0), 0);
+  const total = test.questions.length;
+  const allAnswered = Object.keys(answers).length === total;
+  const passed = submitted && score >= Math.ceil(total * 0.7);
+
+  if (!expanded) {
+    return (
+      <div className="path-test-section" data-testid="module-test">
+        <button className="doc-quiz-start" data-testid="module-test-btn" onClick={() => setExpanded(true)}>
+          <Icon name="Check" size={20}/> <span>{test.title || `${categoryName} — Module Test`}</span> <span className="doc-quiz-count">{total} questions</span>
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="doc-quiz path-test-section" data-testid="module-test-expanded">
+      <h3 className="doc-quiz-title"><Icon name="Award" size={18}/> {test.title} <button className="doc-quiz-minimize" onClick={() => setExpanded(false)}><Icon name="X" size={14}/></button></h3>
+      {test.questions.map((q, qi) => (
+        <div key={q.id} className="quiz-question">
+          <p className="quiz-question-text">{qi + 1}. {q.question}</p>
+          <div className="quiz-options">
+            {q.options.map((opt, oi) => {
+              const selected = answers[q.id] === oi;
+              const isCorrect = submitted && oi === q.correct;
+              const isWrong = submitted && selected && oi !== q.correct;
+              return (
+                <button key={oi} className={`quiz-option ${selected ? "selected" : ""} ${isCorrect ? "correct" : ""} ${isWrong ? "wrong" : ""}`} onClick={() => { if (!submitted) setAnswers(prev => ({...prev, [q.id]: oi})); }} disabled={submitted}>
+                  <span className="quiz-option-letter">{String.fromCharCode(65 + oi)}</span>{opt}
+                </button>
+              );
+            })}
+          </div>
+          {submitted && answers[q.id] !== undefined && (
+            <p className={`quiz-explanation ${answers[q.id] === q.correct ? "correct" : "wrong"}`}>
+              {answers[q.id] === q.correct ? "Correct! " : "Incorrect. "}{q.explanation}
+            </p>
+          )}
+        </div>
+      ))}
+      <div className="quiz-footer">
+        {!submitted ? (
+          <button className="editor-btn-primary" onClick={() => {
+            setSubmitted(true);
+            const s = test.questions.reduce((acc, q) => acc + (answers[q.id] === q.correct ? 1 : 0), 0);
+            if (s >= Math.ceil(total * 0.7)) {
+              try { const p = JSON.parse(localStorage.getItem("aa-modules-passed") || "[]"); if (!p.includes(categoryId)) { p.push(categoryId); localStorage.setItem("aa-modules-passed", JSON.stringify(p)); } } catch {}
+            }
+          }} disabled={!allAnswered}>Check Answers ({Object.keys(answers).length}/{total})</button>
+        ) : (
+          <div className="quiz-result">
+            <span className="quiz-score">Score: {score}/{total} ({Math.round(score/total*100)}%)</span>
+            {passed && <span className="quiz-passed">Passed!</span>}
+            <button className="editor-btn-secondary" onClick={() => { setAnswers({}); setSubmitted(false); }}>Try Again</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// --- Category Page ---
+function CategoryPage({ categories, documents, onSelectDoc }) {
+  const { catId } = useParams();
+  const navigate = useNavigate();
+  const category = categories.find(c => c.id === catId);
+  const subcats = categories.filter(c => c.parent_id === catId);
+  const catDocs = documents.filter(d => d.category_id === catId || subcats.some(c => c.id === d.category_id)).filter(d => !d.deleted);
+
+  if (!category) return <div className="doc-empty"><Icon name="FolderOpen" size={48}/><h2>Category not found</h2><p>This category may have been removed.</p></div>;
+
+  return (
+    <div className="category-page" data-testid="category-page">
+      <button className="lp-back" onClick={() => navigate("/")} data-testid="cat-back"><Icon name="ArrowLeft" size={16}/> All Categories</button>
+      <div className="category-hero">
+        <div className="category-hero-icon"><Icon name={category.icon || "FolderOpen"} size={32}/></div>
+        <h1>{category.name}</h1>
+        <p className="category-desc">{catDocs.length} document{catDocs.length !== 1 ? "s" : ""} in this module</p>
+      </div>
+      <div className="category-docs-grid">
+        {catDocs.map((doc, i) => (
+          <button key={doc.id} className="category-doc-card" data-testid={`cat-doc-${doc.id}`} onClick={() => onSelectDoc(doc.id)} style={{animationDelay: `${i * 0.05}s`}}>
+            <div className="category-doc-num">{i + 1}</div>
+            <div className="category-doc-info">
+              <h3>{doc.title}</h3>
+              <div className="category-doc-meta">
+                <span><Icon name="Clock" size={12}/> {Math.max(1, Math.ceil((doc.content?.split(/\s+/).length || 0) / 200))} min read</span>
+                {doc.updated_at && <span>Updated {new Date(doc.updated_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>}
+              </div>
+            </div>
+            <Icon name="ChevronRight" size={16}/>
+          </button>
+        ))}
+      </div>
+      <ModuleTest categoryId={catId} categoryName={category.name} />
+    </div>
+  );
+}
+
 // --- Main Dashboard ---
 function Dashboard() {
   const { api, user } = useAuth();
   const navigate = useNavigate();
-  const { docId } = useParams();
+  const { docId, catId } = useParams();
   const [categories, setCategories] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [bookmarkedIds, setBookmarkedIds] = useState([]);
   const [activeDoc, setActiveDoc] = useState(null);
   const [editing, setEditing] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => window.innerWidth < 768);
   const [sidebarWidth, setSidebarWidth] = useState(272);
   const [loading, setLoading] = useState(true);
   const [catManagerOpen, setCatManagerOpen] = useState(false);
   const isAdmin = user?.role === "admin";
+  const [searchParams] = useSearchParams();
+  const currentPath = window.location.pathname;
+
+  // Exit editor when navigating to a different route
+  useEffect(() => {
+    if (creating || editing) {
+      const isDocRoute = currentPath.startsWith("/doc/");
+      const isHomeRoute = currentPath === "/";
+      if (!isDocRoute && !isHomeRoute) {
+        // Save draft before exiting
+        const editorTitle = document.querySelector('[data-testid="editor-title"]')?.value;
+        const editorContent = document.querySelector('[data-testid="editor-content"]')?.value;
+        if (editorTitle || editorContent) {
+          localStorage.setItem("aa-draft", JSON.stringify({ title: editorTitle || "", content: editorContent || "", timestamp: Date.now() }));
+        }
+        setCreating(false);
+        setEditing(false);
+      }
+    }
+  }, [currentPath]);
 
   const [connectionError, setConnectionError] = useState(false);
   const retryTimeout = useRef(null);
@@ -1673,7 +2505,7 @@ function Dashboard() {
 
   const handleSaveDoc = async (data) => {
     try {
-      if (creating) { const r = await api("post", "/documents", data); setDocuments(prev => [...prev, r.data]); setCreating(false); navigate(`/doc/${r.data.id}`); }
+      if (creating) { const r = await api("post", "/documents", data); setDocuments(prev => [...prev, r.data]); setCreating(false); localStorage.removeItem("aa-draft"); navigate(`/doc/${r.data.id}`); }
       else if (editing && activeDoc) { const r = await api("put", `/documents/${activeDoc.id}`, data); setDocuments(prev => prev.map(d => d.id === activeDoc.id ? r.data : d)); setActiveDoc(r.data); setEditing(false); }
     } catch {}
   };
@@ -1711,25 +2543,33 @@ function Dashboard() {
   const bookmarkedDocs = documents.filter(d => bookmarkedIds.includes(d.id));
   const activeBookmarkCount = bookmarkedDocs.length;
   const isBookmarksRoute = window.location.pathname === "/bookmarks";
+  const isLearnRoute = window.location.pathname === "/learn";
   const isToolsRoute = window.location.pathname === "/tools";
   const isTrashRoute = window.location.pathname === "/trash";
   const isSettingsRoute = window.location.pathname === "/settings";
   const isAnalyticsRoute = window.location.pathname === "/analytics";
-  const showHome = !docId && !creating && !editing && !isBookmarksRoute && !isToolsRoute && !isTrashRoute && !isSettingsRoute && !isAnalyticsRoute;
+  const isProgressRoute = window.location.pathname === "/progress";
+  const isCategoryRoute = currentPath.startsWith("/category/");
+  const showHome = !docId && !catId && !creating && !editing && !isBookmarksRoute && !isLearnRoute && !isToolsRoute && !isTrashRoute && !isSettingsRoute && !isAnalyticsRoute && !isProgressRoute && !isCategoryRoute;
+
+  const showingDocViewer = !creating && !editing && !isBookmarksRoute && !isLearnRoute && !isToolsRoute && !isTrashRoute && !isSettingsRoute && !isAnalyticsRoute && !isProgressRoute && !isCategoryRoute && !showHome && activeDoc;
 
   return (
     <div className="dashboard" data-testid="dashboard">
-      {activeDoc && !editing && !creating && <ReadingProgress />}
+      {showingDocViewer && <ReadingProgress />}
       <Sidebar categories={categories} documents={documents} activeDocId={activeDoc?.id} onSelectDoc={selectDoc} onNewDoc={startNew} collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} bookmarkCount={activeBookmarkCount} onManageCategories={() => setCatManagerOpen(true)} isAdmin={isAdmin} sidebarWidth={sidebarWidth} onResizeSidebar={setSidebarWidth} />
       <main className="main-content" data-testid="main-content" style={{marginLeft: sidebarCollapsed ? 48 : sidebarWidth}}>
-        {creating || editing ? <DocumentEditor doc={editing ? activeDoc : null} categories={categories} onSave={handleSaveDoc} onCancel={() => { setCreating(false); setEditing(false); if (activeDoc) navigate(`/doc/${activeDoc.id}`); else navigate("/"); }} />
+        {creating || editing ? <DocumentEditor doc={editing ? activeDoc : null} categories={categories} onSave={handleSaveDoc} onCancel={() => { const wasCreating = creating; setCreating(false); setEditing(false); if (!wasCreating && activeDoc) navigate(`/doc/${activeDoc.id}`); }} />
         : isBookmarksRoute ? <BookmarksPage bookmarkedDocs={bookmarkedDocs} categories={categories} onSelectDoc={selectDoc} onToggleBookmark={toggleBookmark} />
+        : isLearnRoute ? <LearningPathsPage />
         : isToolsRoute ? <ToolsPage isAdmin={isAdmin} />
         : isTrashRoute && isAdmin ? <TrashPage onDocumentsChanged={refreshDocuments} />
         : isSettingsRoute && isAdmin ? <SettingsPage isAdmin={isAdmin} />
         : isAnalyticsRoute && isAdmin ? <AnalyticsPage />
+        : isProgressRoute ? <ProgressDashboard documents={documents} categories={categories} />
+        : isCategoryRoute && catId ? <CategoryPage categories={categories} documents={documents} onSelectDoc={selectDoc} />
         : showHome ? <HomePage categories={categories} documents={documents} onSelectDoc={selectDoc} />
-        : <DocumentViewer doc={activeDoc} category={currentCat} parentCategory={parentCat} isBookmarked={bookmarkedIds.includes(activeDoc?.id)} onToggleBookmark={() => activeDoc && toggleBookmark(activeDoc.id)} onEdit={() => setEditing(true)} onDelete={handleDelete} isAdmin={isAdmin} onNavigateHome={() => navigate("/")} />}
+        : <DocumentViewer doc={activeDoc} category={currentCat} parentCategory={parentCat} isBookmarked={bookmarkedIds.includes(activeDoc?.id)} onToggleBookmark={() => activeDoc && toggleBookmark(activeDoc.id)} onEdit={() => setEditing(true)} onDelete={handleDelete} isAdmin={isAdmin} onNavigateHome={() => navigate("/")} categories={categories} documents={documents} onSelectDoc={selectDoc} />}
       </main>
       <CategoryManager open={catManagerOpen} onClose={() => setCatManagerOpen(false)} categories={categories} onCategoriesChange={setCategories} isAdmin={isAdmin} />
       <AIChatbot docId={activeDoc?.id} />
@@ -1742,25 +2582,69 @@ function AppRouter() {
     <Routes>
       <Route path="/share/:shareId" element={<PublicDocPage />} />
       <Route path="/bookmarks" element={<Dashboard />} />
+      <Route path="/learn" element={<Dashboard />} />
+      <Route path="/progress" element={<Dashboard />} />
       <Route path="/tools" element={<Dashboard />} />
       <Route path="/trash" element={<Dashboard />} />
       <Route path="/settings" element={<Dashboard />} />
       <Route path="/analytics" element={<Dashboard />} />
+      <Route path="/category/:catId" element={<Dashboard />} />
       <Route path="/doc/:docId" element={<Dashboard />} />
       <Route path="/" element={<Dashboard />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }
 
+function NotFoundPage() {
+  const navigate = useNavigate();
+  return (
+    <div className="edh-loading" data-testid="not-found-page">
+      <div className="edh-loading-content">
+        <h2 className="edh-loading-title">Page not found</h2>
+        <p className="edh-loading-subtitle">The page you're looking for doesn't exist.</p>
+        <button className="edh-loading-retry" onClick={() => navigate("/")}>Go Home</button>
+      </div>
+    </div>
+  );
+}
+
+function KeywordProvider({ children }) {
+  const [keywords, setKeywords] = useState({});
+  useEffect(() => {
+    axios.get(`${API}/keywords`).then(r => setKeywords(r.data)).catch(() => {});
+  }, []);
+  return <KeywordContext.Provider value={keywords}>{children}</KeywordContext.Provider>;
+}
+
+class ErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { hasError: false }; }
+  static getDerivedStateFromError() { return { hasError: true }; }
+  render() {
+    if (this.state.hasError) return (
+      <div className="edh-loading"><div className="edh-loading-content">
+        <h2 className="edh-loading-title">Something went wrong</h2>
+        <p className="edh-loading-subtitle">An unexpected error occurred.</p>
+        <button className="edh-loading-retry" onClick={() => { this.setState({ hasError: false }); window.location.href = "/"; }}>Reload</button>
+      </div></div>
+    );
+    return this.props.children;
+  }
+}
+
 function App() {
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <BrowserRouter>
-          <AppRouter />
-        </BrowserRouter>
-      </AuthProvider>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <AuthProvider>
+          <KeywordProvider>
+            <BrowserRouter>
+              <AppRouter />
+            </BrowserRouter>
+          </KeywordProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 
